@@ -1,48 +1,60 @@
-// src/App.jsx
-import { useEffect, useState } from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { useState } from 'react';
 import LoginPage from './LoginPage';
-import HomePage from './HomePage';
 import SignupPage from './SignupPage';
+import HomePage from './HomePage';
+import FarmsPage from './FarmsPage';
 
 function App() {
-    const [loggedIn, setLoggedIn] = useState(false);
-    const [page, setPage] = useState('login');
-    const [signupSuccessMsg, setSignupSuccessMsg] = useState('');
+    const [user, setUser] = useState(() => {
+        const saved = sessionStorage.getItem('user');
+        return saved ? JSON.parse(saved) : null;
+    });
 
-    useEffect(() => {
-        if (sessionStorage.getItem('userId')) {
-            setLoggedIn(true);
-        }
-    }, []);
+    const isLoggedIn = !!user;
 
-    const handleLogout = () => {
-        sessionStorage.clear();
-        setLoggedIn(false);
-        setPage('login');
+    const handleLogin = (userData) => {
+        setUser(userData);
+        sessionStorage.setItem('user', JSON.stringify(userData));
     };
 
-    if (loggedIn) {
-        return <HomePage onLogout={handleLogout} />;
-    }
-
-    if (page === 'signup') {
-        return (
-            <SignupPage
-                onSignupSuccess={(msg) => {
-                    setSignupSuccessMsg(msg);
-                    setPage('login');
-                }}
-                onCancel={() => setPage('login')}
-            />
-        );
-    }
+    const handleLogout = () => {
+        sessionStorage.removeItem('user');
+        setUser(null);
+    };
 
     return (
-        <LoginPage
-            onLogin={() => setLoggedIn(true)}
-            onSignupClick={() => setPage('signup')}
-            successMessage={signupSuccessMsg}
-        />
+        <Router>
+            <Routes>
+                <Route path="/login" element={<LoginPage onLogin={handleLogin} />} />
+                <Route path="/signup" element={<SignupPage />} />
+
+                <Route
+                    path="/home"
+                    element={
+                        isLoggedIn ? (
+                            <HomePage user={user} onLogout={handleLogout} />
+                        ) : (
+                            <Navigate to="/login" />
+                        )
+                    }
+                />
+
+                <Route
+                    path="/farms"
+                    element={
+                        isLoggedIn ? (
+                            <FarmsPage />
+                        ) : (
+                            <Navigate to="/login" />
+                        )
+                    }
+                />
+
+                {/* Default redirect */}
+                <Route path="*" element={<Navigate to={isLoggedIn ? "/home" : "/login"} />} />
+            </Routes>
+        </Router>
     );
 }
 

@@ -1,138 +1,78 @@
-// src/SignupPage.jsx
+// src/pages/SignupPage.jsx
 import { useState } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
 
-export default function SignupPage({ onSignupSuccess, onCancel }) {
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
-    const [name, setName] = useState('');
-    const [userType, setUserType] = useState('Farmar');
+function SignupPage() {
+    const [form, setForm] = useState({
+        email: '',
+        password: '',
+        name: '',
+        userType: 'Farmer'
+    });
     const [message, setMessage] = useState('');
+    const navigate = useNavigate();
+
+    const handleChange = (e) => {
+        setForm({ ...form, [e.target.name]: e.target.value });
+    };
 
     const handleSignup = async (e) => {
         e.preventDefault();
-        setMessage('Creating account...');
 
         try {
-            const response = await fetch('http://localhost:3000/api/users', {
+            const res = await fetch('http://localhost:3000/api/users', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, password, name, userType })
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(form)
             });
 
-            const result = await response.json();
+            const data = await res.json();
 
-            if (response.ok && result.success) {
-                onSignupSuccess('Signup successful. Please log in.');
+            if (res.ok) {
+                navigate('/login', { state: { signupSuccess: true } });
             } else {
-                setMessage(result.msg || 'Signup failed');
+                setMessage(data.message || 'Signup failed');
             }
-        } catch (error) {
-            console.error('Signup error:', error);
-            setMessage('Something went wrong: ' + error.message);
+        } catch (err) {
+            setMessage('Error occurred: ' + err.message);
         }
     };
 
     return (
-        <div style={styles.container}>
-            <div style={styles.card}>
-                <h2 style={styles.title}>Sign Up</h2>
-                <form onSubmit={handleSignup}>
-                    <input
-                        type="text"
-                        placeholder="Name"
-                        value={name}
-                        onChange={(e) => setName(e.target.value)}
-                        required
-                        style={styles.input}
-                    />
-                    <input
-                        type="email"
-                        placeholder="Email"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        required
-                        style={styles.input}
-                    />
-                    <input
-                        type="password"
-                        placeholder="Password"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        required
-                        style={styles.input}
-                    />
-                    <select
-                        value={userType}
-                        onChange={(e) => setUserType(e.target.value)}
-                        style={styles.input}
-                    >
-                        <option value="Farmar">Farmar</option>
-                        <option value="Buyer">Expart</option>
+        <div style={{ maxWidth: 400, margin: 'auto', padding: 20 }}>
+            <h2>Sign Up</h2>
+            <form onSubmit={handleSignup}>
+                <div style={{ marginBottom: 10 }}>
+                    <label>Email:</label><br />
+                    <input name="email" type="email" value={form.email} onChange={handleChange} required />
+                </div>
+                <div style={{ marginBottom: 10 }}>
+                    <label>Password:</label><br />
+                    <input name="password" type="password" value={form.password} onChange={handleChange} required />
+                </div>
+                <div style={{ marginBottom: 10 }}>
+                    <label>Name:</label><br />
+                    <input name="name" type="text" value={form.name} onChange={handleChange} required />
+                </div>
+                <div style={{ marginBottom: 10 }}>
+                    <label>User Type:</label><br />
+                    <select name="userType" value={form.userType} onChange={handleChange}>
+                        <option value="Farmer">Farmer</option>
+                        <option value="Expart">Expart</option>
                     </select>
-                    <button type="submit" style={styles.button}>Sign Up</button>
-                </form>
-                {message && <p style={styles.message}>{message}</p>}
-                <p style={styles.switchText}>
-                    Already have an account?{' '}
-                    <button onClick={onCancel} style={styles.linkButton}>Login</button>
-                </p>
-            </div>
+                </div>
+                <button type="submit">Sign Up</button>
+            </form>
+
+            <p style={{ marginTop: 10 }}>{message}</p>
+
+            <p style={{ marginTop: 20 }}>
+                Already have an account? <Link to="/login">Back to Login</Link>
+            </p>
         </div>
     );
 }
 
-const styles = {
-    container: {
-        height: '100vh',
-        backgroundColor: '#f5f7fa',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center'
-    },
-    card: {
-        width: 320,
-        padding: 30,
-        borderRadius: 12,
-        boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)',
-        backgroundColor: 'white'
-    },
-    title: {
-        marginBottom: 20,
-        textAlign: 'center'
-    },
-    input: {
-        width: '100%',
-        padding: 10,
-        marginBottom: 15,
-        borderRadius: 6,
-        border: '1px solid #ccc',
-        fontSize: 14
-    },
-    button: {
-        width: '100%',
-        padding: 10,
-        backgroundColor: '#16a34a',
-        color: 'white',
-        fontWeight: 'bold',
-        border: 'none',
-        borderRadius: 6,
-        cursor: 'pointer'
-    },
-    message: {
-        marginTop: 10,
-        color: 'red',
-        textAlign: 'center'
-    },
-    switchText: {
-        marginTop: 15,
-        textAlign: 'center'
-    },
-    linkButton: {
-        background: 'none',
-        border: 'none',
-        color: '#4f46e5',
-        cursor: 'pointer',
-        textDecoration: 'underline',
-        padding: 0
-    }
-};
+export default SignupPage;
