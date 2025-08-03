@@ -1,14 +1,151 @@
-import { Filter, Heart, MapPin, Search, ShoppingCart, Star } from 'lucide-react';
+'use client';
+
+import { Filter, Heart, Mail, MapPin, Minus, Phone, Plus, Search, ShoppingCart, Star, X } from 'lucide-react';
+import Link from 'next/link';
+import { useEffect, useState } from 'react';
 
 export default function MarketplacePage() {
+  const [products, setProducts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [cartCount, setCartCount] = useState(0);
+  const [selectedCategory, setSelectedCategory] = useState('all');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [addingToCart, setAddingToCart] = useState(null);
+  const [selectedProduct, setSelectedProduct] = useState(null);
+  const [showModal, setShowModal] = useState(false);
+  const [quantity, setQuantity] = useState(1);
+
+  useEffect(() => {
+    fetchProducts();
+    fetchCartCount();
+  }, [selectedCategory]);
+
+  const fetchProducts = async () => {
+    try {
+      setLoading(true);
+      const url = selectedCategory === 'all' 
+        ? 'http://localhost:5000/api/products'
+        : `http://localhost:5000/api/products/category/${selectedCategory}`;
+      
+      const response = await fetch(url);
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success) {
+          setProducts(result.data);
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching products:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchCartCount = async () => {
+    try {
+      const cookies = document.cookie.split(';').reduce((acc, cookie) => {
+        const [key, value] = cookie.trim().split('=');
+        acc[key] = value;
+        return acc;
+      }, {});
+
+      const userId = cookies.userId;
+      if (!userId) return;
+
+      const response = await fetch(`http://localhost:5000/api/cart/${userId}`);
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success) {
+          setCartCount(result.data.itemCount);
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching cart count:', error);
+    }
+  };
+
+  const addToCart = async (productId, qty = 1) => {
+    try {
+      setAddingToCart(productId);
+      const cookies = document.cookie.split(';').reduce((acc, cookie) => {
+        const [key, value] = cookie.trim().split('=');
+        acc[key] = value;
+        return acc;
+      }, {});
+
+      const userId = cookies.userId;
+      if (!userId) {
+        alert('Please log in to add items to cart');
+        return;
+      }
+
+      const response = await fetch(`http://localhost:5000/api/cart/${userId}/add`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          productId: productId,
+          quantity: qty
+        }),
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success) {
+          setCartCount(result.data.itemCount);
+          alert('Product added to cart successfully!');
+          if (showModal) {
+            setShowModal(false);
+            setSelectedProduct(null);
+            setQuantity(1);
+          }
+        }
+      } else {
+        const errorResult = await response.json();
+        alert(errorResult.msg || 'Failed to add product to cart');
+      }
+    } catch (error) {
+      console.error('Error adding to cart:', error);
+      alert('Failed to add product to cart');
+    } finally {
+      setAddingToCart(null);
+    }
+  };
+
+  const openProductModal = (product) => {
+    setSelectedProduct(product);
+    setQuantity(1);
+    setShowModal(true);
+  };
+
+  const closeModal = () => {
+    setShowModal(false);
+    setSelectedProduct(null);
+    setQuantity(1);
+  };
+
+  const handleQuantityChange = (newQuantity) => {
+    if (newQuantity >= 1 && newQuantity <= selectedProduct.stock) {
+      setQuantity(newQuantity);
+    }
+  };
+
+  const filteredProducts = products.filter(product =>
+    product.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold text-gray-900">Marketplace</h1>
-        <button className="bg-teal-600 text-white px-4 py-2 rounded-lg hover:bg-teal-700 transition-colors">
-          <ShoppingCart className="w-4 h-4 mr-2 inline" />
-          View Cart (3)
-        </button>
+        <Link 
+          href="/dashboard/buyer/cart"
+          className="bg-teal-600 text-white px-4 py-2 rounded-lg hover:bg-teal-700 transition-colors flex items-center gap-2"
+        >
+          <ShoppingCart className="w-4 h-4" />
+          View Cart ({cartCount})
+        </Link>
       </div>
 
       {/* Search and Filters */}
@@ -20,6 +157,8 @@ export default function MarketplacePage() {
               <input
                 type="text"
                 placeholder="Search for products..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
               />
             </div>
@@ -29,12 +168,18 @@ export default function MarketplacePage() {
               <Filter className="w-4 h-4" />
               Filter
             </button>
-            <select className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500">
-              <option>All Categories</option>
-              <option>Grains</option>
-              <option>Vegetables</option>
-              <option>Fruits</option>
-              <option>Dairy</option>
+            <select 
+              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500"
+              value={selectedCategory}
+              onChange={(e) => setSelectedCategory(e.target.value)}
+            >
+              <option value="all">All Categories</option>
+              <option value="vegetables">Vegetables</option>
+              <option value="fruits">Fruits</option>
+              <option value="grains">Grains</option>
+              <option value="dairy">Dairy</option>
+              <option value="meat">Meat</option>
+              <option value="other">Other</option>
             </select>
             <select className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500">
               <option>Sort by</option>
@@ -47,191 +192,253 @@ export default function MarketplacePage() {
         </div>
       </div>
 
-      {/* Featured Products */}
+      {/* Products */}
       <div className="bg-white rounded-xl shadow-sm p-6">
-        <h2 className="text-xl font-semibold text-gray-900 mb-4">Featured Products</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          <div className="border border-gray-200 rounded-lg overflow-hidden hover:shadow-lg transition-shadow">
-            <div className="h-48 bg-gradient-to-br from-green-100 to-green-200 flex items-center justify-center">
-              <span className="text-4xl">🌾</span>
-            </div>
-            <div className="p-4">
-              <div className="flex items-center justify-between mb-2">
-                <h3 className="font-semibold text-gray-900">Organic Rice</h3>
-                <button className="text-gray-400 hover:text-red-500">
-                  <Heart className="w-5 h-5" />
-                </button>
-              </div>
-              <div className="flex items-center gap-1 mb-2">
-                <Star className="w-4 h-4 text-yellow-400 fill-current" />
-                <Star className="w-4 h-4 text-yellow-400 fill-current" />
-                <Star className="w-4 h-4 text-yellow-400 fill-current" />
-                <Star className="w-4 h-4 text-yellow-400 fill-current" />
-                <Star className="w-4 h-4 text-yellow-400 fill-current" />
-                <span className="text-sm text-gray-600 ml-1">(24 reviews)</span>
-              </div>
-              <div className="flex items-center gap-2 mb-3">
-                <MapPin className="w-4 h-4 text-gray-400" />
-                <span className="text-sm text-gray-600">Dhaka, 5km away</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-lg font-bold text-gray-900">₹2,500/ton</span>
-                <button className="bg-teal-600 text-white px-3 py-1 rounded-lg hover:bg-teal-700 transition-colors">
-                  Add to Cart
-                </button>
-              </div>
-            </div>
+        <h2 className="text-xl font-semibold text-gray-900 mb-4">
+          {loading ? 'Loading products...' : `${filteredProducts.length} Products Found`}
+        </h2>
+        
+        {loading ? (
+          <div className="flex items-center justify-center h-64">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-600"></div>
           </div>
-
-          <div className="border border-gray-200 rounded-lg overflow-hidden hover:shadow-lg transition-shadow">
-            <div className="h-48 bg-gradient-to-br from-yellow-100 to-yellow-200 flex items-center justify-center">
-              <span className="text-4xl">🍅</span>
-            </div>
-            <div className="p-4">
-              <div className="flex items-center justify-between mb-2">
-                <h3 className="font-semibold text-gray-900">Fresh Tomatoes</h3>
-                <button className="text-gray-400 hover:text-red-500">
-                  <Heart className="w-5 h-5" />
-                </button>
-              </div>
-              <div className="flex items-center gap-1 mb-2">
-                <Star className="w-4 h-4 text-yellow-400 fill-current" />
-                <Star className="w-4 h-4 text-yellow-400 fill-current" />
-                <Star className="w-4 h-4 text-yellow-400 fill-current" />
-                <Star className="w-4 h-4 text-yellow-400 fill-current" />
-                <Star className="w-4 h-4 text-gray-300" />
-                <span className="text-sm text-gray-600 ml-1">(18 reviews)</span>
-              </div>
-              <div className="flex items-center gap-2 mb-3">
-                <MapPin className="w-4 h-4 text-gray-400" />
-                <span className="text-sm text-gray-600">Chittagong, 8km away</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-lg font-bold text-gray-900">₹45/kg</span>
-                <button className="bg-teal-600 text-white px-3 py-1 rounded-lg hover:bg-teal-700 transition-colors">
-                  Add to Cart
-                </button>
-              </div>
-            </div>
+        ) : filteredProducts.length === 0 ? (
+          <div className="text-center py-12">
+            <div className="text-4xl mb-4">🌾</div>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">No products found</h3>
+            <p className="text-gray-600">Try adjusting your search or filter criteria</p>
           </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {filteredProducts.map((product) => (
+              <div 
+                key={product._id} 
+                className="border border-gray-200 rounded-lg overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
+                onClick={() => openProductModal(product)}
+              >
+                <div className="h-48 bg-gradient-to-br from-green-100 to-green-200 flex items-center justify-center">
+                  {product.image ? (
+                    <img 
+                      src={product.image} 
+                      alt={product.name}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <span className="text-4xl">🌾</span>
+                  )}
+                </div>
+                <div className="p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="font-semibold text-gray-900">{product.name}</h3>
+                    <button 
+                      className="text-gray-400 hover:text-red-500"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        // Handle wishlist functionality
+                      }}
+                    >
+                      <Heart className="w-5 h-5" />
+                    </button>
+                  </div>
+                  <p className="text-sm text-gray-600 mb-2 line-clamp-2">{product.description}</p>
+                  <div className="flex items-center gap-1 mb-2">
+                    {Array.from({ length: 5 }, (_, i) => (
+                      <Star
+                        key={i}
+                        className={`w-4 h-4 ${i < (product.rating || 0) ? 'text-yellow-400 fill-current' : 'text-gray-300'}`}
+                      />
+                    ))}
+                    <span className="text-sm text-gray-600 ml-1">({product.reviewCount || 0} reviews)</span>
+                  </div>
+                  <div className="flex items-center gap-2 mb-3">
+                    <MapPin className="w-4 h-4 text-gray-400" />
+                    <span className="text-sm text-gray-600">
+                      {product.farmer?.name || 'Unknown Farmer'}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <span className="text-lg font-bold text-gray-900">${product.price.toFixed(2)}</span>
+                      <span className="text-sm text-gray-600">/{product.unit}</span>
+                    </div>
+                    <button 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        addToCart(product._id);
+                      }}
+                      disabled={addingToCart === product._id}
+                      className="bg-teal-600 text-white px-3 py-1 rounded-lg hover:bg-teal-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
+                    >
+                      {addingToCart === product._id ? (
+                        <>
+                          <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white"></div>
+                          Adding...
+                        </>
+                      ) : (
+                        <>
+                          <Plus className="w-3 h-3" />
+                          Add to Cart
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
 
-          <div className="border border-gray-200 rounded-lg overflow-hidden hover:shadow-lg transition-shadow">
-            <div className="h-48 bg-gradient-to-br from-blue-100 to-blue-200 flex items-center justify-center">
-              <span className="text-4xl">🥛</span>
-            </div>
-            <div className="p-4">
-              <div className="flex items-center justify-between mb-2">
-                <h3 className="font-semibold text-gray-900">Fresh Milk</h3>
-                <button className="text-gray-400 hover:text-red-500">
-                  <Heart className="w-5 h-5" />
+      {/* Product Detail Modal */}
+      {showModal && selectedProduct && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              {/* Header */}
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-2xl font-bold text-gray-900">{selectedProduct.name}</h2>
+                <button
+                  onClick={closeModal}
+                  className="text-gray-400 hover:text-gray-600 transition-colors"
+                >
+                  <X className="w-6 h-6" />
                 </button>
               </div>
-              <div className="flex items-center gap-1 mb-2">
-                <Star className="w-4 h-4 text-yellow-400 fill-current" />
-                <Star className="w-4 h-4 text-yellow-400 fill-current" />
-                <Star className="w-4 h-4 text-yellow-400 fill-current" />
-                <Star className="w-4 h-4 text-yellow-400 fill-current" />
-                <Star className="w-4 h-4 text-yellow-400 fill-current" />
-                <span className="text-sm text-gray-600 ml-1">(32 reviews)</span>
+
+              {/* Product Image */}
+              <div className="mb-6">
+                <div className="h-64 bg-gradient-to-br from-green-100 to-green-200 rounded-lg flex items-center justify-center">
+                  {selectedProduct.image ? (
+                    <img 
+                      src={selectedProduct.image} 
+                      alt={selectedProduct.name}
+                      className="w-full h-full object-cover rounded-lg"
+                    />
+                  ) : (
+                    <span className="text-6xl">🌾</span>
+                  )}
+                </div>
               </div>
-              <div className="flex items-center gap-2 mb-3">
-                <MapPin className="w-4 h-4 text-gray-400" />
-                <span className="text-sm text-gray-600">Sylhet, 3km away</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-lg font-bold text-gray-900">₹80/liter</span>
-                <button className="bg-teal-600 text-white px-3 py-1 rounded-lg hover:bg-teal-700 transition-colors">
-                  Add to Cart
-                </button>
+
+              {/* Product Details */}
+              <div className="space-y-4">
+                {/* Rating */}
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1">
+                    {Array.from({ length: 5 }, (_, i) => (
+                      <Star
+                        key={i}
+                        className={`w-5 h-5 ${i < (selectedProduct.rating || 0) ? 'text-yellow-400 fill-current' : 'text-gray-300'}`}
+                      />
+                    ))}
+                  </div>
+                  <span className="text-sm text-gray-600">
+                    {selectedProduct.rating?.toFixed(1) || '0.0'} ({selectedProduct.reviewCount || 0} reviews)
+                  </span>
+                </div>
+
+                {/* Description */}
+                <div>
+                  <h3 className="font-semibold text-gray-900 mb-2">Description</h3>
+                  <p className="text-gray-600">{selectedProduct.description}</p>
+                </div>
+
+                {/* Farmer Info */}
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <h3 className="font-semibold text-gray-900 mb-2">Farmer Information</h3>
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <MapPin className="w-4 h-4 text-gray-400" />
+                      <span className="text-sm text-gray-600">
+                        {selectedProduct.farmer?.name || 'Unknown Farmer'}
+                      </span>
+                    </div>
+                    {selectedProduct.farmer?.phone && (
+                      <div className="flex items-center gap-2">
+                        <Phone className="w-4 h-4 text-gray-400" />
+                        <span className="text-sm text-gray-600">{selectedProduct.farmer.phone}</span>
+                      </div>
+                    )}
+                    {selectedProduct.farmer?.email && (
+                      <div className="flex items-center gap-2">
+                        <Mail className="w-4 h-4 text-gray-400" />
+                        <span className="text-sm text-gray-600">{selectedProduct.farmer.email}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Stock and Price */}
+                <div className="flex items-center justify-between">
+                  <div>
+                    <span className="text-2xl font-bold text-gray-900">
+                      ${selectedProduct.price.toFixed(2)}
+                    </span>
+                    <span className="text-sm text-gray-600 ml-1">/{selectedProduct.unit}</span>
+                  </div>
+                  <div className="text-sm text-gray-600">
+                    <span className={selectedProduct.stock > 10 ? 'text-green-600' : selectedProduct.stock > 0 ? 'text-yellow-600' : 'text-red-600'}>
+                      {selectedProduct.stock > 10 ? 'In Stock' : selectedProduct.stock > 0 ? 'Low Stock' : 'Out of Stock'}
+                    </span>
+                    <span className="ml-2">({selectedProduct.stock} available)</span>
+                  </div>
+                </div>
+
+                {/* Quantity Selector */}
+                <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium text-gray-700">Quantity:</span>
+                    <div className="flex items-center border border-gray-300 rounded-lg">
+                      <button
+                        onClick={() => handleQuantityChange(quantity - 1)}
+                        disabled={quantity <= 1}
+                        className="px-3 py-1 text-gray-600 hover:text-gray-800 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        <Minus className="w-4 h-4" />
+                      </button>
+                      <span className="px-4 py-1 text-gray-900 font-medium">{quantity}</span>
+                      <button
+                        onClick={() => handleQuantityChange(quantity + 1)}
+                        disabled={quantity >= selectedProduct.stock}
+                        className="px-3 py-1 text-gray-600 hover:text-gray-800 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        <Plus className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                  <div className="text-sm text-gray-600">
+                    Total: ${(selectedProduct.price * quantity).toFixed(2)}
+                  </div>
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex gap-3 pt-4">
+                  <button
+                    onClick={() => addToCart(selectedProduct._id, quantity)}
+                    disabled={addingToCart === selectedProduct._id || selectedProduct.stock === 0}
+                    className="flex-1 bg-teal-600 text-white py-3 px-4 rounded-lg hover:bg-teal-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  >
+                    {addingToCart === selectedProduct._id ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                        Adding...
+                      </>
+                    ) : (
+                      <>
+                        <ShoppingCart className="w-4 h-4" />
+                        Add to Cart
+                      </>
+                    )}
+                  </button>
+                  <button className="px-4 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                    <Heart className="w-5 h-5 text-gray-400" />
+                  </button>
+                </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
-
-      {/* All Products */}
-      <div className="bg-white rounded-xl shadow-sm p-6">
-        <h2 className="text-xl font-semibold text-gray-900 mb-4">All Products</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {[
-            { name: 'Wheat', price: '₹1,800/ton', rating: 4, distance: '6km', emoji: '🌾' },
-            { name: 'Potatoes', price: '₹25/kg', rating: 4, distance: '4km', emoji: '🥔' },
-            { name: 'Onions', price: '₹30/kg', rating: 3, distance: '7km', emoji: '🧅' },
-            { name: 'Carrots', price: '₹35/kg', rating: 5, distance: '5km', emoji: '🥕' },
-            { name: 'Cabbage', price: '₹20/kg', rating: 4, distance: '3km', emoji: '🥬' },
-            { name: 'Cucumber', price: '₹15/kg', rating: 3, distance: '8km', emoji: '🥒' },
-            { name: 'Eggs', price: '₹120/dozen', rating: 5, distance: '2km', emoji: '🥚' },
-            { name: 'Honey', price: '₹400/kg', rating: 5, distance: '10km', emoji: '🍯' }
-          ].map((product, index) => (
-            <div key={index} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
-              <div className="text-center mb-3">
-                <span className="text-3xl">{product.emoji}</span>
-              </div>
-              <h3 className="font-semibold text-gray-900 mb-2">{product.name}</h3>
-              <div className="flex items-center gap-1 mb-2">
-                {Array.from({ length: 5 }, (_, i) => (
-                  <Star
-                    key={i}
-                    className={`w-4 h-4 ${i < product.rating ? 'text-yellow-400 fill-current' : 'text-gray-300'}`}
-                  />
-                ))}
-              </div>
-              <div className="flex items-center gap-2 mb-3">
-                <MapPin className="w-4 h-4 text-gray-400" />
-                <span className="text-sm text-gray-600">{product.distance} away</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="font-bold text-gray-900">{product.price}</span>
-                <button className="bg-teal-600 text-white px-2 py-1 rounded text-sm hover:bg-teal-700 transition-colors">
-                  Add
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Recent Orders */}
-      <div className="bg-white rounded-xl shadow-sm p-6">
-        <h2 className="text-xl font-semibold text-gray-900 mb-4">Recent Orders</h2>
-        <div className="space-y-4">
-          <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
-                <span className="text-2xl">🌾</span>
-              </div>
-              <div>
-                <p className="font-medium text-gray-900">Rice - 2 tons</p>
-                <p className="text-sm text-gray-600">Order #12345</p>
-              </div>
-            </div>
-            <div className="text-right">
-              <p className="text-sm text-gray-500">March 5, 2025</p>
-              <span className="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full">
-                Delivered
-              </span>
-            </div>
-          </div>
-
-          <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center">
-                <span className="text-2xl">🍅</span>
-              </div>
-              <div>
-                <p className="font-medium text-gray-900">Tomatoes - 50kg</p>
-                <p className="text-sm text-gray-600">Order #12346</p>
-              </div>
-            </div>
-            <div className="text-right">
-              <p className="text-sm text-gray-500">March 3, 2025</p>
-              <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">
-                In Transit
-              </span>
-            </div>
-          </div>
-        </div>
-      </div>
+      )}
     </div>
   );
 } 
