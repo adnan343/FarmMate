@@ -2,6 +2,7 @@
 
 import { getUserById, loginUser } from '@/lib/api';
 import Cookies from 'js-cookie';
+import { Link2 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
@@ -64,8 +65,11 @@ export default function LoginPage() {
 
       console.log('User Data:', user);
 
+      // Store complete user information in cookies
       Cookies.set('userId', user.id);
       Cookies.set('role', user.role);
+      Cookies.set('userName', user.name);
+      Cookies.set('userEmail', user.email);
 
       // Redirect based on role
       if (user.role === 'admin') router.push('/dashboard/admin');
@@ -90,19 +94,50 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
-      <div className="sm:mx-auto sm:w-full sm:max-w-md">
-        <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-          Sign in to your account
-        </h2>
-        <p className="mt-2 text-center text-sm text-gray-600">
-          Welcome back to FarmMate
-        </p>
+    <div className="min-h-screen bg-white grid lg:grid-cols-2">
+      {/* Left Column (Branding) */}
+      <div className="hidden lg:flex flex-col bg-teal-900 text-white p-12">
+        <a href="/" className="flex items-center gap-2">
+          <Link2 className="h-6 w-6" />
+          <span className="text-xl font-bold">FarmMate</span>
+        </a>
+        <div className="my-auto">
+          <h1 className="text-6xl font-bold mb-6">FarmMate</h1>
+          <p className="text-4xl font-semibold text-gray-200">
+            Next-Gen Farming Assistant for Sustainable Agriculture.
+          </p>
+          <p className="mt-4 text-lg text-gray-300">
+            Join a community of modern farmers and buyers.
+          </p>
+        </div>
+        <div/> {/* Spacer */}
       </div>
 
-      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
-          <form className="space-y-6" onSubmit={handleLogin}>
+      {/* Right Column (Login Form) */}
+      <div className="flex flex-col justify-center items-center p-8">
+        <div className="w-full max-w-md">
+          {/* Mobile Header */}
+          <div className="lg:hidden mb-8 text-center">
+             <a href="/" className="flex items-center justify-center gap-2 text-teal-900">
+                <Link2 className="h-7 w-7" />
+                <span className="text-2xl font-bold">FarmMate</span>
+            </a>
+          </div>
+          
+          {/* Tabs */}
+          <div className="flex border-b mb-8">
+            <Link href="/login" className="py-2 px-4 text-lg font-semibold text-teal-600 border-b-2 border-teal-600">
+              Login
+            </Link>
+            <Link href="/register" className="py-2 px-4 text-lg font-semibold text-gray-500 hover:text-teal-600">
+              Register
+            </Link>
+          </div>
+
+          <h2 className="text-3xl font-bold text-gray-900">Welcome Back!</h2>
+          <p className="mt-2 text-gray-600">Please enter your details to sign in.</p>
+
+          <form className="mt-8 space-y-6" onSubmit={handleLogin}>
             {/* General Error */}
             {errors.general && (
               <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-md text-sm">
@@ -113,7 +148,7 @@ export default function LoginPage() {
             {/* Email Field */}
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                Email address
+                Email Address
               </label>
               <div className="mt-1">
                 <input
@@ -122,10 +157,10 @@ export default function LoginPage() {
                   type="email"
                   autoComplete="email"
                   required
-                  className={`appearance-none block w-full px-3 py-2 border rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm ${
+                  className={`block w-full px-4 py-3 border rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-teal-500 focus:border-teal-500 sm:text-sm ${
                     errors.email ? 'border-red-300' : 'border-gray-300'
                   }`}
-                  placeholder="Enter your email"
+                  placeholder="you@example.com"
                   value={formData.email}
                   onChange={handleInputChange}
                 />
@@ -137,9 +172,14 @@ export default function LoginPage() {
 
             {/* Password Field */}
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-                Password
-              </label>
+              <div className="flex justify-between items-center">
+                <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+                  Password
+                </label>
+                <a href="#" className="text-sm text-teal-600 hover:underline">
+                  Forgot password?
+                </a>
+              </div>
               <div className="mt-1">
                 <input
                   id="password"
@@ -147,7 +187,7 @@ export default function LoginPage() {
                   type="password"
                   autoComplete="current-password"
                   required
-                  className={`appearance-none block w-full px-3 py-2 border rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm ${
+                  className={`block w-full px-4 py-3 border rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-teal-500 focus:border-teal-500 sm:text-sm ${
                     errors.password ? 'border-red-300' : 'border-gray-300'
                   }`}
                   placeholder="Enter your password"
@@ -164,32 +204,12 @@ export default function LoginPage() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-teal-600 hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {loading ? 'Signing in...' : 'Sign in'}
+                {loading ? 'Signing in...' : 'Sign In'}
               </button>
             </div>
           </form>
-
-          <div className="mt-6">
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-300" />
-              </div>
-              <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-white text-gray-500">Don't have an account?</span>
-              </div>
-            </div>
-
-            <div className="mt-6">
-              <Link
-                href="/register"
-                className="w-full flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-              >
-                Create a new account
-              </Link>
-            </div>
-          </div>
         </div>
       </div>
     </div>

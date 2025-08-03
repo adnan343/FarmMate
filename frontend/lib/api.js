@@ -43,9 +43,11 @@ export async function getUserById(id) {
 
 // Client-side logout function
 export function logout() {
-  // Clear cookies by setting them to expire in the past
+  // Clear all user-related cookies by setting them to expire in the past
   document.cookie = 'userId=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
   document.cookie = 'role=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+  document.cookie = 'userName=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+  document.cookie = 'userEmail=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
   
   // Clear any other auth-related cookies
   document.cookie = 'token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
@@ -62,6 +64,8 @@ export function clearAuthCookies() {
 
   response.cookies.set('userId', '', { maxAge: 0 });
   response.cookies.set('role', '', { maxAge: 0 });
+  response.cookies.set('userName', '', { maxAge: 0 });
+  response.cookies.set('userEmail', '', { maxAge: 0 });
 
   return response;
 }
