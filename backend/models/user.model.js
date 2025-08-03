@@ -1,5 +1,4 @@
 import mongoose from 'mongoose';
-import * as string_decoder from "node:string_decoder";
 
 const UserSchema = new mongoose.Schema({
     email: {
@@ -15,8 +14,10 @@ const UserSchema = new mongoose.Schema({
         type: String,
         required: true
     },
-    userType: {
+    role: {
         type: String,
+        enum: ['admin', 'farmer', 'buyer'],
+        default: 'farmer',
         required: true,
     },
     farms: [

@@ -23,9 +23,16 @@ export const createUser = async (req, res) => {
         // Hash the password before saving the user
         const salt = await bcrypt.genSalt(10); // Generate salt
         const hashedPassword = await bcrypt.hash(user.password, salt); // Hash password
-        user.password = hashedPassword;
+        
+        // Create user object with proper field mapping
+        const userData = {
+            email: user.email,
+            password: hashedPassword,
+            name: user.name,
+            role: user.userType // Map userType to role for the model
+        };
 
-        const newUser = new User(user); // Create a new user with hashed password
+        const newUser = new User(userData); // Create a new user with hashed password
         await newUser.save(); // Save the user to the database
         res.status(201).json({ success: true, msg: "User created successfully" });
     } catch (err) {
@@ -134,7 +141,7 @@ export const loginUser = async (req, res) => {
                 userId: user._id,
                 email: user.email,
                 name: user.name,
-                userType: user.userType,
+                role: user.role, // Use role from model
             },
         });
     } catch (error) {
@@ -176,7 +183,7 @@ export const getUserById = async (req, res) => {
         if (!user) {
             return res.status(404).json({ success: false, msg: "User not found." });
         }
-
+        console.log("User found:", user.role);
         // Return the user details
         res.status(200).json({
             success: true,
@@ -184,10 +191,11 @@ export const getUserById = async (req, res) => {
                 id: user._id,
                 email: user.email,
                 name: user.name,
-                userType: user.userType,
+                role: user.role,
                 farms: user.farms,
                 createdAt: user.createdAt,
                 updatedAt: user.updatedAt,
+                // role: user.userType,
             },
         });
     } catch (error) {
