@@ -20,12 +20,54 @@ const UserSchema = new mongoose.Schema({
         default: 'farmer',
         required: true,
     },
+    phone: {
+        type: String,
+        default: ''
+    },
+    location: {
+        type: String,
+        default: ''
+    },
+    bio: {
+        type: String,
+        default: ''
+    },
     farms: [
         {
             type: mongoose.Schema.Types.ObjectId,
             ref: 'Farm'
         }
-    ]
+    ],
+    cart: {
+        items: [
+            {
+                productId: {
+                    type: mongoose.Schema.Types.ObjectId,
+                    ref: 'Product'
+                },
+                name: String,
+                price: Number,
+                quantity: {
+                    type: Number,
+                    default: 1,
+                    min: 1
+                },
+                image: String,
+                farmer: {
+                    type: mongoose.Schema.Types.ObjectId,
+                    ref: 'User'
+                }
+            }
+        ],
+        total: {
+            type: Number,
+            default: 0
+        },
+        itemCount: {
+            type: Number,
+            default: 0
+        }
+    }
 
 }, {
     timestamps: true

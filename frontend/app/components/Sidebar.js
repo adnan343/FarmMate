@@ -11,7 +11,9 @@ import {
     LogOut,
     Mail,
     Monitor,
+    ShoppingCart,
     Store,
+    User,
     Users
 } from 'lucide-react';
 import Link from 'next/link';
@@ -21,7 +23,8 @@ import { useState } from 'react';
 export default function Sidebar({ userRole, userName, userEmail }) {
   const [expandedSections, setExpandedSections] = useState({
     'my-farm': true,
-    'planning': true
+    'planning': true,
+    'profile': false
   });
   const pathname = usePathname();
 
@@ -36,6 +39,16 @@ export default function Sidebar({ userRole, userName, userEmail }) {
 
   // Role-based navigation items
   const getNavigationItems = () => {
+    const baseItems = [
+      {
+        id: 'profile',
+        label: 'Profile',
+        icon: User,
+        path: '/dashboard/profile',
+        children: []
+      }
+    ];
+
     switch (userRole) {
       case 'farmer':
         return [
@@ -84,7 +97,8 @@ export default function Sidebar({ userRole, userName, userEmail }) {
             icon: BarChart3,
             path: '/dashboard/farmer/analytics',
             children: []
-          }
+          },
+          ...baseItems
         ];
       
       case 'admin':
@@ -102,7 +116,8 @@ export default function Sidebar({ userRole, userName, userEmail }) {
             icon: Users,
             path: '/dashboard/admin/user-management',
             children: []
-          }
+          },
+          ...baseItems
         ];
       
       case 'buyer':
@@ -120,11 +135,19 @@ export default function Sidebar({ userRole, userName, userEmail }) {
             icon: Store,
             path: '/dashboard/buyer/marketplace',
             children: []
-          }
+          },
+          {
+            id: 'cart',
+            label: 'Cart',
+            icon: ShoppingCart,
+            path: '/dashboard/buyer/cart',
+            children: []
+          },
+          ...baseItems
         ];
       
       default:
-        return [];
+        return baseItems;
     }
   };
 
