@@ -1,26 +1,35 @@
-import LogoutButton from '@/app/components/LogoutButton';
+import Sidebar from '@/app/components/Sidebar';
+import { cookies } from 'next/headers';
+import { redirect } from 'next/navigation';
 
-export default function DashboardLayout({ children }) {
+export default async function DashboardLayout({ children }) {
+  const cookieStore = cookies();
+  const role = cookieStore.get('role')?.value;
+  const userId = cookieStore.get('userId')?.value;
+  const userName = cookieStore.get('userName')?.value;
+  const userEmail = cookieStore.get('userEmail')?.value;
+
+  if (!role || !userId) {
+    redirect('/login');
+  }
+
+  // Get user data from cookies, with fallbacks
+  const userData = {
+    name: userName || (role === 'farmer' ? 'Farmer User' : 
+                      role === 'buyer' ? 'Buyer User' : 
+                      role === 'admin' ? 'Admin User' : 'User'),
+    role: role,
+    email: userEmail || `${role}@farmmate.com`
+  };
+
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center">
-              <h1 className="text-xl font-semibold text-gray-900">FarmMate Dashboard</h1>
-            </div>
-            <div className="flex items-center space-x-4">
-              <LogoutButton />
-            </div>
-          </div>
-        </div>
-      </header>
-      
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {children}
-      </main>
+    <div className="flex h-screen bg-gray-50">
+      <Sidebar userRole={userData.role} userName={userData.name} userEmail={userData.email} />
+      <div className="flex-1 ml-64 overflow-auto">
+        <main className="p-6">
+          {children}
+        </main>
+      </div>
     </div>
   );
 }
