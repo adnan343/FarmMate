@@ -1,5 +1,5 @@
 import express from 'express';
-import {createUser, getUsers, deleteUser, updateUser, loginUser} from "../controllers/user.controller.js";
+import { createUser, deleteUser, getUserById, getUsers, loginUser, updateUser } from "../controllers/user.controller.js";
 
 const router = express.Router();
 
@@ -12,5 +12,7 @@ router.get('/', getUsers);
 router.put('/:id', updateUser);
 
 router.post('/login', loginUser)
+
+router.get('/:id', getUserById);
 
 export default router;  ///api/farms
