@@ -138,18 +138,55 @@ export const getOrderById = async (req, res) => {
 export const updateOrderStatus = async (req, res) => {
     const { orderId } = req.params;
     const { status } = req.body;
+    const { user } = req; // From auth middleware
 
     try {
-        const order = await Order.findById(orderId);
+        const order = await Order.findById(orderId)
+            .populate('items.farmer', 'name email');
         
         if (!order) {
             return res.status(404).json({ success: false, msg: 'Order not found' });
         }
 
+        // Check if user is admin or if they are a farmer with products in this order
+        const isAdmin = user.role === 'admin';
+        const isFarmerWithProducts = user.role === 'farmer' && 
+            order.items.some(item => item.farmer._id.toString() === user._id.toString());
+
+        if (!isAdmin && !isFarmerWithProducts) {
+            return res.status(403).json({ 
+                success: false, 
+                msg: 'Not authorized to update this order' 
+            });
+        }
+
+        // Validate status transition
+        const validStatuses = ['pending', 'confirmed', 'shipped', 'delivered', 'cancelled'];
+        if (!validStatuses.includes(status)) {
+            return res.status(400).json({ 
+                success: false, 
+                msg: 'Invalid status. Must be one of: pending, confirmed, shipped, delivered, cancelled' 
+            });
+        }
+
+        // Store the previous status to check if we need to restore stock
+        const previousStatus = order.status;
+        
         order.status = status;
         
         if (status === 'delivered') {
             order.deliveryDate = new Date();
+        }
+
+        // If order is being cancelled, restore product stock
+        if (status === 'cancelled' && previousStatus !== 'cancelled') {
+            for (const item of order.items) {
+                const product = await Product.findById(item.productId);
+                if (product) {
+                    product.stock += item.quantity;
+                    await product.save();
+                }
+            }
         }
 
         await order.save();
@@ -180,6 +217,37 @@ export const getAllOrders = async (req, res) => {
         });
     } catch (error) {
         console.error('Error fetching all orders:', error);
+        res.status(500).json({ success: false, msg: 'Internal Server Error' });
+    }
+};
+
+// Get orders for a specific farmer
+export const getFarmerOrders = async (req, res) => {
+    const { farmerId } = req.params;
+    const { status } = req.query;
+
+    try {
+        let query = {
+            'items.farmer': farmerId
+        };
+
+        // Add status filter if provided
+        if (status && status !== 'all') {
+            query.status = status;
+        }
+
+        const orders = await Order.find(query)
+            .populate('buyer', 'name email phone')
+            .populate('items.productId')
+            .populate('items.farmer', 'name email')
+            .sort({ createdAt: -1 });
+
+        res.status(200).json({
+            success: true,
+            data: orders
+        });
+    } catch (error) {
+        console.error('Error fetching farmer orders:', error);
         res.status(500).json({ success: false, msg: 'Internal Server Error' });
     }
 }; 

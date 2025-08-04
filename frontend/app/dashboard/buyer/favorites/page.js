@@ -31,7 +31,9 @@ export default function FavoritesPage() {
         return;
       }
 
-      const response = await fetch(`http://localhost:5000/api/users/${userId}/favorites`);
+      const response = await fetch(`http://localhost:5000/api/users/${userId}/favorites`, {
+        credentials: 'include'
+      });
       if (response.ok) {
         const result = await response.json();
         if (result.success) {
@@ -56,7 +58,9 @@ export default function FavoritesPage() {
       const userId = cookies.userId;
       if (!userId) return;
 
-      const response = await fetch(`http://localhost:5000/api/cart/${userId}`);
+      const response = await fetch(`http://localhost:5000/api/cart/${userId}`, {
+        credentials: 'include'
+      });
       if (response.ok) {
         const result = await response.json();
         if (result.success) {
@@ -88,6 +92,7 @@ export default function FavoritesPage() {
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include',
         body: JSON.stringify({
           productId: productId,
           quantity: qty
@@ -129,6 +134,7 @@ export default function FavoritesPage() {
 
       const response = await fetch(`http://localhost:5000/api/users/${userId}/favorites/${productId}`, {
         method: 'DELETE',
+        credentials: 'include'
       });
 
       if (response.ok) {

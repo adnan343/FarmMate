@@ -21,12 +21,82 @@ export default function FarmerProductsPage() {
   const [showModal, setShowModal] = useState(false);
   const [quantity, setQuantity] = useState(1);
   const [sortBy, setSortBy] = useState('');
+  const [favorites, setFavorites] = useState([]);
+  const [user, setUser] = useState(null);
 
   useEffect(() => {
     fetchFarmerDetails();
     fetchProducts();
     fetchCartCount();
+    fetchUserAndFavorites();
   }, [farmerId, selectedCategory]);
+
+  const fetchUserAndFavorites = async () => {
+    try {
+      const cookies = document.cookie.split(';').reduce((acc, cookie) => {
+        const [key, value] = cookie.trim().split('=');
+        acc[key] = value;
+        return acc;
+      }, {});
+
+      const userId = cookies.userId;
+      if (!userId) return;
+
+      setUser({ _id: userId });
+
+      // Fetch user's favorites
+      const response = await fetch(`http://localhost:5000/api/users/${userId}/favorites`);
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success) {
+          setFavorites(result.data.map(product => product._id));
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching favorites:', error);
+    }
+  };
+
+  const toggleFavorite = async (productId, e) => {
+    e.stopPropagation();
+    
+    if (!user) {
+      alert('Please log in to add items to favorites');
+      return;
+    }
+
+    try {
+      const isFavorite = favorites.includes(productId);
+      const url = isFavorite 
+        ? `http://localhost:5000/api/users/${user._id}/favorites/${productId}`
+        : `http://localhost:5000/api/users/${user._id}/favorites`;
+      
+      const method = isFavorite ? 'DELETE' : 'POST';
+      const body = isFavorite ? undefined : JSON.stringify({ productId });
+
+      const response = await fetch(url, {
+        method,
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        credentials: 'include',
+        ...(body && { body })
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success) {
+          if (isFavorite) {
+            setFavorites(favorites.filter(id => id !== productId));
+          } else {
+            setFavorites([...favorites, productId]);
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Error toggling favorite:', error);
+    }
+  };
 
   const fetchFarmerDetails = async () => {
     try {
@@ -329,12 +399,9 @@ export default function FarmerProductsPage() {
                     <h3 className="font-semibold text-gray-900">{product.name}</h3>
                     <button 
                       className="text-gray-400 hover:text-red-500"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        // Handle wishlist functionality
-                      }}
+                      onClick={(e) => toggleFavorite(product._id, e)}
                     >
-                      <Heart className="w-5 h-5" />
+                      <Heart className={`w-5 h-5 ${favorites.includes(product._id) ? 'text-red-500 fill-current' : ''}`} />
                     </button>
                   </div>
                   <p className="text-sm text-gray-600 mb-2 line-clamp-2">{product.description}</p>
@@ -388,12 +455,20 @@ export default function FarmerProductsPage() {
               {/* Header */}
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-2xl font-bold text-gray-900">{selectedProduct.name}</h2>
-                <button
-                  onClick={closeModal}
-                  className="text-gray-400 hover:text-gray-600 transition-colors"
-                >
-                  <X className="w-6 h-6" />
-                </button>
+                <div className="flex items-center gap-2">
+                  <button 
+                    className="text-gray-400 hover:text-red-500 transition-colors"
+                    onClick={(e) => toggleFavorite(selectedProduct._id, e)}
+                  >
+                    <Heart className={`w-6 h-6 ${favorites.includes(selectedProduct._id) ? 'text-red-500 fill-current' : ''}`} />
+                  </button>
+                  <button
+                    onClick={closeModal}
+                    className="text-gray-400 hover:text-gray-600 transition-colors"
+                  >
+                    <X className="w-6 h-6" />
+                  </button>
+                </div>
               </div>
 
               {/* Product Image */}
@@ -477,29 +552,26 @@ export default function FarmerProductsPage() {
                   </div>
                 </div>
 
-                {/* Action Buttons */}
-                <div className="flex gap-3 pt-4">
-                  <button
-                    onClick={() => addToCart(selectedProduct._id, quantity)}
-                    disabled={addingToCart === selectedProduct._id || selectedProduct.stock === 0}
-                    className="flex-1 bg-teal-600 text-white py-3 px-4 rounded-lg hover:bg-teal-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                  >
-                    {addingToCart === selectedProduct._id ? (
-                      <>
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                        Adding...
-                      </>
-                    ) : (
-                      <>
-                        <ShoppingCart className="w-4 h-4" />
-                        Add to Cart
-                      </>
-                    )}
-                  </button>
-                  <button className="px-4 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
-                    <Heart className="w-5 h-5 text-gray-400" />
-                  </button>
-                </div>
+                                 {/* Action Buttons */}
+                 <div className="flex gap-3 pt-4">
+                   <button
+                     onClick={() => addToCart(selectedProduct._id, quantity)}
+                     disabled={addingToCart === selectedProduct._id || selectedProduct.stock === 0}
+                     className="flex-1 bg-teal-600 text-white py-3 px-4 rounded-lg hover:bg-teal-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                   >
+                     {addingToCart === selectedProduct._id ? (
+                       <>
+                         <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                         Adding...
+                       </>
+                     ) : (
+                       <>
+                         <ShoppingCart className="w-4 h-4" />
+                         Add to Cart
+                       </>
+                     )}
+                   </button>
+                 </div>
               </div>
             </div>
           </div>

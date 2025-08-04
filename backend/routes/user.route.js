@@ -1,4 +1,5 @@
 import express from 'express';
+import auth from '../middleware/auth.js';
 import { createUser, updateUser, deleteUser, loginUser, getUserById, getUsers, getUserIdByUsername, getFarmers, addToFavorites, removeFromFavorites, getUserFavorites } from '../controllers/user.controller.js';
 
 const router = express.Router();
@@ -13,8 +14,8 @@ router.get('/email/:email', getUserIdByUsername);
 router.get('/farmers/all', getFarmers);
 
 // Favorites routes
-router.post('/:userId/favorites', addToFavorites);
-router.delete('/:userId/favorites/:productId', removeFromFavorites);
-router.get('/:userId/favorites', getUserFavorites);
+router.post('/:userId/favorites', auth, addToFavorites);
+router.delete('/:userId/favorites/:productId', auth, removeFromFavorites);
+router.get('/:userId/favorites', auth, getUserFavorites);
 
 export default router;

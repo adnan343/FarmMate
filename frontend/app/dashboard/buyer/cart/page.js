@@ -35,7 +35,9 @@ export default function CartPage() {
         return;
       }
 
-      const response = await fetch(`http://localhost:5000/api/cart/${userId}`);
+      const response = await fetch(`http://localhost:5000/api/cart/${userId}`, {
+        credentials: 'include'
+      });
       if (response.ok) {
         const result = await response.json();
         if (result.success) {
@@ -67,6 +69,7 @@ export default function CartPage() {
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include',
         body: JSON.stringify({ quantity: newQuantity }),
       });
 
@@ -99,6 +102,7 @@ export default function CartPage() {
       
       const response = await fetch(`http://localhost:5000/api/cart/${userId}/items/${itemId}`, {
         method: 'DELETE',
+        credentials: 'include'
       });
 
       if (response.ok) {
@@ -126,6 +130,7 @@ export default function CartPage() {
       
       const response = await fetch(`http://localhost:5000/api/cart/${userId}/clear`, {
         method: 'DELETE',
+        credentials: 'include'
       });
 
       if (response.ok) {

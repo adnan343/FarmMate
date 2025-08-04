@@ -57,14 +57,18 @@ export default function CheckoutPage() {
         return;
       }
 
-      const response = await fetch(`http://localhost:5000/api/cart/${userId}`);
+      const response = await fetch(`http://localhost:5000/api/cart/${userId}`, {
+        credentials: 'include'
+      });
       if (response.ok) {
         const result = await response.json();
         if (result.success) {
           setCart(result.data);
           
           // Pre-fill shipping info with user data
-          const userResponse = await fetch(`http://localhost:5000/api/users/${userId}`);
+          const userResponse = await fetch(`http://localhost:5000/api/users/${userId}`, {
+            credentials: 'include'
+          });
           if (userResponse.ok) {
             const userResult = await userResponse.json();
             if (userResult.success) {
@@ -152,6 +156,7 @@ export default function CheckoutPage() {
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include',
         body: JSON.stringify(orderData),
       });
 
