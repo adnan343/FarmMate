@@ -1,6 +1,6 @@
 'use client';
 
-import { Filter, Heart, Mail, MapPin, Minus, Phone, Plus, Search, ShoppingCart, Star, X, ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Heart, Mail, MapPin, Minus, Phone, Plus, Search, ShoppingCart, Star, X } from 'lucide-react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
@@ -20,6 +20,7 @@ export default function FarmerProductsPage() {
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [quantity, setQuantity] = useState(1);
+  const [sortBy, setSortBy] = useState('');
 
   useEffect(() => {
     fetchFarmerDetails();
@@ -153,9 +154,26 @@ export default function FarmerProductsPage() {
     }
   };
 
-  const filteredProducts = products.filter(product =>
+  // Sorting logic
+  const getSortedProducts = (products) => {
+    let sorted = [...products];
+    if (sortBy === 'Price: Low to High') {
+      sorted.sort((a, b) => a.price - b.price);
+    } else if (sortBy === 'Price: High to Low') {
+      sorted.sort((a, b) => b.price - a.price);
+    } else if (sortBy === 'Rating') {
+      sorted.sort((a, b) => (b.rating || 0) - (a.rating || 0));
+    } else if (sortBy === 'Distance') {
+      // Placeholder: implement real distance logic if location data is available
+      // sorted.sort((a, b) => a.distance - b.distance);
+    }
+    return sorted;
+  };
+
+  // Filter and sort products
+  const filteredProducts = getSortedProducts(products.filter(product =>
     product.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  ));
 
   if (!farmer) {
     return (
@@ -255,6 +273,17 @@ export default function FarmerProductsPage() {
               <option value="dairy">Dairy</option>
               <option value="meat">Meat</option>
               <option value="other">Other</option>
+            </select>
+            <select 
+              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500"
+              value={sortBy}
+              onChange={e => setSortBy(e.target.value)}
+            >
+              <option value="">Sort by</option>
+              <option value="Price: Low to High">Price: Low to High</option>
+              <option value="Price: High to Low">Price: High to Low</option>
+              <option value="Rating">Rating</option>
+              <option value="Distance">Distance</option>
             </select>
           </div>
         </div>
