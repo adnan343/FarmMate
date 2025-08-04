@@ -6,17 +6,17 @@ import {
     ChevronDown,
     ChevronUp,
     FileText,
+    Heart,
     Home,
     List,
     LogOut,
     Mail,
     Monitor,
+    Package,
     ShoppingCart,
     Store,
     User,
-    Users,
-    Package,
-    Heart
+    Users
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -98,6 +98,13 @@ export default function Sidebar({ userRole, userName, userEmail }) {
             label: 'Analytics',
             icon: BarChart3,
             path: '/dashboard/farmer/analytics',
+            children: []
+          },
+          {
+            id: 'community',
+            label: 'Community Forum',
+            icon: Users,
+            path: '/dashboard/farmer/community',
             children: []
           },
           ...baseItems
