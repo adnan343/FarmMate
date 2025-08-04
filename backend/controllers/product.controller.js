@@ -2,8 +2,17 @@ import Product from '../models/product.model.js';
 
 // Get all available products
 export const getAllProducts = async (req, res) => {
+    const { category } = req.query;
+    
     try {
-        const products = await Product.find({ isAvailable: true })
+        let query = { isAvailable: true };
+        
+        // Add category filter if provided
+        if (category && category !== 'all') {
+            query.category = category;
+        }
+        
+        const products = await Product.find(query)
             .populate('farmer', 'name')
             .populate('farm', 'name');
         
@@ -131,13 +140,21 @@ export const deleteProduct = async (req, res) => {
 // Get products by farmer
 export const getProductsByFarmer = async (req, res) => {
     const { farmerId } = req.params;
+    const { category } = req.query;
     
     try {
-        const products = await Product.find({ 
+        let query = { 
             farmer: farmerId,
             isAvailable: true 
-        })
-        .populate('farm', 'name location');
+        };
+        
+        // Add category filter if provided
+        if (category && category !== 'all') {
+            query.category = category;
+        }
+        
+        const products = await Product.find(query)
+            .populate('farm', 'name location');
         
         res.status(200).json({
             success: true,

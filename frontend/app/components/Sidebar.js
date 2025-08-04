@@ -6,11 +6,14 @@ import {
     ChevronDown,
     ChevronUp,
     FileText,
+    Heart,
     Home,
     List,
     LogOut,
     Mail,
+    MessageCircle,
     Monitor,
+    Package,
     ShoppingCart,
     Store,
     User,
@@ -98,6 +101,20 @@ export default function Sidebar({ userRole, userName, userEmail }) {
             path: '/dashboard/farmer/analytics',
             children: []
           },
+          {
+            id: 'community',
+            label: 'Community Forum',
+            icon: Users,
+            path: '/dashboard/farmer/community',
+            children: []
+          },
+          {
+            id: 'qa',
+            label: 'Q&A Support',
+            icon: MessageCircle,
+            path: '/dashboard/farmer/qa',
+            children: []
+          },
           ...baseItems
         ];
       
@@ -117,6 +134,13 @@ export default function Sidebar({ userRole, userName, userEmail }) {
             path: '/dashboard/admin/user-management',
             children: []
           },
+          {
+            id: 'qa-management',
+            label: 'Q&A Management',
+            icon: MessageCircle,
+            path: '/dashboard/admin/qa',
+            children: []
+          },
           ...baseItems
         ];
       
@@ -130,10 +154,31 @@ export default function Sidebar({ userRole, userName, userEmail }) {
             children: []
           },
           {
+            id: 'browse-farmers',
+            label: 'Browse Farmers',
+            icon: Store,
+            path: '/dashboard/buyer/browse-farmers',
+            children: []
+          },
+          {
             id: 'marketplace',
             label: 'Marketplace',
             icon: Store,
             path: '/dashboard/buyer/marketplace',
+            children: []
+          },
+          {
+            id: 'my-orders',
+            label: 'My Orders',
+            icon: Package,
+            path: '/dashboard/buyer/my-orders',
+            children: []
+          },
+          {
+            id: 'favorites',
+            label: 'Favorites',
+            icon: Heart,
+            path: '/dashboard/buyer/favorites',
             children: []
           },
           {
