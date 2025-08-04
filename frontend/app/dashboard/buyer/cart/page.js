@@ -75,9 +75,13 @@ export default function CartPage() {
         if (result.success) {
           setCart(result.data);
         }
+      } else {
+        const errorData = await response.json();
+        alert(errorData.msg || 'Failed to update quantity');
       }
     } catch (error) {
       console.error('Error updating quantity:', error);
+      alert('Failed to update quantity');
     } finally {
       setUpdatingItem(null);
     }
@@ -213,6 +217,9 @@ export default function CartPage() {
                         <h3 className="text-lg font-medium text-gray-900 mb-1">{item.name}</h3>
                         <p className="text-gray-600 text-sm mb-2">Farmer: {item.farmer?.name || 'Unknown'}</p>
                         <p className="text-lg font-semibold text-teal-600">${item.price.toFixed(2)}</p>
+                        <p className="text-sm text-gray-500">
+                          Stock: {item.productId?.stock || 'Unknown'} available
+                        </p>
                       </div>
 
                       {/* Quantity Controls */}

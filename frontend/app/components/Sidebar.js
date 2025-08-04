@@ -14,7 +14,9 @@ import {
     ShoppingCart,
     Store,
     User,
-    Users
+    Users,
+    Package,
+    Heart
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -130,10 +132,31 @@ export default function Sidebar({ userRole, userName, userEmail }) {
             children: []
           },
           {
+            id: 'browse-farmers',
+            label: 'Browse Farmers',
+            icon: Store,
+            path: '/dashboard/buyer/browse-farmers',
+            children: []
+          },
+          {
             id: 'marketplace',
             label: 'Marketplace',
             icon: Store,
             path: '/dashboard/buyer/marketplace',
+            children: []
+          },
+          {
+            id: 'my-orders',
+            label: 'My Orders',
+            icon: Package,
+            path: '/dashboard/buyer/my-orders',
+            children: []
+          },
+          {
+            id: 'favorites',
+            label: 'Favorites',
+            icon: Heart,
+            path: '/dashboard/buyer/favorites',
             children: []
           },
           {

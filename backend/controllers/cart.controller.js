@@ -34,8 +34,8 @@ export const addToCart = async (req, res) => {
             return res.status(404).json({ success: false, msg: 'Product not found' });
         }
 
-        if (!product.isAvailable || product.stock < quantity) {
-            return res.status(400).json({ success: false, msg: 'Product not available in requested quantity' });
+        if (!product.isAvailable) {
+            return res.status(400).json({ success: false, msg: 'Product is not available' });
         }
 
         const user = await User.findById(userId);
@@ -48,9 +48,23 @@ export const addToCart = async (req, res) => {
             item => item.productId && item.productId.toString() === productId
         );
 
+        let newQuantity = quantity;
+        if (existingItemIndex > -1) {
+            // Add to existing quantity
+            newQuantity = user.cart.items[existingItemIndex].quantity + quantity;
+        }
+
+        // Validate stock availability
+        if (newQuantity > product.stock) {
+            return res.status(400).json({ 
+                success: false, 
+                msg: `Cannot add more than available stock. Available: ${product.stock}, Requested: ${newQuantity}` 
+            });
+        }
+
         if (existingItemIndex > -1) {
             // Update quantity if item exists
-            user.cart.items[existingItemIndex].quantity += quantity;
+            user.cart.items[existingItemIndex].quantity = newQuantity;
         } else {
             // Add new item to cart
             user.cart.items.push({
@@ -102,8 +116,19 @@ export const updateCartItem = async (req, res) => {
 
         // Check product availability
         const product = await Product.findById(user.cart.items[itemIndex].productId);
-        if (!product || !product.isAvailable || product.stock < quantity) {
-            return res.status(400).json({ success: false, msg: 'Product not available in requested quantity' });
+        if (!product) {
+            return res.status(404).json({ success: false, msg: 'Product not found' });
+        }
+        
+        if (!product.isAvailable) {
+            return res.status(400).json({ success: false, msg: 'Product is not available' });
+        }
+        
+        if (product.stock < quantity) {
+            return res.status(400).json({ 
+                success: false, 
+                msg: `Cannot update to more than available stock. Available: ${product.stock}, Requested: ${quantity}` 
+            });
         }
 
         user.cart.items[itemIndex].quantity = quantity;

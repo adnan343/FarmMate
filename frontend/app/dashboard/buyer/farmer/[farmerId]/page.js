@@ -1,10 +1,16 @@
 'use client';
 
-import { Filter, Heart, Mail, MapPin, Minus, Phone, Plus, Search, ShoppingCart, Star, X } from 'lucide-react';
+import { Filter, Heart, Mail, MapPin, Minus, Phone, Plus, Search, ShoppingCart, Star, X, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
+import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
-export default function MarketplacePage() {
+export default function FarmerProductsPage() {
+  const params = useParams();
+  const router = useRouter();
+  const { farmerId } = params;
+  
+  const [farmer, setFarmer] = useState(null);
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [cartCount, setCartCount] = useState(0);
@@ -14,24 +20,33 @@ export default function MarketplacePage() {
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [quantity, setQuantity] = useState(1);
-  const [favorites, setFavorites] = useState([]);
-  const [managingFavorites, setManagingFavorites] = useState(null);
 
   useEffect(() => {
+    fetchFarmerDetails();
     fetchProducts();
     fetchCartCount();
-    fetchFavorites();
-  }, [selectedCategory]);
+  }, [farmerId, selectedCategory]);
+
+  const fetchFarmerDetails = async () => {
+    try {
+      const response = await fetch(`http://localhost:5000/api/users/${farmerId}`);
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success) {
+          setFarmer(result.data);
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching farmer details:', error);
+    }
+  };
 
   const fetchProducts = async () => {
     try {
       setLoading(true);
-      let url = 'http://localhost:5000/api/products';
-      
-      // Add category filter if not 'all'
-      if (selectedCategory !== 'all') {
-        url += `?category=${selectedCategory}`;
-      }
+      const url = selectedCategory === 'all' 
+        ? `http://localhost:5000/api/products/farmer/${farmerId}`
+        : `http://localhost:5000/api/products/farmer/${farmerId}?category=${selectedCategory}`;
       
       const response = await fetch(url);
       if (response.ok) {
@@ -67,29 +82,6 @@ export default function MarketplacePage() {
       }
     } catch (error) {
       console.error('Error fetching cart count:', error);
-    }
-  };
-
-  const fetchFavorites = async () => {
-    try {
-      const cookies = document.cookie.split(';').reduce((acc, cookie) => {
-        const [key, value] = cookie.trim().split('=');
-        acc[key] = value;
-        return acc;
-      }, {});
-
-      const userId = cookies.userId;
-      if (!userId) return;
-
-      const response = await fetch(`http://localhost:5000/api/users/${userId}/favorites`);
-      if (response.ok) {
-        const result = await response.json();
-        if (result.success) {
-          setFavorites(result.data.map(fav => fav._id));
-        }
-      }
-    } catch (error) {
-      console.error('Error fetching favorites:', error);
     }
   };
 
@@ -133,7 +125,6 @@ export default function MarketplacePage() {
       } else {
         const errorResult = await response.json();
         alert(errorResult.msg || 'Failed to add product to cart');
-        // Refresh products to get updated stock information
         fetchProducts();
       }
     } catch (error) {
@@ -141,62 +132,6 @@ export default function MarketplacePage() {
       alert('Failed to add product to cart');
     } finally {
       setAddingToCart(null);
-    }
-  };
-
-  const toggleFavorite = async (productId) => {
-    try {
-      setManagingFavorites(productId);
-      const cookies = document.cookie.split(';').reduce((acc, cookie) => {
-        const [key, value] = cookie.trim().split('=');
-        acc[key] = value;
-        return acc;
-      }, {});
-
-      const userId = cookies.userId;
-      if (!userId) {
-        alert('Please log in to manage favorites');
-        return;
-      }
-
-      const isFavorite = favorites.includes(productId);
-      
-      if (isFavorite) {
-        // Remove from favorites
-        const response = await fetch(`http://localhost:5000/api/users/${userId}/favorites/${productId}`, {
-          method: 'DELETE',
-        });
-
-        if (response.ok) {
-          setFavorites(favorites.filter(id => id !== productId));
-        } else {
-          const errorResult = await response.json();
-          alert(errorResult.msg || 'Failed to remove from favorites');
-        }
-      } else {
-        // Add to favorites
-        const response = await fetch(`http://localhost:5000/api/users/${userId}/favorites`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            productId: productId
-          }),
-        });
-
-        if (response.ok) {
-          setFavorites([...favorites, productId]);
-        } else {
-          const errorResult = await response.json();
-          alert(errorResult.msg || 'Failed to add to favorites');
-        }
-      }
-    } catch (error) {
-      console.error('Error managing favorites:', error);
-      alert('Failed to manage favorites');
-    } finally {
-      setManagingFavorites(null);
     }
   };
 
@@ -222,10 +157,30 @@ export default function MarketplacePage() {
     product.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  if (!farmer) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-600"></div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
+      {/* Header */}
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold text-gray-900">Marketplace</h1>
+        <div className="flex items-center gap-4">
+          <button
+            onClick={() => router.back()}
+            className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
+          >
+            <ArrowLeft className="w-5 h-5" />
+          </button>
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">{farmer.name}'s Products</h1>
+            <p className="text-gray-600 mt-2">Fresh products from {farmer.name}</p>
+          </div>
+        </div>
         <Link 
           href="/dashboard/buyer/cart"
           className="bg-teal-600 text-white px-4 py-2 rounded-lg hover:bg-teal-700 transition-colors flex items-center gap-2"
@@ -233,6 +188,43 @@ export default function MarketplacePage() {
           <ShoppingCart className="w-4 h-4" />
           View Cart ({cartCount})
         </Link>
+      </div>
+
+      {/* Farmer Info */}
+      <div className="bg-white rounded-xl shadow-sm p-6">
+        <div className="flex items-start gap-4">
+          <div className="w-16 h-16 bg-teal-100 rounded-full flex items-center justify-center">
+            <span className="text-teal-600 font-semibold text-2xl">
+              {farmer.name.charAt(0).toUpperCase()}
+            </span>
+          </div>
+          <div className="flex-1">
+            <h2 className="text-xl font-semibold text-gray-900 mb-2">{farmer.name}</h2>
+            {farmer.bio && (
+              <p className="text-gray-600 mb-3">{farmer.bio}</p>
+            )}
+            <div className="flex flex-wrap gap-4 text-sm text-gray-600">
+              {farmer.location && (
+                <div className="flex items-center gap-1">
+                  <MapPin className="w-4 h-4" />
+                  <span>{farmer.location}</span>
+                </div>
+              )}
+              {farmer.phone && (
+                <div className="flex items-center gap-1">
+                  <Phone className="w-4 h-4" />
+                  <span>{farmer.phone}</span>
+                </div>
+              )}
+              {farmer.email && (
+                <div className="flex items-center gap-1">
+                  <Mail className="w-4 h-4" />
+                  <span>{farmer.email}</span>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Search and Filters */}
@@ -251,10 +243,6 @@ export default function MarketplacePage() {
             </div>
           </div>
           <div className="flex gap-2">
-            <button className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">
-              <Filter className="w-4 h-4" />
-              Filter
-            </button>
             <select 
               className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500"
               value={selectedCategory}
@@ -267,13 +255,6 @@ export default function MarketplacePage() {
               <option value="dairy">Dairy</option>
               <option value="meat">Meat</option>
               <option value="other">Other</option>
-            </select>
-            <select className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500">
-              <option>Sort by</option>
-              <option>Price: Low to High</option>
-              <option>Price: High to Low</option>
-              <option>Rating</option>
-              <option>Distance</option>
             </select>
           </div>
         </div>
@@ -293,7 +274,7 @@ export default function MarketplacePage() {
           <div className="text-center py-12">
             <div className="text-4xl mb-4">🌾</div>
             <h3 className="text-lg font-semibold text-gray-900 mb-2">No products found</h3>
-            <p className="text-gray-600">Try adjusting your search or filter criteria</p>
+            <p className="text-gray-600">This farmer doesn't have any products available</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
@@ -318,18 +299,13 @@ export default function MarketplacePage() {
                   <div className="flex items-center justify-between mb-2">
                     <h3 className="font-semibold text-gray-900">{product.name}</h3>
                     <button 
-                      className={`${favorites.includes(product._id) ? 'text-red-500' : 'text-gray-400 hover:text-red-500'}`}
+                      className="text-gray-400 hover:text-red-500"
                       onClick={(e) => {
                         e.stopPropagation();
-                        toggleFavorite(product._id);
+                        // Handle wishlist functionality
                       }}
-                      disabled={managingFavorites === product._id}
                     >
-                      {managingFavorites === product._id ? (
-                        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-current"></div>
-                      ) : (
-                        <Heart className={`w-5 h-5 ${favorites.includes(product._id) ? 'fill-current' : ''}`} />
-                      )}
+                      <Heart className="w-5 h-5" />
                     </button>
                   </div>
                   <p className="text-sm text-gray-600 mb-2 line-clamp-2">{product.description}</p>
@@ -341,12 +317,6 @@ export default function MarketplacePage() {
                       />
                     ))}
                     <span className="text-sm text-gray-600 ml-1">({product.reviewCount || 0} reviews)</span>
-                  </div>
-                  <div className="flex items-center gap-2 mb-3">
-                    <MapPin className="w-4 h-4 text-gray-400" />
-                    <span className="text-sm text-gray-600">
-                      {product.farmer?.name || 'Unknown Farmer'}
-                    </span>
                   </div>
                   <div className="flex items-center justify-between">
                     <div>
@@ -435,31 +405,6 @@ export default function MarketplacePage() {
                   <p className="text-gray-600">{selectedProduct.description}</p>
                 </div>
 
-                {/* Farmer Info */}
-                <div className="bg-gray-50 rounded-lg p-4">
-                  <h3 className="font-semibold text-gray-900 mb-2">Farmer Information</h3>
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2">
-                      <MapPin className="w-4 h-4 text-gray-400" />
-                      <span className="text-sm text-gray-600">
-                        {selectedProduct.farmer?.name || 'Unknown Farmer'}
-                      </span>
-                    </div>
-                    {selectedProduct.farmer?.phone && (
-                      <div className="flex items-center gap-2">
-                        <Phone className="w-4 h-4 text-gray-400" />
-                        <span className="text-sm text-gray-600">{selectedProduct.farmer.phone}</span>
-                      </div>
-                    )}
-                    {selectedProduct.farmer?.email && (
-                      <div className="flex items-center gap-2">
-                        <Mail className="w-4 h-4 text-gray-400" />
-                        <span className="text-sm text-gray-600">{selectedProduct.farmer.email}</span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
                 {/* Stock and Price */}
                 <div className="flex items-center justify-between">
                   <div>
@@ -522,18 +467,8 @@ export default function MarketplacePage() {
                       </>
                     )}
                   </button>
-                  <button 
-                    onClick={() => toggleFavorite(selectedProduct._id)}
-                    disabled={managingFavorites === selectedProduct._id}
-                    className={`px-4 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors flex items-center justify-center ${
-                      favorites.includes(selectedProduct._id) ? 'text-red-500 border-red-300' : ''
-                    }`}
-                  >
-                    {managingFavorites === selectedProduct._id ? (
-                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-current"></div>
-                    ) : (
-                      <Heart className={`w-5 h-5 ${favorites.includes(selectedProduct._id) ? 'fill-current' : ''}`} />
-                    )}
+                  <button className="px-4 py-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                    <Heart className="w-5 h-5 text-gray-400" />
                   </button>
                 </div>
               </div>
