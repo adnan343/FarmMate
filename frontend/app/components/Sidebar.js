@@ -11,6 +11,7 @@ import {
     List,
     LogOut,
     Mail,
+    MessageCircle,
     Monitor,
     Package,
     ShoppingCart,
@@ -107,6 +108,13 @@ export default function Sidebar({ userRole, userName, userEmail }) {
             path: '/dashboard/farmer/community',
             children: []
           },
+          {
+            id: 'qa',
+            label: 'Q&A Support',
+            icon: MessageCircle,
+            path: '/dashboard/farmer/qa',
+            children: []
+          },
           ...baseItems
         ];
       
@@ -124,6 +132,13 @@ export default function Sidebar({ userRole, userName, userEmail }) {
             label: 'User Management',
             icon: Users,
             path: '/dashboard/admin/user-management',
+            children: []
+          },
+          {
+            id: 'qa-management',
+            label: 'Q&A Management',
+            icon: MessageCircle,
+            path: '/dashboard/admin/qa',
             children: []
           },
           ...baseItems

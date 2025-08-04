@@ -1,0 +1,246 @@
+"use client";
+import { Check, CheckCircle, Clock, Edit, MessageCircle, Reply, Trash2, X } from "lucide-react";
+import { useEffect, useState } from "react";
+
+export default function AdminQAPage() {
+  const [questions, setQuestions] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [answeringQuestion, setAnsweringQuestion] = useState(null);
+  const [editingAnswer, setEditingAnswer] = useState(null);
+  const [deleting, setDeleting] = useState({});
+  const [answerText, setAnswerText] = useState("");
+  const [currentAdmin, setCurrentAdmin] = useState(null);
+
+  useEffect(() => {
+    fetchQuestions();
+    getCurrentAdmin();
+  }, []);
+
+  const getCurrentAdmin = () => {
+    const cookies = document.cookie.split(';').reduce((acc, cookie) => {
+      const [key, value] = cookie.trim().split('=');
+      acc[key] = value;
+      return acc;
+    }, {});
+    setCurrentAdmin(cookies.userId);
+  };
+
+  const fetchQuestions = async () => {
+    setLoading(true);
+    const res = await fetch("http://localhost:5000/api/qa/admin", { credentials: "include" });
+    const data = await res.json();
+    if (data.success) setQuestions(data.data);
+    setLoading(false);
+  };
+
+  const handleAnswerQuestion = async (questionId) => {
+    if (!answerText.trim()) return;
+    const res = await fetch(`http://localhost:5000/api/qa/${questionId}/answer`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ answer: answerText }),
+    });
+    if (res.ok) {
+      setAnsweringQuestion(null);
+      setAnswerText("");
+      fetchQuestions();
+    } else {
+      alert("Failed to answer question");
+    }
+  };
+
+  const handleEditAnswer = async (questionId, updatedAnswer) => {
+    const res = await fetch(`http://localhost:5000/api/qa/${questionId}/answer/edit`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ answer: updatedAnswer }),
+    });
+    if (res.ok) {
+      setEditingAnswer(null);
+      fetchQuestions();
+    } else {
+      alert("Failed to edit answer");
+    }
+  };
+
+  const handleDeleteAnswer = async (questionId) => {
+    if (!confirm("Are you sure you want to delete this answer?")) return;
+    setDeleting({ ...deleting, [questionId]: true });
+    const res = await fetch(`http://localhost:5000/api/qa/${questionId}/answer`, {
+      method: "DELETE",
+      credentials: "include",
+    });
+    setDeleting({ ...deleting, [questionId]: false });
+    if (res.ok) fetchQuestions();
+    else alert("Failed to delete answer");
+  };
+
+  const unanswered = questions.filter(q => q.status !== 'answered');
+  const answered = questions.filter(q => q.status === 'answered');
+
+  return (
+    <div className="max-w-6xl mx-auto p-4">
+      <h1 className="text-2xl font-bold mb-4">Q&A Management</h1>
+      <div className="bg-white rounded shadow p-6 mb-8">
+        <h2 className="text-lg font-semibold mb-4">Unanswered Questions</h2>
+        {loading ? (
+          <div className="text-center py-8">Loading questions...</div>
+        ) : unanswered.length === 0 ? (
+          <div className="text-center py-8 text-gray-500">
+            <MessageCircle className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+            <p>No unanswered questions.</p>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {unanswered.map((qa) => (
+              <div key={qa._id} className="border rounded-lg p-4">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    <Clock className="w-5 h-5 text-yellow-600" />
+                    <span className="px-2 py-1 text-xs rounded bg-yellow-100 text-yellow-800">Pending</span>
+                    <span className="text-xs text-gray-500">{new Date(qa.createdAt).toLocaleDateString()}</span>
+                  </div>
+                  <button
+                    onClick={() => setAnsweringQuestion(qa)}
+                    className="text-green-600 hover:text-green-800"
+                  >
+                    <Reply className="w-4 h-4" />
+                  </button>
+                </div>
+                <div className="mb-3">
+                  <div className="text-sm text-gray-600 mb-1">
+                    From: <span className="font-semibold">{qa.farmer?.name}</span> ({qa.farmer?.email})
+                  </div>
+                  <h3 className="font-semibold text-gray-900 mb-2">Question:</h3>
+                  <p className="text-gray-700 whitespace-pre-line">{qa.question}</p>
+                </div>
+                {answeringQuestion?._id === qa._id && (
+                  <div className="bg-blue-50 border-l-4 border-blue-400 p-4">
+                    <h3 className="font-semibold text-blue-900 mb-2">Answer:</h3>
+                    <textarea
+                      value={answerText}
+                      onChange={(e) => setAnswerText(e.target.value)}
+                      className="border rounded p-2 w-full mb-2"
+                      rows="4"
+                      placeholder="Write your answer here..."
+                    />
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => handleAnswerQuestion(qa._id)}
+                        className="bg-green-600 text-white px-3 py-1 rounded text-sm"
+                      >
+                        <Check className="w-4 h-4 inline mr-1" />
+                        Submit Answer
+                      </button>
+                      <button
+                        onClick={() => {
+                          setAnsweringQuestion(null);
+                          setAnswerText("");
+                        }}
+                        className="bg-gray-600 text-white px-3 py-1 rounded text-sm"
+                      >
+                        <X className="w-4 h-4 inline mr-1" />
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+      <div className="bg-white rounded shadow p-6">
+        <h2 className="text-lg font-semibold mb-4">Answered Questions</h2>
+        {loading ? (
+          <div className="text-center py-8">Loading questions...</div>
+        ) : answered.length === 0 ? (
+          <div className="text-center py-8 text-gray-500">
+            <MessageCircle className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+            <p>No answered questions yet.</p>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {answered.map((qa) => (
+              <div key={qa._id} className="border rounded-lg p-4">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    <CheckCircle className="w-5 h-5 text-green-600" />
+                    <span className="px-2 py-1 text-xs rounded bg-green-100 text-green-800">Answered</span>
+                    <span className="text-xs text-gray-500">{new Date(qa.createdAt).toLocaleDateString()}</span>
+                  </div>
+                  {qa.admin?._id === currentAdmin && (
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => setEditingAnswer(qa)}
+                        className="text-blue-600 hover:text-blue-800"
+                      >
+                        <Edit className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => handleDeleteAnswer(qa._id)}
+                        disabled={deleting[qa._id]}
+                        className="text-red-600 hover:text-red-800"
+                      >
+                        {deleting[qa._id] ? (
+                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
+                        ) : (
+                          <Trash2 className="w-4 h-4" />
+                        )}
+                      </button>
+                    </div>
+                  )}
+                </div>
+                <div className="mb-3">
+                  <div className="text-sm text-gray-600 mb-1">
+                    From: <span className="font-semibold">{qa.farmer?.name}</span> ({qa.farmer?.email})
+                  </div>
+                  <h3 className="font-semibold text-gray-900 mb-2">Question:</h3>
+                  <p className="text-gray-700 whitespace-pre-line">{qa.question}</p>
+                </div>
+                {editingAnswer?._id === qa._id ? (
+                  <div className="bg-blue-50 border-l-4 border-blue-400 p-4">
+                    <h3 className="font-semibold text-blue-900 mb-2">Edit Answer:</h3>
+                    <textarea
+                      value={editingAnswer.answer}
+                      onChange={(e) => setEditingAnswer({...editingAnswer, answer: e.target.value})}
+                      className="border rounded p-2 w-full mb-2"
+                      rows="4"
+                      placeholder="Edit your answer here..."
+                    />
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => handleEditAnswer(qa._id, editingAnswer.answer)}
+                        className="bg-green-600 text-white px-3 py-1 rounded text-sm"
+                      >
+                        <Check className="w-4 h-4 inline mr-1" />
+                        Save
+                      </button>
+                      <button
+                        onClick={() => setEditingAnswer(null)}
+                        className="bg-gray-600 text-white px-3 py-1 rounded text-sm"
+                      >
+                        <X className="w-4 h-4 inline mr-1" />
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                ) : qa.answer ? (
+                  <div className="bg-green-50 border-l-4 border-green-400 p-4">
+                    <h3 className="font-semibold text-green-900 mb-2">Answer:</h3>
+                    <p className="text-green-800 whitespace-pre-line">{qa.answer}</p>
+                    <div className="mt-2 text-sm text-green-600">
+                      Answered by {qa.admin?.name || 'Admin'} on {new Date(qa.answeredAt).toLocaleDateString()}
+                    </div>
+                  </div>
+                ) : null}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+} 
