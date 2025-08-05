@@ -22,6 +22,18 @@ const farmSchema = new mongoose.Schema(
             type: String,
             required: true,
         },
+        farmer: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'User',
+            required: true
+        },
+        description: {
+            type: String,
+            default: ''
+        },
+        establishedYear: {
+            type: Number
+        }
     },
     {
         timestamps: true

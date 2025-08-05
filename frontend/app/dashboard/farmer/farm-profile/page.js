@@ -1,114 +1,742 @@
-import { Calendar, Mail, MapPin, Phone } from 'lucide-react';
+'use client';
+
+import { Calendar, Edit, MapPin, Plus, Scissors, Trash2 } from 'lucide-react';
+import { useEffect, useState } from 'react';
 
 export default function FarmProfilePage() {
+  const [farms, setFarms] = useState([]);
+  const [crops, setCrops] = useState([]);
+  const [selectedFarm, setSelectedFarm] = useState(null);
+  const [showAddFarmModal, setShowAddFarmModal] = useState(false);
+  const [showEditFarmModal, setShowEditFarmModal] = useState(false);
+  const [showAddCropModal, setShowAddCropModal] = useState(false);
+  const [selectedCrop, setSelectedCrop] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState(null);
+
+  // Form states
+  const [farmForm, setFarmForm] = useState({
+    name: '',
+    location: '',
+    landSize: '',
+    soilType: '',
+    mapView: '',
+    description: '',
+    establishedYear: ''
+  });
+
+  const [cropForm, setCropForm] = useState({
+    name: '',
+    variety: '',
+    area: '',
+    unit: 'acres',
+    plantingDate: '',
+    expectedHarvestDate: '',
+    estimatedYield: '',
+    yieldUnit: 'kg',
+    notes: ''
+  });
+
+
+
+  useEffect(() => {
+    // Get user data from cookies
+    const getCookie = (name) => {
+      const value = `; ${document.cookie}`;
+      const parts = value.split(`; ${name}=`);
+      if (parts.length === 2) return parts.pop().split(';').shift();
+      return null;
+    };
+
+    const userId = getCookie('userId');
+    const userName = getCookie('userName');
+    const userEmail = getCookie('userEmail');
+    const role = getCookie('role');
+
+    if (userId) {
+      const userData = {
+        _id: userId,
+        name: userName,
+        email: userEmail,
+        role: role
+      };
+      setUser(userData);
+      fetchFarms(userId);
+      fetchCrops(userId);
+    } else {
+      setLoading(false);
+    }
+  }, []);
+
+  const fetchFarms = async (farmerId) => {
+    try {
+      const response = await fetch(`http://localhost:5000/api/farms/farmer/${farmerId}`, {
+        credentials: 'include' // This will send cookies with the request
+      });
+      const data = await response.json();
+      if (data.success) {
+        setFarms(data.data);
+        if (data.data.length > 0) {
+          setSelectedFarm(data.data[0]);
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching farms:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchCrops = async (farmerId) => {
+    try {
+      const response = await fetch(`http://localhost:5000/api/crops/farmer/${farmerId}`, {
+        credentials: 'include' // This will send cookies with the request
+      });
+      const data = await response.json();
+      if (data.success) {
+        setCrops(data.data);
+      }
+    } catch (error) {
+      console.error('Error fetching crops:', error);
+    }
+  };
+
+  const handleAddFarm = async (e) => {
+    e.preventDefault();
+    try {
+      const response = await fetch('http://localhost:5000/api/farms', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          ...farmForm,
+          farmer: user._id
+        })
+      });
+      const data = await response.json();
+      if (data.success) {
+        setFarms([...farms, data.farm]);
+        setShowAddFarmModal(false);
+        setFarmForm({
+          name: '',
+          location: '',
+          landSize: '',
+          soilType: '',
+          mapView: '',
+          description: '',
+          establishedYear: ''
+        });
+      }
+    } catch (error) {
+      console.error('Error adding farm:', error);
+    }
+  };
+
+  const handleEditFarm = async (e) => {
+    e.preventDefault();
+    try {
+      const response = await fetch(`http://localhost:5000/api/farms/${selectedFarm._id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        credentials: 'include',
+        body: JSON.stringify(farmForm)
+      });
+      const data = await response.json();
+      if (data.success) {
+        setFarms(farms.map(farm => farm._id === selectedFarm._id ? data.data : farm));
+        setSelectedFarm(data.data);
+        setShowEditFarmModal(false);
+      }
+    } catch (error) {
+      console.error('Error updating farm:', error);
+    }
+  };
+
+  const handleDeleteFarm = async (farmId) => {
+    if (!confirm('Are you sure you want to delete this farm?')) return;
+    
+    try {
+      const response = await fetch(`http://localhost:5000/api/farms/${farmId}`, {
+        method: 'DELETE',
+        credentials: 'include'
+      });
+      const data = await response.json();
+      if (data.success) {
+        setFarms(farms.filter(farm => farm._id !== farmId));
+        if (selectedFarm && selectedFarm._id === farmId) {
+          setSelectedFarm(farms.length > 1 ? farms.find(f => f._id !== farmId) : null);
+        }
+      }
+    } catch (error) {
+      console.error('Error deleting farm:', error);
+    }
+  };
+
+  const handleAddCrop = async (e) => {
+    e.preventDefault();
+    try {
+      const response = await fetch('http://localhost:5000/api/crops', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          ...cropForm,
+          farm: selectedFarm._id,
+          farmer: user._id,
+          area: parseFloat(cropForm.area),
+          estimatedYield: cropForm.estimatedYield ? parseFloat(cropForm.estimatedYield) : undefined
+        })
+      });
+      const data = await response.json();
+      if (data.success) {
+        setCrops([...crops, data.data]);
+        setShowAddCropModal(false);
+        setCropForm({
+          name: '',
+          variety: '',
+          area: '',
+          unit: 'acres',
+          plantingDate: '',
+          expectedHarvestDate: '',
+          estimatedYield: '',
+          yieldUnit: 'kg',
+          notes: ''
+        });
+      }
+    } catch (error) {
+      console.error('Error adding crop:', error);
+    }
+  };
+
+  const handleUpdateCropStage = async (cropId, stage) => {
+    try {
+      const response = await fetch(`http://localhost:5000/api/crops/${cropId}/stage`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        credentials: 'include',
+        body: JSON.stringify({ stage })
+      });
+      const data = await response.json();
+      if (data.success) {
+        setCrops(crops.map(crop => crop._id === cropId ? data.data : crop));
+        
+        // Show notification if crop is harvested
+        if (stage === 'harvested') {
+          alert('Crop harvested! A product has been automatically created. You can edit and publish it in the "My Products" page.');
+        }
+      }
+    } catch (error) {
+      console.error('Error updating crop stage:', error);
+    }
+  };
+
+
+
+  const getStageColor = (stage) => {
+    const colors = {
+      planning: 'bg-gray-100 text-gray-800',
+      planting: 'bg-blue-100 text-blue-800',
+      growing: 'bg-green-100 text-green-800',
+      flowering: 'bg-purple-100 text-purple-800',
+      fruiting: 'bg-orange-100 text-orange-800',
+      harvest: 'bg-yellow-100 text-yellow-800',
+      harvested: 'bg-red-100 text-red-800'
+    };
+    return colors[stage] || 'bg-gray-100 text-gray-800';
+  };
+
+  if (loading) {
+    return <div className="flex justify-center items-center h-64">Loading...</div>;
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold text-gray-900">Farm Profile</h1>
-        <button className="bg-teal-600 text-white px-4 py-2 rounded-lg hover:bg-teal-700 transition-colors">
-          Edit Profile
-        </button>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Farm Information */}
-        <div className="bg-white rounded-xl shadow-sm p-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">Farm Information</h2>
-          <div className="space-y-4">
-            <div className="flex items-center gap-3">
-              <MapPin className="w-5 h-5 text-gray-500" />
-              <div>
-                <p className="text-sm text-gray-500">Location</p>
-                <p className="text-gray-900">Dhaka, Bangladesh</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-3">
-              <Calendar className="w-5 h-5 text-gray-500" />
-              <div>
-                <p className="text-sm text-gray-500">Established</p>
-                <p className="text-gray-900">2018</p>
-              </div>
-            </div>
-            <div>
-              <p className="text-sm text-gray-500 mb-1">Farm Size</p>
-              <p className="text-gray-900">25 acres</p>
-            </div>
-            <div>
-              <p className="text-sm text-gray-500 mb-1">Primary Crops</p>
-              <p className="text-gray-900">Rice, Wheat, Vegetables</p>
-            </div>
-          </div>
-        </div>
-
-        {/* Contact Information */}
-        <div className="bg-white rounded-xl shadow-sm p-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">Contact Information</h2>
-          <div className="space-y-4">
-            <div className="flex items-center gap-3">
-              <Phone className="w-5 h-5 text-gray-500" />
-              <div>
-                <p className="text-sm text-gray-500">Phone</p>
-                <p className="text-gray-900">+880 1712 345 678</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-3">
-              <Mail className="w-5 h-5 text-gray-500" />
-              <div>
-                <p className="text-sm text-gray-500">Email</p>
-                <p className="text-gray-900">farmer@farmmate.com</p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Current Crops */}
-        <div className="bg-white rounded-xl shadow-sm p-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">Current Crops</h2>
-          <div className="space-y-3">
-            <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-              <div>
-                <p className="font-medium text-gray-900">Rice</p>
-                <p className="text-sm text-gray-500">5 acres</p>
-              </div>
-              <span className="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full">
-                Growing
-              </span>
-            </div>
-            <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-              <div>
-                <p className="font-medium text-gray-900">Wheat</p>
-                <p className="text-sm text-gray-500">3 acres</p>
-              </div>
-              <span className="px-2 py-1 bg-yellow-100 text-yellow-800 text-xs rounded-full">
-                Planning
-              </span>
-            </div>
-          </div>
-        </div>
-
-        {/* Farm Statistics */}
-        <div className="bg-white rounded-xl shadow-sm p-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">Farm Statistics</h2>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="text-center p-4 bg-teal-50 rounded-lg">
-              <p className="text-2xl font-bold text-teal-600">25</p>
-              <p className="text-sm text-gray-600">Total Acres</p>
-            </div>
-            <div className="text-center p-4 bg-blue-50 rounded-lg">
-              <p className="text-2xl font-bold text-blue-600">8</p>
-              <p className="text-sm text-gray-600">Active Crops</p>
-            </div>
-            <div className="text-center p-4 bg-green-50 rounded-lg">
-              <p className="text-2xl font-bold text-green-600">15</p>
-              <p className="text-sm text-gray-600">Workers</p>
-            </div>
-            <div className="text-center p-4 bg-purple-50 rounded-lg">
-              <p className="text-2xl font-bold text-purple-600">95%</p>
-              <p className="text-sm text-gray-600">Efficiency</p>
-            </div>
-          </div>
+        <div className="flex gap-2">
+          <button 
+            onClick={() => setShowAddFarmModal(true)}
+            className="bg-teal-600 text-white px-4 py-2 rounded-lg hover:bg-teal-700 transition-colors flex items-center gap-2"
+          >
+            <Plus className="w-4 h-4" />
+            Add Farm
+          </button>
         </div>
       </div>
+
+      {/* Farm Selection */}
+      {farms.length > 0 && (
+        <div className="bg-white rounded-xl shadow-sm p-6">
+          <h2 className="text-xl font-semibold text-gray-900 mb-4">Select Farm</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {farms.map((farm) => (
+              <div 
+                key={farm._id}
+                className={`p-4 border rounded-lg cursor-pointer transition-colors ${
+                  selectedFarm?._id === farm._id 
+                    ? 'border-teal-500 bg-teal-50' 
+                    : 'border-gray-200 hover:border-teal-300'
+                }`}
+                onClick={() => setSelectedFarm(farm)}
+              >
+                <div className="flex justify-between items-start">
+                  <div>
+                    <h3 className="font-semibold text-gray-900">{farm.name}</h3>
+                    <p className="text-sm text-gray-500">{farm.location}</p>
+                    <p className="text-sm text-gray-500">{farm.landSize}</p>
+                  </div>
+                  <div className="flex gap-1">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedFarm(farm);
+                        setFarmForm({
+                          name: farm.name,
+                          location: farm.location,
+                          landSize: farm.landSize,
+                          soilType: farm.soilType,
+                          mapView: farm.mapView,
+                          description: farm.description || '',
+                          establishedYear: farm.establishedYear || ''
+                        });
+                        setShowEditFarmModal(true);
+                      }}
+                      className="p-1 text-gray-500 hover:text-teal-600"
+                    >
+                      <Edit className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDeleteFarm(farm._id);
+                      }}
+                      className="p-1 text-gray-500 hover:text-red-600"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {selectedFarm && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Farm Information */}
+          <div className="bg-white rounded-xl shadow-sm p-6">
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">Farm Information</h2>
+            <div className="space-y-4">
+              <div className="flex items-center gap-3">
+                <MapPin className="w-5 h-5 text-gray-500" />
+                <div>
+                  <p className="text-sm text-gray-500">Location</p>
+                  <p className="text-gray-900">{selectedFarm.location}</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <Calendar className="w-5 h-5 text-gray-500" />
+                <div>
+                  <p className="text-sm text-gray-500">Established</p>
+                  <p className="text-gray-900">{selectedFarm.establishedYear || 'N/A'}</p>
+                </div>
+              </div>
+              <div>
+                <p className="text-sm text-gray-500 mb-1">Farm Size</p>
+                <p className="text-gray-900">{selectedFarm.landSize}</p>
+              </div>
+              <div>
+                <p className="text-sm text-gray-500 mb-1">Soil Type</p>
+                <p className="text-gray-900">{selectedFarm.soilType}</p>
+              </div>
+              {selectedFarm.description && (
+                <div>
+                  <p className="text-sm text-gray-500 mb-1">Description</p>
+                  <p className="text-gray-900">{selectedFarm.description}</p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Current Crops */}
+          <div className="bg-white rounded-xl shadow-sm p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-semibold text-gray-900">Current Crops</h2>
+              <button
+                onClick={() => setShowAddCropModal(true)}
+                className="bg-teal-600 text-white px-3 py-1 rounded-lg hover:bg-teal-700 transition-colors text-sm flex items-center gap-1"
+              >
+                <Plus className="w-3 h-3" />
+                Add Crop
+              </button>
+            </div>
+            <div className="space-y-3">
+              {crops.filter(crop => crop.farm._id === selectedFarm._id).map((crop) => (
+                <div key={crop._id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                  <div className="flex-1">
+                    <p className="font-medium text-gray-900">{crop.name} - {crop.variety}</p>
+                    <p className="text-sm text-gray-500">{crop.area} {crop.unit}</p>
+                    <p className="text-xs text-gray-400">
+                      Planted: {new Date(crop.plantingDate).toLocaleDateString()}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className={`px-2 py-1 text-xs rounded-full ${getStageColor(crop.stage)}`}>
+                      {crop.stage}
+                    </span>
+                                         {crop.stage === 'harvested' && (
+                       <span className="text-xs text-green-600 font-medium">
+                         Product created!
+                       </span>
+                     )}
+                    <select
+                      value={crop.stage}
+                      onChange={(e) => handleUpdateCropStage(crop._id, e.target.value)}
+                      className="text-xs border rounded px-1 py-1"
+                    >
+                      <option value="planning">Planning</option>
+                      <option value="planting">Planting</option>
+                      <option value="growing">Growing</option>
+                      <option value="flowering">Flowering</option>
+                      <option value="fruiting">Fruiting</option>
+                      <option value="harvest">Harvest</option>
+                      <option value="harvested">Harvested</option>
+                    </select>
+                  </div>
+                </div>
+              ))}
+              {crops.filter(crop => crop.farm._id === selectedFarm._id).length === 0 && (
+                <p className="text-gray-500 text-center py-4">No crops added yet</p>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Add Farm Modal */}
+      {showAddFarmModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md">
+            <h2 className="text-xl font-semibold mb-4">Add New Farm</h2>
+            <form onSubmit={handleAddFarm} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Farm Name</label>
+                <input
+                  type="text"
+                  value={farmForm.name}
+                  onChange={(e) => setFarmForm({...farmForm, name: e.target.value})}
+                  className="w-full border rounded-lg px-3 py-2"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Location</label>
+                <input
+                  type="text"
+                  value={farmForm.location}
+                  onChange={(e) => setFarmForm({...farmForm, location: e.target.value})}
+                  className="w-full border rounded-lg px-3 py-2"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Land Size</label>
+                <input
+                  type="text"
+                  value={farmForm.landSize}
+                  onChange={(e) => setFarmForm({...farmForm, landSize: e.target.value})}
+                  className="w-full border rounded-lg px-3 py-2"
+                  placeholder="e.g., 50 acres"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Soil Type</label>
+                <input
+                  type="text"
+                  value={farmForm.soilType}
+                  onChange={(e) => setFarmForm({...farmForm, soilType: e.target.value})}
+                  className="w-full border rounded-lg px-3 py-2"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Map View URL</label>
+                <input
+                  type="url"
+                  value={farmForm.mapView}
+                  onChange={(e) => setFarmForm({...farmForm, mapView: e.target.value})}
+                  className="w-full border rounded-lg px-3 py-2"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                <textarea
+                  value={farmForm.description}
+                  onChange={(e) => setFarmForm({...farmForm, description: e.target.value})}
+                  className="w-full border rounded-lg px-3 py-2"
+                  rows="3"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Established Year</label>
+                <input
+                  type="number"
+                  value={farmForm.establishedYear}
+                  onChange={(e) => setFarmForm({...farmForm, establishedYear: e.target.value})}
+                  className="w-full border rounded-lg px-3 py-2"
+                />
+              </div>
+              <div className="flex gap-2">
+                <button
+                  type="submit"
+                  className="flex-1 bg-teal-600 text-white py-2 rounded-lg hover:bg-teal-700"
+                >
+                  Add Farm
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowAddFarmModal(false)}
+                  className="flex-1 bg-gray-300 text-gray-700 py-2 rounded-lg hover:bg-gray-400"
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Farm Modal */}
+      {showEditFarmModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md">
+            <h2 className="text-xl font-semibold mb-4">Edit Farm</h2>
+            <form onSubmit={handleEditFarm} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Farm Name</label>
+                <input
+                  type="text"
+                  value={farmForm.name}
+                  onChange={(e) => setFarmForm({...farmForm, name: e.target.value})}
+                  className="w-full border rounded-lg px-3 py-2"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Location</label>
+                <input
+                  type="text"
+                  value={farmForm.location}
+                  onChange={(e) => setFarmForm({...farmForm, location: e.target.value})}
+                  className="w-full border rounded-lg px-3 py-2"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Land Size</label>
+                <input
+                  type="text"
+                  value={farmForm.landSize}
+                  onChange={(e) => setFarmForm({...farmForm, landSize: e.target.value})}
+                  className="w-full border rounded-lg px-3 py-2"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Soil Type</label>
+                <input
+                  type="text"
+                  value={farmForm.soilType}
+                  onChange={(e) => setFarmForm({...farmForm, soilType: e.target.value})}
+                  className="w-full border rounded-lg px-3 py-2"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Map View URL</label>
+                <input
+                  type="url"
+                  value={farmForm.mapView}
+                  onChange={(e) => setFarmForm({...farmForm, mapView: e.target.value})}
+                  className="w-full border rounded-lg px-3 py-2"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                <textarea
+                  value={farmForm.description}
+                  onChange={(e) => setFarmForm({...farmForm, description: e.target.value})}
+                  className="w-full border rounded-lg px-3 py-2"
+                  rows="3"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Established Year</label>
+                <input
+                  type="number"
+                  value={farmForm.establishedYear}
+                  onChange={(e) => setFarmForm({...farmForm, establishedYear: e.target.value})}
+                  className="w-full border rounded-lg px-3 py-2"
+                />
+              </div>
+              <div className="flex gap-2">
+                <button
+                  type="submit"
+                  className="flex-1 bg-teal-600 text-white py-2 rounded-lg hover:bg-teal-700"
+                >
+                  Update Farm
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowEditFarmModal(false)}
+                  className="flex-1 bg-gray-300 text-gray-700 py-2 rounded-lg hover:bg-gray-400"
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Add Crop Modal */}
+      {showAddCropModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md">
+            <h2 className="text-xl font-semibold mb-4">Add New Crop</h2>
+            <form onSubmit={handleAddCrop} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Crop Name</label>
+                <input
+                  type="text"
+                  value={cropForm.name}
+                  onChange={(e) => setCropForm({...cropForm, name: e.target.value})}
+                  className="w-full border rounded-lg px-3 py-2"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Variety</label>
+                <input
+                  type="text"
+                  value={cropForm.variety}
+                  onChange={(e) => setCropForm({...cropForm, variety: e.target.value})}
+                  className="w-full border rounded-lg px-3 py-2"
+                  required
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Area</label>
+                  <input
+                    type="number"
+                    value={cropForm.area}
+                    onChange={(e) => setCropForm({...cropForm, area: e.target.value})}
+                    className="w-full border rounded-lg px-3 py-2"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Unit</label>
+                  <select
+                    value={cropForm.unit}
+                    onChange={(e) => setCropForm({...cropForm, unit: e.target.value})}
+                    className="w-full border rounded-lg px-3 py-2"
+                  >
+                    <option value="acres">Acres</option>
+                    <option value="hectares">Hectares</option>
+                    <option value="square_meters">Square Meters</option>
+                  </select>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Planting Date</label>
+                  <input
+                    type="date"
+                    value={cropForm.plantingDate}
+                    onChange={(e) => setCropForm({...cropForm, plantingDate: e.target.value})}
+                    className="w-full border rounded-lg px-3 py-2"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Expected Harvest Date</label>
+                  <input
+                    type="date"
+                    value={cropForm.expectedHarvestDate}
+                    onChange={(e) => setCropForm({...cropForm, expectedHarvestDate: e.target.value})}
+                    className="w-full border rounded-lg px-3 py-2"
+                    required
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Estimated Yield</label>
+                  <input
+                    type="number"
+                    value={cropForm.estimatedYield}
+                    onChange={(e) => setCropForm({...cropForm, estimatedYield: e.target.value})}
+                    className="w-full border rounded-lg px-3 py-2"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Yield Unit</label>
+                  <select
+                    value={cropForm.yieldUnit}
+                    onChange={(e) => setCropForm({...cropForm, yieldUnit: e.target.value})}
+                    className="w-full border rounded-lg px-3 py-2"
+                  >
+                    <option value="kg">kg</option>
+                    <option value="lb">lb</option>
+                    <option value="tons">tons</option>
+                    <option value="bushels">bushels</option>
+                  </select>
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Notes</label>
+                <textarea
+                  value={cropForm.notes}
+                  onChange={(e) => setCropForm({...cropForm, notes: e.target.value})}
+                  className="w-full border rounded-lg px-3 py-2"
+                  rows="3"
+                />
+              </div>
+              <div className="flex gap-2">
+                <button
+                  type="submit"
+                  className="flex-1 bg-teal-600 text-white py-2 rounded-lg hover:bg-teal-700"
+                >
+                  Add Crop
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowAddCropModal(false)}
+                  className="flex-1 bg-gray-300 text-gray-700 py-2 rounded-lg hover:bg-gray-400"
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      
     </div>
   );
 } 

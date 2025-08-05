@@ -274,6 +274,11 @@ export const addToFavorites = async (req, res) => {
         return res.status(400).json({ success: false, msg: "Product ID is required" });
     }
 
+    // Ensure user can only manage their own favorites
+    if (req.user._id.toString() !== userId) {
+        return res.status(403).json({ success: false, msg: "Not authorized to manage this user's favorites" });
+    }
+
     try {
         const user = await User.findById(userId);
         if (!user) {
@@ -303,6 +308,11 @@ export const addToFavorites = async (req, res) => {
 export const removeFromFavorites = async (req, res) => {
     const { userId, productId } = req.params;
 
+    // Ensure user can only manage their own favorites
+    if (req.user._id.toString() !== userId) {
+        return res.status(403).json({ success: false, msg: "Not authorized to manage this user's favorites" });
+    }
+
     try {
         const user = await User.findById(userId);
         if (!user) {
@@ -326,6 +336,11 @@ export const removeFromFavorites = async (req, res) => {
 // Get user favorites
 export const getUserFavorites = async (req, res) => {
     const { userId } = req.params;
+
+    // Ensure user can only view their own favorites
+    if (req.user._id.toString() !== userId) {
+        return res.status(403).json({ success: false, msg: "Not authorized to view this user's favorites" });
+    }
 
     try {
         const user = await User.findById(userId)

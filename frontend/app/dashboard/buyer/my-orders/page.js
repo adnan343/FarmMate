@@ -26,7 +26,9 @@ export default function MyOrdersPage() {
         return;
       }
 
-      const response = await fetch(`http://localhost:5000/api/orders/user/${userId}`);
+      const response = await fetch(`http://localhost:5000/api/orders/user/${userId}`, {
+        credentials: 'include'
+      });
       if (response.ok) {
         const result = await response.json();
         if (result.success) {

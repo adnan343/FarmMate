@@ -137,7 +137,7 @@ export const deleteProduct = async (req, res) => {
     }
 };
 
-// Get products by farmer
+// Get products by farmer (for marketplace - only published products)
 export const getProductsByFarmer = async (req, res) => {
     const { farmerId } = req.params;
     const { category } = req.query;
@@ -162,6 +162,69 @@ export const getProductsByFarmer = async (req, res) => {
         });
     } catch (error) {
         console.error('Error fetching farmer products:', error);
+        res.status(500).json({ success: false, msg: 'Internal Server Error' });
+    }
+};
+
+// Get farmer's own products (including unpublished ones)
+export const getFarmerOwnProducts = async (req, res) => {
+    const { farmerId } = req.params;
+    const { category } = req.query;
+    
+    try {
+        let query = { 
+            farmer: farmerId
+        };
+        
+        // Add category filter if provided
+        if (category && category !== 'all') {
+            query.category = category;
+        }
+        
+        const products = await Product.find(query)
+            .populate('farm', 'name location')
+            .sort({ createdAt: -1 });
+        
+        res.status(200).json({
+            success: true,
+            data: products
+        });
+    } catch (error) {
+        console.error('Error fetching farmer own products:', error);
+        res.status(500).json({ success: false, msg: 'Internal Server Error' });
+    }
+};
+
+// Publish/unpublish product
+export const toggleProductAvailability = async (req, res) => {
+    const { id } = req.params;
+    const { isAvailable } = req.body;
+    
+    try {
+        const product = await Product.findById(id);
+        
+        if (!product) {
+            return res.status(404).json({ success: false, msg: 'Product not found' });
+        }
+        
+        // Check if product has a price set before publishing
+        if (isAvailable && product.price <= 0) {
+            return res.status(400).json({ 
+                success: false, 
+                msg: 'Please set a price before publishing the product' 
+            });
+        }
+        
+        product.isAvailable = isAvailable;
+        await product.save();
+        
+        res.status(200).json({
+            success: true,
+            msg: `Product ${isAvailable ? 'published' : 'unpublished'} successfully`,
+            data: product
+        });
+    } catch (error) {
+        console.error('Error toggling product availability:', error);
         res.status(500).json({ success: false, msg: 'Internal Server Error' });
     }
 }; 

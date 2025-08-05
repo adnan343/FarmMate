@@ -4,6 +4,7 @@ import express from 'express';
 import { connectDB } from "./config/db.js";
 
 import cartRoutes from "./routes/cart.routes.js";
+import cropRoutes from "./routes/crop.routes.js";
 import farmRoutes from "./routes/farm.routes.js";
 import forumRoutes from "./routes/forum.routes.js";
 import orderRoutes from "./routes/order.routes.js";
@@ -23,6 +24,7 @@ const PORT = process.env.PORT || 3000;
 app.use(express.json()); // allows us to accept json data in the req.body.
 
 app.use("/api/farms", farmRoutes);
+app.use("/api/crops", cropRoutes);
 
 app.use("/api/users", userRoute);
 app.use("/api/cart", cartRoutes);
