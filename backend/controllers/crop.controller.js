@@ -2,6 +2,7 @@ import Crop from "../models/crop.model.js";
 import Farm from "../models/farm.model.js";
 import Product from "../models/product.model.js";
 import mongoose from "mongoose";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 
 // Get all crops for a farmer
 export const getCrops = async (req, res) => {
@@ -245,4 +246,103 @@ export const harvestCrop = async (req, res) => {
         console.error("Error harvesting crop", err.message);
         res.status(500).json({ success: false, message: "Server error" });
     }
-}; 
+};
+
+// Suggest crops using Gemini AI
+export const suggestCrops = async (req, res) => {
+    console.log("=== suggestCrops function started ===");
+    try {
+        const { farmId } = req.params;
+        console.log("1. Farm ID:", farmId);
+        
+        if (!mongoose.Types.ObjectId.isValid(farmId)) {
+            console.log("Invalid farm ID");
+            return res.status(400).json({ success: false, message: 'Invalid farm ID' });
+        }
+
+        console.log("2. Searching for farm...");
+        const farm = await Farm.findById(farmId);
+        console.log("3. Farm found:", !!farm);
+        if (!farm) {
+            return res.status(404).json({ success: false, message: 'Farm not found' });
+        }
+
+        console.log("4. Initializing Gemini AI...");
+        console.log("5. API Key present:", !!process.env.GEMINI_API);
+        
+        // Initialize Gemini AI
+        const genAI = new GoogleGenerativeAI(process.env.GEMINI_API);
+        console.log("6. Gemini AI instance created");
+        
+        const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+        console.log("7. Model initialized");
+
+        // Create the prompt
+        const prompt = `Give me suggestions on what crops should I plant on my farm based on the following data:
+
+Location: ${farm.location}
+Land area: ${farm.area}
+
+Your output should be a JSON array containing objects with the following structure:
+{
+  "cropName": "name of the crop",
+  "expectedYield": "expected yield with unit",
+  "plantingWindow": "best time to plant",
+  "reason": "brief explanation why this crop is suitable"
+}
+
+Please provide 3-5 crop suggestions that would be suitable for this farm location and size. Return only the JSON array, no additional text.`;
+
+        console.log("8. Making API call to Gemini...");
+        // Generate content using Gemini
+        const result = await model.generateContent(prompt);
+        console.log("9. Got result from Gemini");
+        
+        const response = await result.response;
+        console.log("10. Got response object");
+        
+        let text = response.text();
+        console.log("11. Response text length:", text.length);
+
+        try {
+            console.log("12. Processing response text...");
+            // Clean the response by removing markdown code blocks if present
+            if (text.includes('```json')) {
+                text = text.replace(/```json\n?/g, '').replace(/\n?```/g, '');
+            } else if (text.includes('```')) {
+                text = text.replace(/```\n?/g, '').replace(/\n?```/g, '');
+            }
+            
+            // Trim any extra whitespace
+            text = text.trim();
+            console.log("13. Cleaned text, attempting JSON parse...");
+            
+            // Parse the JSON response from Gemini
+            const suggestions = JSON.parse(text);
+            console.log("14. JSON parsed successfully, suggestions count:", suggestions.length);
+            
+            res.status(200).json({ 
+                success: true, 
+                data: suggestions,
+                farmInfo: {
+                    location: farm.location,
+                    area: farm.area
+                }
+            });
+        } catch (parseError) {
+            console.error("JSON Parse Error:", parseError.message);
+            console.error("Cleaned text:", text);
+            res.status(500).json({ 
+                success: false, 
+                message: "Error processing AI response",
+                rawResponse: text 
+            });
+        }
+
+    } catch (err) {
+        console.error("=== MAIN ERROR ===");
+        console.error("Error message:", err.message);
+        console.error("Error stack:", err.stack);
+        res.status(500).json({ success: false, message: "Server error", details: err.message });
+    }
+};

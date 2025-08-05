@@ -1,4 +1,6 @@
 const API_BASE = 'http://localhost:5000/api/users';
+const FARM_API_BASE = 'http://localhost:5000/api/farms';
+const PRODUCT_API_BASE = 'http://localhost:5000/api/products';
 
 export async function registerUser(data) {
   const res = await fetch(`${API_BASE}/register`, {
@@ -39,6 +41,182 @@ export async function getUserById(id) {
   });
   if (!res.ok) throw new Error('User not found');
   return res.json();
+}
+
+// Farm API functions
+export async function getFarmByOwner(ownerId) {
+  const res = await fetch(`${FARM_API_BASE}/owner/${ownerId}`, {
+    method: 'GET',
+    headers: { 'Content-Type': 'application/json' },
+  });
+  
+  const responseData = await res.json();
+  
+  if (!res.ok) {
+    throw new Error(responseData.message || 'Failed to fetch farm data');
+  }
+  
+  return responseData;
+}
+
+export async function getFarmById(farmId) {
+  const res = await fetch(`${FARM_API_BASE}/${farmId}`, {
+    method: 'GET',
+    headers: { 'Content-Type': 'application/json' },
+  });
+  
+  const responseData = await res.json();
+  
+  if (!res.ok) {
+    throw new Error(responseData.message || 'Failed to fetch farm data');
+  }
+  
+  return responseData;
+}
+
+export async function updateFarm(farmId, farmData) {
+  const res = await fetch(`${FARM_API_BASE}/${farmId}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(farmData),
+  });
+  
+  const responseData = await res.json();
+  
+  if (!res.ok) {
+    throw new Error(responseData.message || 'Failed to update farm');
+  }
+  
+  return responseData;
+}
+
+export async function createFarm(farmData) {
+  const res = await fetch(`${FARM_API_BASE}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(farmData),
+  });
+  
+  const responseData = await res.json();
+  
+  if (!res.ok) {
+    throw new Error(responseData.message || 'Failed to create farm');
+  }
+  
+  return responseData;
+}
+
+// Product API functions
+export async function getMarketplaceProducts(filters = {}) {
+  const queryParams = new URLSearchParams();
+  Object.entries(filters).forEach(([key, value]) => {
+    if (value) queryParams.append(key, value);
+  });
+  
+  const res = await fetch(`${PRODUCT_API_BASE}/marketplace?${queryParams}`, {
+    method: 'GET',
+    headers: { 'Content-Type': 'application/json' },
+  });
+  
+  const responseData = await res.json();
+  
+  if (!res.ok) {
+    throw new Error(responseData.msg || 'Failed to fetch marketplace products');
+  }
+  
+  return responseData;
+}
+
+export async function getHarvestedProductsByFarmer(farmerId) {
+  const res = await fetch(`${PRODUCT_API_BASE}/farmer/${farmerId}/harvested`, {
+    method: 'GET',
+    headers: { 'Content-Type': 'application/json' },
+  });
+  
+  const responseData = await res.json();
+  
+  if (!res.ok) {
+    throw new Error(responseData.msg || 'Failed to fetch harvested products');
+  }
+  
+  return responseData;
+}
+
+export async function getMarketplaceProductsByFarmer(farmerId) {
+  const res = await fetch(`${PRODUCT_API_BASE}/farmer/${farmerId}/marketplace`, {
+    method: 'GET',
+    headers: { 'Content-Type': 'application/json' },
+  });
+  
+  const responseData = await res.json();
+  
+  if (!res.ok) {
+    throw new Error(responseData.msg || 'Failed to fetch marketplace products');
+  }
+  
+  return responseData;
+}
+
+export async function createHarvestedProduct(productData) {
+  const res = await fetch(`${PRODUCT_API_BASE}/harvested`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(productData),
+  });
+  
+  const responseData = await res.json();
+  
+  if (!res.ok) {
+    throw new Error(responseData.msg || 'Failed to create harvested product');
+  }
+  
+  return responseData;
+}
+
+export async function addToMarketplace(productId, marketplaceData) {
+  const res = await fetch(`${PRODUCT_API_BASE}/${productId}/marketplace`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(marketplaceData),
+  });
+  
+  const responseData = await res.json();
+  
+  if (!res.ok) {
+    throw new Error(responseData.msg || 'Failed to add product to marketplace');
+  }
+  
+  return responseData;
+}
+
+export async function removeFromMarketplace(productId) {
+  const res = await fetch(`${PRODUCT_API_BASE}/${productId}/remove-marketplace`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+  });
+  
+  const responseData = await res.json();
+  
+  if (!res.ok) {
+    throw new Error(responseData.msg || 'Failed to remove product from marketplace');
+  }
+  
+  return responseData;
+}
+
+export async function getProductById(productId) {
+  const res = await fetch(`${PRODUCT_API_BASE}/${productId}`, {
+    method: 'GET',
+    headers: { 'Content-Type': 'application/json' },
+  });
+  
+  const responseData = await res.json();
+  
+  if (!res.ok) {
+    throw new Error(responseData.msg || 'Failed to fetch product');
+  }
+  
+  return responseData;
 }
 
 // Client-side logout function

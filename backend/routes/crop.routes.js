@@ -6,7 +6,8 @@ import {
     updateCropStage, 
     updateCrop, 
     deleteCrop, 
-    harvestCrop 
+    harvestCrop ,
+    suggestCrops
 } from '../controllers/crop.controller.js';
 import auth from '../middleware/auth.js';
 
@@ -32,5 +33,10 @@ router.delete('/:cropId', auth, deleteCrop);
 
 // Harvest crop and create product
 router.post('/:cropId/harvest', auth, harvestCrop);
+
+router.post('/suggest/:farmId', auth, suggestCrops);
+
+router.post('/suggest-test/:farmId', suggestCrops);
+
 
 export default router; 
