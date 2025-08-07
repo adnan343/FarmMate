@@ -41,6 +41,14 @@ export async function getUserById(id) {
   return res.json();
 }
 
+// Fetch all users
+export async function fetchAllUsers() {
+  const res = await fetch(`${API_BASE}`);
+  if (!res.ok) throw new Error('Failed to fetch users');
+  const data = await res.json();
+  return data.data;
+}
+
 // Client-side logout function
 export function logout() {
   // Clear all user-related cookies by setting them to expire in the past

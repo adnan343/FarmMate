@@ -15,9 +15,9 @@ connectDB();
 // Dummy farmers data
 const dummyFarmers = [
   {
-    name: 'John Smith',
-    email: 'john.smith@farm.com',
-    password: 'password123',
+    name: 'Azmain Adib',
+    email: 'azmain@gmial.com',
+    password: '123456',
     role: 'farmer',
     phone: '+1-555-0101',
     location: 'Springfield, IL',
@@ -343,6 +343,20 @@ async function seedData() {
     
     await testBuyer.save();
     console.log('Created test buyer account: buyer@test.com / password123');
+
+    // Create an admin account
+    const adminPassword = await bcrypt.hash('123456', 10);
+    const adminUser = new User({
+      name: 'Admin User',
+      email: 'admin@gmail.com',
+      password: adminPassword,
+      role: 'admin',
+      phone: '+1-555-9999',
+      location: 'Admin City, AC',
+      bio: 'Administrator account'
+    });
+    await adminUser.save();
+    console.log('Created admin account: admin@gmail.com / 123456');
     
     console.log('Data seeding completed successfully!');
     console.log('\nTest Accounts:');
