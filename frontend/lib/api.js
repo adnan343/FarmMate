@@ -1,6 +1,7 @@
 const API_BASE = 'http://localhost:5000/api/users';
 const FARM_API_BASE = 'http://localhost:5000/api/farms';
 const PRODUCT_API_BASE = 'http://localhost:5000/api/products';
+const CROP_API_BASE = 'http://localhost:5000/api/crops';
 
 export async function registerUser(data) {
   const res = await fetch(`${API_BASE}/register`, {
@@ -232,6 +233,55 @@ export function logout() {
   
   // Redirect to login page
   window.location.href = '/login';
+}
+
+// Crop API functions
+export async function getCropSuggestions(farmId) {
+  const res = await fetch(`${CROP_API_BASE}/suggest/${farmId}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+  });
+  
+  const responseData = await res.json();
+  
+  if (!res.ok) {
+    throw new Error(responseData.message || 'Failed to get crop suggestions');
+  }
+  
+  return responseData;
+}
+
+export async function getStoredCropSuggestions(farmId) {
+  const res = await fetch(`${CROP_API_BASE}/suggestions/${farmId}`, {
+    method: 'GET',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+  });
+  
+  const responseData = await res.json();
+  
+  if (!res.ok) {
+    throw new Error(responseData.message || 'Failed to get stored crop suggestions');
+  }
+  
+  return responseData;
+}
+
+export async function refreshCropSuggestions(farmId) {
+  const res = await fetch(`${CROP_API_BASE}/suggestions/${farmId}/refresh`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+  });
+  
+  const responseData = await res.json();
+  
+  if (!res.ok) {
+    throw new Error(responseData.message || 'Failed to refresh crop suggestions');
+  }
+  
+  return responseData;
 }
 
 // Server-side logout function (for API routes)

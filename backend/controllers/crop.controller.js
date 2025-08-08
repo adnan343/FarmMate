@@ -1,6 +1,7 @@
 import Crop from "../models/crop.model.js";
 import Farm from "../models/farm.model.js";
 import Product from "../models/product.model.js";
+import CropSuggestion from "../models/cropSuggestion.model.js";
 import mongoose from "mongoose";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
@@ -267,21 +268,40 @@ export const suggestCrops = async (req, res) => {
             return res.status(404).json({ success: false, message: 'Farm not found' });
         }
 
-        console.log("4. Initializing Gemini AI...");
-        console.log("5. API Key present:", !!process.env.GEMINI_API);
+        // Check if suggestions already exist in database
+        console.log("4. Checking for existing suggestions in database...");
+        let existingSuggestion = await CropSuggestion.findOne({ farm: farmId });
         
-        // Initialize Gemini AI
-        const genAI = new GoogleGenerativeAI(process.env.GEMINI_API);
-        console.log("6. Gemini AI instance created");
-        
-        const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
-        console.log("7. Model initialized");
+        if (existingSuggestion) {
+            console.log("5. Found existing suggestions in database");
+            return res.status(200).json({ 
+                success: true, 
+                data: existingSuggestion.suggestions,
+                farmInfo: existingSuggestion.farmInfo,
+                fromCache: true
+            });
+        }
 
-        // Create the prompt
-        const prompt = `Give me suggestions on what crops should I plant on my farm based on the following data:
+        console.log("6. No existing suggestions found, making API call to Gemini...");
+        console.log("7. API Key present:", !!(process.env.GEMINI_API || process.env.GOOGLE_API_KEY));
+
+        // Initialize Gemini AI
+        const apiKey = process.env.GEMINI_API || process.env.GOOGLE_API_KEY;
+        if (!apiKey) {
+            console.log("Missing Gemini API key (GEMINI_API or GOOGLE_API_KEY)");
+            return res.status(500).json({ success: false, message: 'Missing Gemini API key' });
+        }
+        const genAI = new GoogleGenerativeAI(apiKey);
+        console.log("8. Gemini AI instance created");
+
+        const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+        console.log("9. Model initialized");
+
+                       // Create the prompt
+               const prompt = `Give me suggestions on what crops should I plant on my farm based on the following data:
 
 Location: ${farm.location}
-Land area: ${farm.area}
+                Land area: ${farm.landSize}
 
 Your output should be a JSON array containing objects with the following structure:
 {
@@ -291,21 +311,23 @@ Your output should be a JSON array containing objects with the following structu
   "reason": "brief explanation why this crop is suitable"
 }
 
-Please provide 3-5 crop suggestions that would be suitable for this farm location and size. Return only the JSON array, no additional text.`;
+Please provide 3-5 crop suggestions that would be suitable for this farm location and size. Return ONLY the JSON array, no markdown formatting, no code blocks, no additional text or explanations.`;
 
-        console.log("8. Making API call to Gemini...");
+        console.log("10. Making API call to Gemini...");
         // Generate content using Gemini
         const result = await model.generateContent(prompt);
-        console.log("9. Got result from Gemini");
+        console.log("11. Got result from Gemini");
         
         const response = await result.response;
-        console.log("10. Got response object");
+        console.log("12. Got response object");
         
         let text = response.text();
-        console.log("11. Response text length:", text.length);
+        console.log("13. Response text length:", text.length);
 
         try {
-            console.log("12. Processing response text...");
+            console.log("14. Processing response text...");
+            console.log("Raw response:", text);
+            
             // Clean the response by removing markdown code blocks if present
             if (text.includes('```json')) {
                 text = text.replace(/```json\n?/g, '').replace(/\n?```/g, '');
@@ -313,21 +335,45 @@ Please provide 3-5 crop suggestions that would be suitable for this farm locatio
                 text = text.replace(/```\n?/g, '').replace(/\n?```/g, '');
             }
             
-            // Trim any extra whitespace
+            // Remove any leading/trailing whitespace and newlines
             text = text.trim();
-            console.log("13. Cleaned text, attempting JSON parse...");
+            
+            // Try to find JSON array in the response
+            const jsonMatch = text.match(/\[[\s\S]*\]/);
+            if (jsonMatch) {
+                text = jsonMatch[0];
+            }
+            
+            console.log("15. Cleaned text:", text);
+            console.log("15. Cleaned text length:", text.length);
             
             // Parse the JSON response from Gemini
             const suggestions = JSON.parse(text);
-            console.log("14. JSON parsed successfully, suggestions count:", suggestions.length);
+            console.log("16. JSON parsed successfully, suggestions count:", suggestions.length);
+            
+            // Store suggestions in database
+            console.log("17. Storing suggestions in database...");
+            const newSuggestion = new CropSuggestion({
+                farm: farmId,
+                farmer: farm.farmer,
+                suggestions: suggestions,
+                farmInfo: {
+                    location: farm.location,
+                    area: farm.landSize
+                }
+            });
+            
+            await newSuggestion.save();
+            console.log("18. Suggestions stored successfully");
             
             res.status(200).json({ 
                 success: true, 
                 data: suggestions,
                 farmInfo: {
                     location: farm.location,
-                    area: farm.area
-                }
+                    area: farm.landSize
+                },
+                fromCache: false
             });
         } catch (parseError) {
             console.error("JSON Parse Error:", parseError.message);
@@ -344,5 +390,54 @@ Please provide 3-5 crop suggestions that would be suitable for this farm locatio
         console.error("Error message:", err.message);
         console.error("Error stack:", err.stack);
         res.status(500).json({ success: false, message: "Server error", details: err.message });
+    }
+};
+
+// Get stored crop suggestions for a farm
+export const getStoredCropSuggestions = async (req, res) => {
+    try {
+        const { farmId } = req.params;
+        
+        if (!mongoose.Types.ObjectId.isValid(farmId)) {
+            return res.status(400).json({ success: false, message: 'Invalid farm ID' });
+        }
+
+        const suggestion = await CropSuggestion.findOne({ farm: farmId });
+        
+        if (!suggestion) {
+            return res.status(404).json({ success: false, message: 'No suggestions found for this farm' });
+        }
+
+        res.status(200).json({ 
+            success: true, 
+            data: suggestion.suggestions,
+            farmInfo: suggestion.farmInfo,
+            createdAt: suggestion.createdAt
+        });
+    } catch (err) {
+        console.error("Error fetching stored crop suggestions", err.message);
+        res.status(500).json({ success: false, message: "Server error" });
+    }
+};
+
+// Force refresh crop suggestions (delete existing and get new ones)
+export const refreshCropSuggestions = async (req, res) => {
+    try {
+        const { farmId } = req.params;
+        
+        if (!mongoose.Types.ObjectId.isValid(farmId)) {
+            return res.status(400).json({ success: false, message: 'Invalid farm ID' });
+        }
+
+        // Delete existing suggestions
+        await CropSuggestion.findOneAndDelete({ farm: farmId });
+        
+        // Call the suggestCrops function to get new suggestions
+        req.params.farmId = farmId;
+        return await suggestCrops(req, res);
+        
+    } catch (err) {
+        console.error("Error refreshing crop suggestions", err.message);
+        res.status(500).json({ success: false, message: "Server error" });
     }
 };

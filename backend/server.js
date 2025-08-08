@@ -19,7 +19,7 @@ app.use(cors({
     origin: 'http://localhost:3000', // frontend URL
     credentials: true               // allow cookies if needed
 }));
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 5000;
 
 app.use(express.json()); // allows us to accept json data in the req.body.
 
