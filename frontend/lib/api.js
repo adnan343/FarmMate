@@ -17,19 +17,26 @@ export async function registerUser(data) {
 }
 
 export async function loginUser(data) {
-  const res = await fetch(`${API_BASE}/login`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data),
-  });
-  
-  const responseData = await res.json();
-  
-  if (!res.ok) {
-    throw new Error(responseData.msg || 'Login failed');
+  try {
+    const res = await fetch(`${API_BASE}/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    
+    const responseData = await res.json();
+    
+    if (!res.ok) {
+      throw new Error(responseData.msg || 'Login failed');
+    }
+    
+    return responseData;
+  } catch (error) {
+    if (error.name === 'TypeError' && error.message.includes('fetch')) {
+      throw new Error('Unable to connect to server. Please make sure the backend server is running on http://localhost:5000');
+    }
+    throw error;
   }
-  
-  return responseData;
 }
 
 export async function getUserById(id) {
@@ -43,10 +50,64 @@ export async function getUserById(id) {
 
 // Fetch all users
 export async function fetchAllUsers() {
-  const res = await fetch(`${API_BASE}`);
-  if (!res.ok) throw new Error('Failed to fetch users');
-  const data = await res.json();
-  return data.data;
+  try {
+    const res = await fetch(`${API_BASE}`);
+    if (!res.ok) throw new Error('Failed to fetch users');
+    const data = await res.json();
+    return data.data;
+  } catch (error) {
+    if (error.name === 'TypeError' && error.message.includes('fetch')) {
+      throw new Error('Unable to connect to server. Please make sure the backend server is running on http://localhost:5000');
+    }
+    throw error;
+  }
+}
+
+// Update user role (admin function)
+export async function updateUserRole(userId, newRole) {
+  try {
+    const res = await fetch(`${API_BASE}/${userId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ role: newRole }),
+    });
+    
+    const responseData = await res.json();
+    
+    if (!res.ok) {
+      throw new Error(responseData.msg || 'Failed to update user role');
+    }
+    
+    return responseData;
+  } catch (error) {
+    if (error.name === 'TypeError' && error.message.includes('fetch')) {
+      throw new Error('Unable to connect to server. Please make sure the backend server is running on http://localhost:5000');
+    }
+    throw error;
+  }
+}
+
+// Delete user (admin function)
+export async function deleteUserById(userId) {
+  try {
+    const res = await fetch(`${API_BASE}/${userId}`, {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+    });
+    
+    const responseData = await res.json();
+    
+    if (!res.ok) {
+      throw new Error(responseData.msg || 'Failed to delete user');
+    }
+    
+    return responseData;
+  } catch (error) {
+    if (error.name === 'TypeError' && error.message.includes('fetch')) {
+      throw new Error('Unable to connect to server. Please make sure the backend server is running on http://localhost:5000');
+    }
+    throw error;
+  }
 }
 
 // Client-side logout function

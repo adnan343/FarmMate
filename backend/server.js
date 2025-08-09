@@ -19,7 +19,7 @@ app.use(cors({
     origin: 'http://localhost:3000', // frontend URL
     credentials: true               // allow cookies if needed
 }));
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 1283;
 
 app.use(express.json()); // allows us to accept json data in the req.body.
 
@@ -33,9 +33,17 @@ app.use("/api/orders", orderRoutes);
 app.use("/api/forum", forumRoutes);
 app.use("/api/qa", qaRoutes);
 
+// Add a simple health check endpoint
+app.get('/api/health', (req, res) => {
+    res.json({ status: 'Server is running', port: PORT });
+});
+
 app.listen(PORT, () => {
-    connectDB();
     console.log('Server running at http://localhost:'+PORT);
+    // Try to connect to database, but don't fail if it doesn't work
+    connectDB().catch(err => {
+        console.log('Database connection failed, but server is still running');
+    });
 });
 
 
