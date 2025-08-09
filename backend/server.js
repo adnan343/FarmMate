@@ -11,6 +11,7 @@ import orderRoutes from "./routes/order.routes.js";
 import productRoutes from "./routes/product.routes.js";
 import qaRoutes from "./routes/qa.routes.js";
 import userRoute from "./routes/user.route.js";
+import analyticsRoutes from "./routes/analytics.routes.js";
 
 dotenv.config();
 
@@ -19,6 +20,7 @@ app.use(cors({
     origin: 'http://localhost:3000', // frontend URL
     credentials: true               // allow cookies if needed
 }));
+
 const PORT = process.env.PORT || 5000;
 
 app.use(express.json()); // allows us to accept json data in the req.body.
@@ -32,10 +34,19 @@ app.use("/api/products", productRoutes);
 app.use("/api/orders", orderRoutes);
 app.use("/api/forum", forumRoutes);
 app.use("/api/qa", qaRoutes);
+app.use("/api/analytics", analyticsRoutes);
+
+// Add a simple health check endpoint
+app.get('/api/health', (req, res) => {
+    res.json({ status: 'Server is running', port: PORT });
+});
 
 app.listen(PORT, () => {
-    connectDB();
     console.log('Server running at http://localhost:'+PORT);
+    // Try to connect to database, but don't fail if it doesn't work
+    connectDB().catch(err => {
+        console.log('Database connection failed, but server is still running');
+    });
 });
 
 

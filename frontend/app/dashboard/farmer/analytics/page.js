@@ -1,6 +1,115 @@
-import { Activity, BarChart3, DollarSign, TrendingDown, TrendingUp } from 'lucide-react';
+"use client";
+
+import { Activity, BarChart3, DollarSign, TrendingDown, TrendingUp, Loader2, AlertCircle } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { getYieldAnalytics } from '../../../../lib/api';
+import dynamic from 'next/dynamic';
+import 'chart.js/auto';
+
+const Line = dynamic(() => import('react-chartjs-2').then((mod) => mod.Line), { ssr: false });
+const Bar = dynamic(() => import('react-chartjs-2').then((mod) => mod.Bar), { ssr: false });
 
 export default function AnalyticsPage() {
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [data, setData] = useState(null);
+  const [userId, setUserId] = useState(null);
+
+  useEffect(() => {
+    const getCookie = (name) => {
+      const value = `; ${document.cookie}`;
+      const parts = value.split(`; ${name}=`);
+      if (parts.length === 2) return parts.pop().split(';').shift();
+      return null;
+    };
+    const uid = getCookie('userId');
+    setUserId(uid);
+    if (!uid) {
+      setError('User not authenticated');
+      setLoading(false);
+      return;
+    }
+    (async () => {
+      try {
+        const resp = await getYieldAnalytics(uid);
+        setData(resp.data);
+      } catch (e) {
+        setError(e.message || 'Failed to load analytics');
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, []);
+
+  const timeSeriesChart = useMemo(() => {
+    if (!data?.timeSeries?.length) return null;
+    const labels = data.timeSeries.map((p) => p.month);
+    return {
+      labels,
+      datasets: [
+        {
+          label: 'Total Yield (kg)',
+          data: data.timeSeries.map((p) => p.totalYieldKg),
+          borderColor: 'rgb(16, 185, 129)',
+          backgroundColor: 'rgba(16, 185, 129, 0.3)',
+          tension: 0.3,
+        },
+      ],
+    };
+  }, [data]);
+
+  const perCropBarChart = useMemo(() => {
+    if (!data?.perCrop?.length) return null;
+    const labels = data.perCrop.map((c) => c.crop);
+    return {
+      labels,
+      datasets: [
+        {
+          label: 'Avg Yield (kg)',
+          data: data.perCrop.map((c) => c.averageYieldKg),
+          backgroundColor: 'rgba(59, 130, 246, 0.4)',
+          borderColor: 'rgb(59, 130, 246)',
+          borderWidth: 1,
+        },
+        {
+          label: 'Predicted Next Yield (kg)',
+          data: data.perCrop.map((c) => c.predictedNextYieldKg ?? 0),
+          backgroundColor: 'rgba(139, 92, 246, 0.4)',
+          borderColor: 'rgb(139, 92, 246)',
+          borderWidth: 1,
+        },
+      ],
+    };
+  }, [data]);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-64">
+        <Loader2 className="w-8 h-8 animate-spin text-teal-600" />
+        <span className="ml-2 text-gray-600">Loading analytics...</span>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <h1 className="text-3xl font-bold text-gray-900">Analytics</h1>
+        </div>
+        <div className="bg-red-50 border border-red-200 rounded-xl p-6">
+          <div className="flex items-center gap-3">
+            <AlertCircle className="w-6 h-6 text-red-600" />
+            <div>
+              <h3 className="text-lg font-semibold text-red-800">Error</h3>
+              <p className="text-red-700">{error}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -57,66 +166,38 @@ export default function AnalyticsPage() {
         </div>
       </div>
 
-      {/* Revenue Analysis */}
+      {/* Yield Time Series */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="bg-white rounded-xl shadow-sm p-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">Revenue by Crop</h2>
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-4 h-4 bg-green-500 rounded"></div>
-                <span className="text-gray-700">Rice</span>
-              </div>
-              <span className="font-medium">₹1,20,000</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-4 h-4 bg-blue-500 rounded"></div>
-                <span className="text-gray-700">Wheat</span>
-              </div>
-              <span className="font-medium">₹85,000</span>
-            </div>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-4 h-4 bg-purple-500 rounded"></div>
-                <span className="text-gray-700">Tomatoes</span>
-              </div>
-              <span className="font-medium">₹40,000</span>
-            </div>
-          </div>
+          <h2 className="text-xl font-semibold text-gray-900 mb-4">Monthly Yield (kg)</h2>
+          {timeSeriesChart ? (
+            <Line
+              data={timeSeriesChart}
+              options={{
+                responsive: true,
+                plugins: { legend: { display: true } },
+                scales: { y: { beginAtZero: true } },
+              }}
+            />
+          ) : (
+            <p className="text-gray-600">No yield data yet.</p>
+          )}
         </div>
 
         <div className="bg-white rounded-xl shadow-sm p-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">Monthly Trends</h2>
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <span className="text-gray-700">January</span>
-              <div className="flex items-center gap-2">
-                <div className="w-16 h-2 bg-gray-200 rounded-full">
-                  <div className="w-12 h-2 bg-teal-500 rounded-full"></div>
-                </div>
-                <span className="text-sm font-medium">₹1,80,000</span>
-              </div>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-gray-700">February</span>
-              <div className="flex items-center gap-2">
-                <div className="w-16 h-2 bg-gray-200 rounded-full">
-                  <div className="w-14 h-2 bg-teal-500 rounded-full"></div>
-                </div>
-                <span className="text-sm font-medium">₹2,10,000</span>
-              </div>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-gray-700">March</span>
-              <div className="flex items-center gap-2">
-                <div className="w-16 h-2 bg-gray-200 rounded-full">
-                  <div className="w-16 h-2 bg-teal-500 rounded-full"></div>
-                </div>
-                <span className="text-sm font-medium">₹2,45,000</span>
-              </div>
-            </div>
-          </div>
+          <h2 className="text-xl font-semibold text-gray-900 mb-4">Per-Crop Yield & Prediction (kg)</h2>
+          {perCropBarChart ? (
+            <Bar
+              data={perCropBarChart}
+              options={{
+                responsive: true,
+                plugins: { legend: { display: true } },
+                scales: { y: { beginAtZero: true } },
+              }}
+            />
+          ) : (
+            <p className="text-gray-600">No per-crop data yet.</p>
+          )}
         </div>
       </div>
 
@@ -207,29 +288,31 @@ export default function AnalyticsPage() {
         </div>
       </div>
 
-      {/* Market Insights */}
+      {/* Environmental Insights */}
       <div className="bg-white rounded-xl shadow-sm p-6">
-        <h2 className="text-xl font-semibold text-gray-900 mb-4">Market Insights</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="text-center p-4 bg-green-50 rounded-lg">
-            <DollarSign className="w-8 h-8 text-green-600 mx-auto mb-2" />
-            <p className="text-lg font-semibold text-gray-900">Rice Price</p>
-            <p className="text-2xl font-bold text-green-600">₹2,500/ton</p>
-            <p className="text-sm text-green-600">+15% from last month</p>
+        <h2 className="text-xl font-semibold text-gray-900 mb-4">Environmental Summary</h2>
+        {data?.env ? (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="text-center p-4 bg-blue-50 rounded-lg">
+              <p className="text-lg font-semibold text-gray-900">Location</p>
+              <p className="text-2xl font-bold text-blue-600">{data.env.location}</p>
+            </div>
+            {data.env.monthly?.slice(-1).map((m) => (
+              <div key={m.month} className="text-center p-4 bg-green-50 rounded-lg">
+                <p className="text-lg font-semibold text-gray-900">Last Month Avg Temp</p>
+                <p className="text-2xl font-bold text-green-600">{m.avgTempC ?? '-'} °C</p>
+              </div>
+            ))}
+            {data.env.monthly?.slice(-1).map((m) => (
+              <div key={m.month + '-p'} className="text-center p-4 bg-purple-50 rounded-lg">
+                <p className="text-lg font-semibold text-gray-900">Last Month Precip</p>
+                <p className="text-2xl font-bold text-purple-600">{m.totalPrecipMm} mm</p>
+              </div>
+            ))}
           </div>
-          <div className="text-center p-4 bg-blue-50 rounded-lg">
-            <DollarSign className="w-8 h-8 text-blue-600 mx-auto mb-2" />
-            <p className="text-lg font-semibold text-gray-900">Wheat Price</p>
-            <p className="text-2xl font-bold text-blue-600">₹1,800/ton</p>
-            <p className="text-sm text-blue-600">+8% from last month</p>
-          </div>
-          <div className="text-center p-4 bg-purple-50 rounded-lg">
-            <DollarSign className="w-8 h-8 text-purple-600 mx-auto mb-2" />
-            <p className="text-lg font-semibold text-gray-900">Tomato Price</p>
-            <p className="text-2xl font-bold text-purple-600">₹45/kg</p>
-            <p className="text-sm text-purple-600">+12% from last month</p>
-          </div>
-        </div>
+        ) : (
+          <p className="text-gray-600">Environmental data unavailable.</p>
+        )}
       </div>
     </div>
   );
