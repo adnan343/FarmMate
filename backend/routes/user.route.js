@@ -1,18 +1,21 @@
 import express from 'express';
-import { createUser, deleteUser, getUserById, getUsers, loginUser, updateUser } from "../controllers/user.controller.js";
+import auth from '../middleware/auth.js';
+import { createUser, updateUser, deleteUser, loginUser, getUserById, getUsers, getUserIdByUsername, getFarmers, addToFavorites, removeFromFavorites, getUserFavorites } from '../controllers/user.controller.js';
 
 const router = express.Router();
 
-router.post('/', createUser);
-
-router.delete('/:id', deleteUser);
-//
-router.get('/', getUsers);
-//
-router.put('/:id', updateUser);
-
-router.post('/login', loginUser)
-
+router.post('/register', createUser);
+router.post('/login', loginUser);
 router.get('/:id', getUserById);
+router.delete('/:id', deleteUser);
+router.get('/', getUsers);
+router.put('/:id', updateUser);
+router.get('/email/:email', getUserIdByUsername);
+router.get('/farmers/all', getFarmers);
 
-export default router;  ///api/farms
+// Favorites routes
+router.post('/:userId/favorites', auth, addToFavorites);
+router.delete('/:userId/favorites/:productId', auth, removeFromFavorites);
+router.get('/:userId/favorites', auth, getUserFavorites);
+
+export default router;

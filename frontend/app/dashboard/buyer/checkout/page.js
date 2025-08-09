@@ -57,14 +57,18 @@ export default function CheckoutPage() {
         return;
       }
 
-      const response = await fetch(`http://localhost:5000/api/cart/${userId}`);
+      const response = await fetch(`http://localhost:5000/api/cart/${userId}`, {
+        credentials: 'include'
+      });
       if (response.ok) {
         const result = await response.json();
         if (result.success) {
           setCart(result.data);
           
           // Pre-fill shipping info with user data
-          const userResponse = await fetch(`http://localhost:5000/api/users/${userId}`);
+          const userResponse = await fetch(`http://localhost:5000/api/users/${userId}`, {
+            credentials: 'include'
+          });
           if (userResponse.ok) {
             const userResult = await userResponse.json();
             if (userResult.success) {
@@ -126,15 +130,6 @@ export default function CheckoutPage() {
 
     setProcessing(true);
     try {
-      // Simulate order processing
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      // Generate order ID
-      const newOrderId = 'ORD-' + Date.now().toString().slice(-8);
-      setOrderId(newOrderId);
-      setOrderComplete(true);
-
-      // Clear cart after successful order
       const cookies = document.cookie.split(';').reduce((acc, cookie) => {
         const [key, value] = cookie.trim().split('=');
         acc[key] = value;
@@ -143,9 +138,40 @@ export default function CheckoutPage() {
 
       const userId = cookies.userId;
       
-      await fetch(`http://localhost:5000/api/cart/${userId}/clear`, {
-        method: 'DELETE',
+      // Create order with shipping address
+      const orderData = {
+        shippingAddress: {
+          street: shippingInfo.address,
+          city: shippingInfo.city,
+          state: shippingInfo.state,
+          zipCode: shippingInfo.zipCode,
+          country: shippingInfo.country
+        },
+        paymentMethod: 'card',
+        notes: `Order placed by ${shippingInfo.firstName} ${shippingInfo.lastName}`
+      };
+
+      const response = await fetch(`http://localhost:5000/api/orders/${userId}/checkout`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify(orderData),
       });
+
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success) {
+          setOrderId(result.data._id);
+          setOrderComplete(true);
+        } else {
+          alert(result.msg || 'There was an error processing your order. Please try again.');
+        }
+      } else {
+        const errorData = await response.json();
+        alert(errorData.msg || 'There was an error processing your order. Please try again.');
+      }
 
     } catch (error) {
       console.error('Error processing order:', error);

@@ -1,7 +1,7 @@
 const API_BASE = 'http://localhost:5000/api/users';
 
 export async function registerUser(data) {
-  const res = await fetch(`${API_BASE}`, {
+  const res = await fetch(`${API_BASE}/register`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
