@@ -11,6 +11,7 @@ import orderRoutes from "./routes/order.routes.js";
 import productRoutes from "./routes/product.routes.js";
 import qaRoutes from "./routes/qa.routes.js";
 import userRoute from "./routes/user.route.js";
+import analyticsRoutes from "./routes/analytics.routes.js";
 
 dotenv.config();
 
@@ -33,6 +34,7 @@ app.use("/api/products", productRoutes);
 app.use("/api/orders", orderRoutes);
 app.use("/api/forum", forumRoutes);
 app.use("/api/qa", qaRoutes);
+app.use("/api/analytics", analyticsRoutes);
 
 // Add a simple health check endpoint
 app.get('/api/health', (req, res) => {
