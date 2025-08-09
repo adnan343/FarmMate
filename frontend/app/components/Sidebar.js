@@ -104,6 +104,13 @@ export default function Sidebar({ userRole, userName, userEmail }) {
             children: []
           },
           {
+            id: 'my-products',
+            label: 'My Products',
+            icon: Package,
+            path: '/dashboard/farmer/my-products',
+            children: []
+          },
+          {
             id: 'community',
             label: 'Community Forum',
             icon: Users,

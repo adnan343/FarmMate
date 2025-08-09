@@ -1,4 +1,6 @@
-const API_BASE = 'http://localhost:5000/api/users';
+import { getApiUrl, getErrorMessage } from './apiConfig';
+
+const API_BASE = getApiUrl('/users');
 
 export async function registerUser(data) {
   const res = await fetch(`${API_BASE}/register`, {
@@ -33,7 +35,7 @@ export async function loginUser(data) {
     return responseData;
   } catch (error) {
     if (error.name === 'TypeError' && error.message.includes('fetch')) {
-      throw new Error('Unable to connect to server. Please make sure the backend server is running on http://localhost:5000');
+      throw new Error(getErrorMessage());
     }
     throw error;
   }
@@ -57,7 +59,7 @@ export async function fetchAllUsers() {
     return data.data;
   } catch (error) {
     if (error.name === 'TypeError' && error.message.includes('fetch')) {
-      throw new Error('Unable to connect to server. Please make sure the backend server is running on http://localhost:5000');
+      throw new Error(getErrorMessage());
     }
     throw error;
   }
@@ -81,7 +83,7 @@ export async function updateUserRole(userId, newRole) {
     return responseData;
   } catch (error) {
     if (error.name === 'TypeError' && error.message.includes('fetch')) {
-      throw new Error('Unable to connect to server. Please make sure the backend server is running on http://localhost:5000');
+      throw new Error(getErrorMessage());
     }
     throw error;
   }
@@ -104,7 +106,7 @@ export async function deleteUserById(userId) {
     return responseData;
   } catch (error) {
     if (error.name === 'TypeError' && error.message.includes('fetch')) {
-      throw new Error('Unable to connect to server. Please make sure the backend server is running on http://localhost:5000');
+      throw new Error(getErrorMessage());
     }
     throw error;
   }
