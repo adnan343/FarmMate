@@ -1,6 +1,6 @@
 'use client';
 
-import { Calendar, Edit, MapPin, Plus, Scissors, Trash2 } from 'lucide-react';
+import { Calendar, Edit, MapPin, Plus, Trash2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 export default function FarmProfilePage() {
@@ -238,6 +238,24 @@ export default function FarmProfilePage() {
     }
   };
 
+  const handleGenerateTimelineForCrop = async (cropId) => {
+    try {
+      const res = await fetch(`http://localhost:5000/api/crops/${cropId}/timeline/generate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+      });
+      const data = await res.json();
+      if (data.success) {
+        alert('Timeline generated for this crop. Check Planting Calendar to manage tasks.');
+      } else {
+        alert(data.message || 'Failed to generate timeline');
+      }
+    } catch (e) {
+      alert(e.message || 'Failed to generate timeline');
+    }
+  };
+
 
 
   const getStageColor = (stage) => {
@@ -393,6 +411,13 @@ export default function FarmProfilePage() {
                     <span className={`px-2 py-1 text-xs rounded-full ${getStageColor(crop.stage)}`}>
                       {crop.stage}
                     </span>
+                    <button
+                      onClick={() => handleGenerateTimelineForCrop(crop._id)}
+                      className="text-xs px-2 py-1 rounded border hover:bg-white bg-white"
+                      title="Generate timeline for this crop"
+                    >
+                      Generate Timeline
+                    </button>
                                          {crop.stage === 'harvested' && (
                        <span className="text-xs text-green-600 font-medium">
                          Product created!

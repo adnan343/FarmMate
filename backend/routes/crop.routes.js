@@ -1,15 +1,22 @@
 import express from 'express';
-import { 
-    getCrops, 
-    getCropsByFarm, 
-    addCrop, 
-    updateCropStage, 
-    updateCrop, 
-    deleteCrop, 
-    harvestCrop,
-    suggestCrops,
+import {
+    acceptCropSuggestion,
+    addCrop,
+    addTimelineItem,
+    deleteCrop,
+    deleteTimelineItem,
+    generateCropTimeline,
+    generateTimelineForCrop,
+    getCrops,
+    getCropsByFarm,
+    getCropTimeline,
     getStoredCropSuggestions,
-    refreshCropSuggestions
+    harvestCrop,
+    refreshCropSuggestions,
+    suggestCrops,
+    updateCrop,
+    updateCropStage,
+    updateTimelineItem
 } from '../controllers/crop.controller.js';
 import auth from '../middleware/auth.js';
 
@@ -48,6 +55,21 @@ router.get('/suggestions-test/:farmId', getStoredCropSuggestions);
 
 // Refresh crop suggestions (force new API call)
 router.post('/suggestions/:farmId/refresh', auth, refreshCropSuggestions);
+
+// Generate a crop timeline using Gemini for a suggestion
+router.post('/timeline/:farmId/generate', auth, generateCropTimeline);
+
+// Accept a suggestion and create crop with timeline
+router.post('/suggestions/:farmId/accept', auth, acceptCropSuggestion);
+
+// Timeline CRUD for a crop
+router.get('/:cropId/timeline', auth, getCropTimeline);
+router.post('/:cropId/timeline', auth, addTimelineItem);
+router.put('/:cropId/timeline/:index', auth, updateTimelineItem);
+router.delete('/:cropId/timeline/:index', auth, deleteTimelineItem);
+
+// Generate timeline for an existing crop
+router.post('/:cropId/timeline/generate', auth, generateTimelineForCrop);
 
 
 export default router; 

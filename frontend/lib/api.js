@@ -284,6 +284,88 @@ export async function refreshCropSuggestions(farmId) {
   return responseData;
 }
 
+// Timeline and suggestion acceptance APIs
+export async function generateCropTimeline(farmId, payload) {
+  const res = await fetch(`${CROP_API_BASE}/timeline/${farmId}/generate`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message || 'Failed to generate timeline');
+  return data;
+}
+
+export async function acceptSuggestionAndCreateCrop(farmId, payload) {
+  const res = await fetch(`${CROP_API_BASE}/suggestions/${farmId}/accept`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message || 'Failed to create crop');
+  return data;
+}
+
+export async function getCropTimeline(cropId) {
+  const res = await fetch(`${CROP_API_BASE}/${cropId}/timeline`, {
+    method: 'GET',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message || 'Failed to fetch timeline');
+  return data;
+}
+
+export async function addTimelineItem(cropId, item) {
+  const res = await fetch(`${CROP_API_BASE}/${cropId}/timeline`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify(item),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message || 'Failed to add timeline item');
+  return data;
+}
+
+export async function updateTimelineItem(cropId, index, updates) {
+  const res = await fetch(`${CROP_API_BASE}/${cropId}/timeline/${index}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify(updates),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message || 'Failed to update timeline item');
+  return data;
+}
+
+export async function deleteTimelineItem(cropId, index) {
+  const res = await fetch(`${CROP_API_BASE}/${cropId}/timeline/${index}`, {
+    method: 'DELETE',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message || 'Failed to delete timeline item');
+  return data;
+}
+
+export async function generateTimelineForCrop(cropId) {
+  const res = await fetch(`${CROP_API_BASE}/${cropId}/timeline/generate`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message || 'Failed to generate timeline for crop');
+  return data;
+}
+
 // Server-side logout function (for API routes)
 import { NextResponse } from 'next/server';
 

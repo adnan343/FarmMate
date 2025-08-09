@@ -1,8 +1,8 @@
 'use client';
 
-import { Calendar, Lightbulb, MapPin, TrendingUp, RefreshCw, Loader2, AlertCircle } from 'lucide-react';
+import { Calendar, Lightbulb, MapPin, TrendingUp, RefreshCw, Loader2, AlertCircle, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { getCropSuggestions, getStoredCropSuggestions, refreshCropSuggestions } from '../../../../lib/api';
+import { getCropSuggestions, getStoredCropSuggestions, refreshCropSuggestions, generateCropTimeline, acceptSuggestionAndCreateCrop } from '../../../../lib/api';
 
 export default function CropSuggestionsPage() {
   const [suggestions, setSuggestions] = useState([]);
@@ -13,6 +13,21 @@ export default function CropSuggestionsPage() {
   const [user, setUser] = useState(null);
   const [farms, setFarms] = useState([]);
   const [selectedFarm, setSelectedFarm] = useState(null);
+  const [accepting, setAccepting] = useState(false);
+  const [showAcceptModal, setShowAcceptModal] = useState(false);
+  const [selectedSuggestion, setSelectedSuggestion] = useState(null);
+  const [cropInput, setCropInput] = useState({
+    variety: 'General',
+    area: 1,
+    unit: 'acres',
+    plantingDate: '',
+    expectedHarvestDate: '',
+    estimatedYield: '',
+    yieldUnit: 'kg',
+    notes: ''
+  });
+  const [timelinePreview, setTimelinePreview] = useState([]);
+  const [genLoading, setGenLoading] = useState(false);
 
   useEffect(() => {
     fetchUserAndFarms();
@@ -117,9 +132,47 @@ export default function CropSuggestionsPage() {
   };
 
   const handleAcceptSuggestion = (suggestion) => {
-    // This would typically navigate to a crop creation form
-    // For now, just show an alert
-    alert(`Accepted suggestion for ${suggestion.cropName}. You can now add this crop to your farm.`);
+    setSelectedSuggestion(suggestion);
+    setShowAcceptModal(true);
+  };
+
+  const handleGenerateTimeline = async () => {
+    if (!selectedFarm || !selectedSuggestion) return;
+    try {
+      setGenLoading(true);
+      const payload = {
+        suggestion: selectedSuggestion,
+        plantingStartDate: cropInput.plantingDate || undefined,
+      };
+      const res = await generateCropTimeline(selectedFarm._id, payload);
+      setTimelinePreview(res.data || []);
+    } catch (e) {
+      alert(e.message || 'Failed to generate timeline');
+    } finally {
+      setGenLoading(false);
+    }
+  };
+
+  const handleConfirmAccept = async () => {
+    if (!selectedFarm || !user || !selectedSuggestion) return;
+    try {
+      setAccepting(true);
+      const payload = {
+        farmerId: user._id,
+        suggestion: selectedSuggestion,
+        cropInput,
+        timeline: timelinePreview,
+      };
+      await acceptSuggestionAndCreateCrop(selectedFarm._id, payload);
+      setShowAcceptModal(false);
+      setSelectedSuggestion(null);
+      setTimelinePreview([]);
+      alert('Crop created with timeline! You can manage it in Planting Calendar.');
+    } catch (e) {
+      alert(e.message || 'Failed to create crop');
+    } finally {
+      setAccepting(false);
+    }
   };
 
   if (loading) {
@@ -258,6 +311,97 @@ export default function CropSuggestionsPage() {
             <div>
               <h3 className="text-lg font-semibold text-yellow-800">No Suggestions Available</h3>
               <p className="text-yellow-700">Click "Get New Suggestions" to generate crop recommendations for your farm.</p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showAcceptModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="bg-white rounded-xl w-full max-w-3xl p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-xl font-semibold">Accept Suggestion: {selectedSuggestion?.cropName}</h3>
+              <button className="p-2" onClick={() => setShowAcceptModal(false)}>
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-3">
+                <div>
+                  <label className="text-sm text-gray-600">Variety</label>
+                  <input className="w-full border rounded px-3 py-2" value={cropInput.variety} onChange={(e)=>setCropInput({...cropInput, variety: e.target.value})} />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-sm text-gray-600">Area</label>
+                    <input type="number" className="w-full border rounded px-3 py-2" value={cropInput.area} onChange={(e)=>setCropInput({...cropInput, area: e.target.value})} />
+                  </div>
+                  <div>
+                    <label className="text-sm text-gray-600">Unit</label>
+                    <select className="w-full border rounded px-3 py-2" value={cropInput.unit} onChange={(e)=>setCropInput({...cropInput, unit: e.target.value})}>
+                      <option value="acres">Acres</option>
+                      <option value="hectares">Hectares</option>
+                      <option value="square_meters">Square Meters</option>
+                    </select>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-sm text-gray-600">Planting Date</label>
+                    <input type="date" className="w-full border rounded px-3 py-2" value={cropInput.plantingDate} onChange={(e)=>setCropInput({...cropInput, plantingDate: e.target.value})} />
+                  </div>
+                  <div>
+                    <label className="text-sm text-gray-600">Expected Harvest</label>
+                    <input type="date" className="w-full border rounded px-3 py-2" value={cropInput.expectedHarvestDate} onChange={(e)=>setCropInput({...cropInput, expectedHarvestDate: e.target.value})} />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-sm text-gray-600">Estimated Yield</label>
+                    <input type="number" className="w-full border rounded px-3 py-2" value={cropInput.estimatedYield} onChange={(e)=>setCropInput({...cropInput, estimatedYield: e.target.value})} />
+                  </div>
+                  <div>
+                    <label className="text-sm text-gray-600">Yield Unit</label>
+                    <select className="w-full border rounded px-3 py-2" value={cropInput.yieldUnit} onChange={(e)=>setCropInput({...cropInput, yieldUnit: e.target.value})}>
+                      <option value="kg">kg</option>
+                      <option value="lb">lb</option>
+                      <option value="tons">tons</option>
+                      <option value="bushels">bushels</option>
+                    </select>
+                  </div>
+                </div>
+                <div>
+                  <label className="text-sm text-gray-600">Notes</label>
+                  <textarea className="w-full border rounded px-3 py-2" rows={3} value={cropInput.notes} onChange={(e)=>setCropInput({...cropInput, notes: e.target.value})} />
+                </div>
+                <div className="flex gap-2">
+                  <button onClick={handleGenerateTimeline} disabled={genLoading} className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+                    {genLoading ? 'Generating...' : 'Generate Timeline'}
+                  </button>
+                </div>
+              </div>
+              <div>
+                <h4 className="font-medium mb-2">Timeline Preview</h4>
+                <div className="max-h-80 overflow-auto space-y-2">
+                  {timelinePreview.length === 0 && (
+                    <p className="text-sm text-gray-500">No timeline generated yet.</p>
+                  )}
+                  {timelinePreview.map((t, i) => (
+                    <div key={i} className="border rounded p-2">
+                      <p className="font-medium">{t.title}</p>
+                      <p className="text-xs text-gray-500">{t.category}</p>
+                      <p className="text-sm">{t.description}</p>
+                      <p className="text-xs text-gray-500">{[t.startDate, t.endDate].filter(Boolean).join(' → ') || t.dueDate || ''}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+            <div className="flex justify-end gap-2 mt-4">
+              <button className="px-4 py-2 rounded border" onClick={()=>setShowAcceptModal(false)}>Cancel</button>
+              <button onClick={handleConfirmAccept} disabled={accepting} className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
+                {accepting ? 'Saving...' : 'Save Crop'}
+              </button>
             </div>
           </div>
         </div>

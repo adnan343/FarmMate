@@ -74,6 +74,43 @@ const cropSchema = new mongoose.Schema({
         type: Number,
         min: 0
     },
+    // Original suggestion snapshot (if crop was created from AI suggestion)
+    acceptedSuggestion: {
+        cropName: String,
+        expectedYield: String,
+        plantingWindow: String,
+        reason: String
+    },
+    // Timeline of recommended tasks throughout the crop cycle
+    timeline: [
+        {
+            title: { type: String, required: true },
+            category: {
+                type: String,
+                enum: [
+                    'soil_preparation',
+                    'planting',
+                    'watering',
+                    'irrigation',
+                    'fertilizing',
+                    'weeding',
+                    'pest_control',
+                    'monitoring',
+                    'pruning',
+                    'harvest',
+                    'other'
+                ],
+                default: 'other'
+            },
+            description: { type: String, default: '' },
+            startDate: { type: Date },
+            endDate: { type: Date },
+            dueDate: { type: Date },
+            frequency: { type: String, default: '' },
+            completed: { type: Boolean, default: false },
+            notes: { type: String, default: '' }
+        }
+    ],
     product: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Product'
