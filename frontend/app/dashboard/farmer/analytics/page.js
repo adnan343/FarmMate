@@ -1,14 +1,5 @@
 "use client";
 
-import { Activity, BarChart3, DollarSign, TrendingDown, TrendingUp, Loader2, AlertCircle } from 'lucide-react';
-import { useEffect, useMemo, useState } from 'react';
-import { getYieldAnalytics } from '../../../../lib/api';
-import dynamic from 'next/dynamic';
-import 'chart.js/auto';
-
-const Line = dynamic(() => import('react-chartjs-2').then((mod) => mod.Line), { ssr: false });
-const Bar = dynamic(() => import('react-chartjs-2').then((mod) => mod.Bar), { ssr: false });
-"use client";
 import { useEffect, useMemo, useState } from 'react';
 import { BarChart3, TrendingUp, TrendingDown } from 'lucide-react';
 import {
@@ -40,6 +31,9 @@ ChartJS.register(
 );
 
 export default function AnalyticsPage() {
+  const [user, setUser] = useState(null);
+  const [crops, setCrops] = useState([]);
+  const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [data, setData] = useState(null);
@@ -59,63 +53,74 @@ export default function AnalyticsPage() {
       setLoading(false);
       return;
     }
-    (async () => {
+    setUser({ _id: uid });
+
+    const fetchAnalyticsData = async () => {
       try {
-        const resp = await getYieldAnalytics(uid);
-        setData(resp.data);
-      } catch (e) {
-        setError(e.message || 'Failed to load analytics');
+        const [cropsRes, ordersRes] = await Promise.all([
+          fetch(`http://localhost:5000/api/crops/farmer/${uid}`, { credentials: 'include' }),
+          fetch(`http://localhost:5000/api/orders/farmer/${uid}?status=delivered`, { credentials: 'include' })
+        ]);
+
+        const cropsData = await cropsRes.json();
+        if (cropsData.success) setCrops(cropsData.data);
+
+        const ordersData = await ordersRes.json();
+        if (ordersData.success) setOrders(ordersData.data);
+
+      } catch (error) {
+        console.error('Error fetching analytics data:', error);
       } finally {
         setLoading(false);
       }
-    })();
+    };
+    fetchAnalyticsData();
   }, []);
 
-  const timeSeriesChart = useMemo(() => {
-    if (!data?.timeSeries?.length) return null;
-    const labels = data.timeSeries.map((p) => p.month);
-    return {
-      labels,
-      datasets: [
-        {
-          label: 'Total Yield (kg)',
-          data: data.timeSeries.map((p) => p.totalYieldKg),
-          borderColor: 'rgb(16, 185, 129)',
-          backgroundColor: 'rgba(16, 185, 129, 0.3)',
-          tension: 0.3,
-        },
-      ],
-    };
-  }, [data]);
+  const totals = useMemo(() => {
+    const expected = crops.reduce((sum, c) => sum + (Number(c.estimatedYield) || 0), 0);
+    const predicted = crops.reduce((sum, c) => sum + (Number(c.predictedYield) || 0), 0);
+    const actual = crops.reduce((sum, c) => sum + (Number(c.actualYield) || 0), 0);
 
-  const perCropBarChart = useMemo(() => {
-    if (!data?.perCrop?.length) return null;
-    const labels = data.perCrop.map((c) => c.crop);
-    return {
-      labels,
-      datasets: [
-        {
-          label: 'Avg Yield (kg)',
-          data: data.perCrop.map((c) => c.averageYieldKg),
-          backgroundColor: 'rgba(59, 130, 246, 0.4)',
-          borderColor: 'rgb(59, 130, 246)',
-          borderWidth: 1,
-        },
-        {
-          label: 'Predicted Next Yield (kg)',
-          data: data.perCrop.map((c) => c.predictedNextYieldKg ?? 0),
-          backgroundColor: 'rgba(139, 92, 246, 0.4)',
-          borderColor: 'rgb(139, 92, 246)',
-          borderWidth: 1,
-        },
-      ],
-    };
-  }, [data]);
+    let totalIncome = 0;
+    const revenueByProductId = new Map();
+    
+    // Calculate income from delivered orders
+    orders.forEach(order => {
+      // Only count delivered orders
+      if (order.status === 'delivered') {
+        order.items.forEach(item => {
+          // Check if this item belongs to the current farmer
+          // Handle both ObjectId and string comparisons
+          const itemFarmerId = item.farmer?._id || item.farmer;
+          const currentUserId = user?._id;
+          
+          if (itemFarmerId && currentUserId && 
+              itemFarmerId.toString() === currentUserId.toString()) {
+            const itemRevenue = item.price * item.quantity;
+            totalIncome += itemRevenue;
+            
+            // Store revenue by product ID for per-crop analysis
+            const productId = item.productId?._id || item.productId;
+            if (productId) {
+              revenueByProductId.set(productId.toString(), 
+                (revenueByProductId.get(productId.toString()) || 0) + itemRevenue);
+            }
+          }
+        });
+      }
+    });
+
+    const totalCost = crops.reduce((sum, c) => sum + (Number(c.totalCost) || 0), 0);
+    const netProfit = totalIncome - totalCost;
+
+    return { expected, predicted, actual, totalIncome, totalCost, netProfit, revenueByProductId };
+  }, [crops, orders, user]);
 
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-64">
-        <Loader2 className="w-8 h-8 animate-spin text-teal-600" />
+        <div className="w-8 h-8 animate-spin text-teal-600">Loading...</div>
         <span className="ml-2 text-gray-600">Loading analytics...</span>
       </div>
     );
@@ -129,7 +134,7 @@ export default function AnalyticsPage() {
         </div>
         <div className="bg-red-50 border border-red-200 rounded-xl p-6">
           <div className="flex items-center gap-3">
-            <AlertCircle className="w-6 h-6 text-red-600" />
+            <div className="w-6 h-6 text-red-600">!</div>
             <div>
               <h3 className="text-lg font-semibold text-red-800">Error</h3>
               <p className="text-red-700">{error}</p>
@@ -138,64 +143,6 @@ export default function AnalyticsPage() {
         </div>
       </div>
     );
-  }
-
-  const [user, setUser] = useState(null);
-  const [crops, setCrops] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [orders, setOrders] = useState([]);
-
-  useEffect(() => {
-    const getCookie = (name) => {
-      const value = `; ${document.cookie}`;
-      const parts = value.split(`; ${name}=`);
-      if (parts.length === 2) return parts.pop().split(';').shift();
-      return null;
-    };
-
-    const userId = getCookie('userId');
-    if (!userId) {
-      setLoading(false);
-      return;
-    }
-    setUser({ _id: userId });
-
-    Promise.all([
-      fetch(`http://localhost:5000/api/crops/farmer/${userId}`, { credentials: 'include' }).then((r) => r.json()),
-      fetch(`http://localhost:5000/api/orders/farmer/${userId}?status=delivered`, { credentials: 'include' }).then((r) => r.json()),
-    ]).then(([cropsRes, ordersRes]) => {
-      if (cropsRes?.success) setCrops(cropsRes.data);
-      if (ordersRes?.success) setOrders(ordersRes.data);
-    }).finally(() => setLoading(false));
-  }, []);
-
-  const totals = useMemo(() => {
-    const expected = crops.reduce((sum, c) => sum + (Number(c.estimatedYield) || 0), 0);
-    const predicted = crops.reduce((sum, c) => sum + (Number(c.predictedYield) || 0), 0);
-    const actual = crops.reduce((sum, c) => sum + (Number(c.actualYield) || 0), 0);
-    const revenueByProductId = new Map();
-    for (const order of orders) {
-      for (const item of order.items || []) {
-        const key = (item.productId && item.productId._id) || item.productId;
-        const lineRevenue = Number(item.price) * Number(item.quantity);
-        revenueByProductId.set(key, (revenueByProductId.get(key) || 0) + lineRevenue);
-      }
-    }
-    let totalIncome = 0;
-    let totalCost = 0;
-    for (const c of crops) {
-      const pid = c.product;
-      if (pid && revenueByProductId.has(pid.toString())) {
-        totalIncome += revenueByProductId.get(pid.toString());
-      }
-      totalCost += Number(c.totalCost || 0);
-    }
-    const netProfit = totalIncome - totalCost;
-    return { expected, predicted, actual, totalIncome, totalCost, netProfit, revenueByProductId };
-  }, [crops, orders]);
-
-  if (loading) {
-    return <div className="flex justify-center items-center h-64">Loading analytics...</div>;
   }
 
   return (
@@ -248,10 +195,7 @@ export default function AnalyticsPage() {
             </div>
           </div>
         </div>
-      </div>
-
-      {/* Yield Time Series */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        
         <div className="bg-white rounded-xl shadow-sm p-6">
           <div className="flex items-center justify-between">
             <div>
@@ -260,6 +204,7 @@ export default function AnalyticsPage() {
             </div>
           </div>
         </div>
+        
         <div className="bg-white rounded-xl shadow-sm p-6">
           <div className="flex items-center justify-between">
             <div>
@@ -269,39 +214,15 @@ export default function AnalyticsPage() {
           </div>
         </div>
       </div>
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">Monthly Yield (kg)</h2>
-          {timeSeriesChart ? (
-            <Line
-              data={timeSeriesChart}
-              options={{
-                responsive: true,
-                plugins: { legend: { display: true } },
-                scales: { y: { beginAtZero: true } },
-              }}
-            />
-          ) : (
-            <p className="text-gray-600">No yield data yet.</p>
-          )}
-        </div>
+
+
+
+
 
       {/* Charts Section */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Yield Comparison Chart */}
         <div className="bg-white rounded-xl shadow-sm p-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">Per-Crop Yield & Prediction (kg)</h2>
-          {perCropBarChart ? (
-            <Bar
-              data={perCropBarChart}
-              options={{
-                responsive: true,
-                plugins: { legend: { display: true } },
-                scales: { y: { beginAtZero: true } },
-              }}
-            />
-          ) : (
-            <p className="text-gray-600">No per-crop data yet.</p>
-          )}
-        </div>
           <h2 className="text-xl font-semibold text-gray-900 mb-4">Yield Comparison</h2>
           <Bar
             data={{
@@ -579,13 +500,6 @@ export default function AnalyticsPage() {
               </div>
             );
           })}
-        </div>
-              <div className="flex justify-between items-center">
-                <span className="text-gray-600">Profit Margin</span>
-                <span className="font-medium text-green-600">53%</span>
-              </div>
-            </div>
-          </div>
         </div>
       </div>
 
