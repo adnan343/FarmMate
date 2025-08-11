@@ -5,6 +5,57 @@ import CropSuggestion from "../models/cropSuggestion.model.js";
 import mongoose from "mongoose";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
+// Internal helper to predict yield using Gemini
+async function predictYieldWithGemini({
+    cropName,
+    variety,
+    area,
+    areaUnit,
+    farmLocation,
+    soilType,
+    plantingDate,
+    expectedHarvestDate,
+    yieldUnit
+}) {
+    try {
+        const apiKey = process.env.GEMINI_API || process.env.GOOGLE_API_KEY;
+        if (!apiKey) {
+            return null;
+        }
+        const genAI = new GoogleGenerativeAI(apiKey);
+        const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+
+        const prompt = `You are an agronomy assistant. Predict the yield for the following crop.
+Crop: ${cropName}
+Variety: ${variety}
+Area: ${area} ${areaUnit}
+Farm location: ${farmLocation || "unknown"}
+Soil type: ${soilType || "unknown"}
+Planting date: ${plantingDate}
+Expected harvest date: ${expectedHarvestDate}
+Desired unit: ${yieldUnit}
+
+Return ONLY a single positive number representing the predicted yield in ${yieldUnit}, with no unit text or extra commentary. If uncertain, provide your best estimate as a number.`;
+
+        const result = await model.generateContent(prompt);
+        const response = await result.response;
+        let text = (response && typeof response.text === 'function') ? response.text() : '';
+        if (!text) return null;
+        // Clean code fencing if any
+        if (text.includes('```')) {
+            text = text.replace(/```[a-z]*\n?/gi, '').replace(/\n?```/g, '');
+        }
+        // Extract number
+        const match = text.match(/\d+(?:\.\d+)?/);
+        if (!match) return null;
+        const value = parseFloat(match[0]);
+        if (isNaN(value) || value < 0) return null;
+        return value;
+    } catch (_err) {
+        return null;
+    }
+}
+
 // Get all crops for a farmer
 export const getCrops = async (req, res) => {
     try {
@@ -66,6 +117,29 @@ export const addCrop = async (req, res) => {
             return res.status(403).json({ success: false, message: 'Farm does not belong to this farmer' });
         }
 
+        // Normalize numeric fields
+        if (cropData.estimatedYield !== undefined && cropData.estimatedYield !== null) {
+            cropData.estimatedYield = Number(cropData.estimatedYield);
+        }
+        cropData.area = Number(cropData.area);
+
+        // Attempt AI predicted yield
+        const predicted = await predictYieldWithGemini({
+            cropName: cropData.name,
+            variety: cropData.variety,
+            area: cropData.area,
+            areaUnit: cropData.unit,
+            farmLocation: farm.location,
+            soilType: farm.soilType,
+            plantingDate: cropData.plantingDate,
+            expectedHarvestDate: cropData.expectedHarvestDate,
+            yieldUnit: cropData.yieldUnit || 'kg'
+        });
+
+        if (predicted !== null) {
+            cropData.predictedYield = predicted;
+        }
+
         const newCrop = new Crop(cropData);
         await newCrop.save();
 
@@ -82,7 +156,7 @@ export const addCrop = async (req, res) => {
 export const updateCropStage = async (req, res) => {
     try {
         const { cropId } = req.params;
-        const { stage, notes } = req.body;
+        const { stage, notes, actualYield, totalCost } = req.body;
 
         if (!mongoose.Types.ObjectId.isValid(cropId)) {
             return res.status(400).json({ success: false, message: 'Invalid crop ID' });
@@ -97,11 +171,21 @@ export const updateCropStage = async (req, res) => {
         if (stage) updateData.stage = stage;
         if (notes !== undefined) updateData.notes = notes;
 
-        // If stage is 'harvested', set harvest date and isHarvested flag, and create a product
+        // If stage is 'harvested', require actualYield, set harvest date and isHarvested flag, and create a product
         if (stage === 'harvested') {
+            if (actualYield === undefined || actualYield === null || Number(actualYield) <= 0) {
+                return res.status(400).json({ success: false, message: 'Please provide actualYield to mark as harvested' });
+            }
             updateData.isHarvested = true;
             updateData.harvestDate = new Date();
             updateData.status = 'completed';
+            updateData.actualYield = Number(actualYield);
+            if (totalCost !== undefined && totalCost !== null) {
+                const parsedCost = Number(totalCost);
+                if (!isNaN(parsedCost) && parsedCost >= 0) {
+                    updateData.totalCost = parsedCost;
+                }
+            }
 
             // Get the crop to access farm information
             const crop = await Crop.findById(cropId).populate('farm');
@@ -112,7 +196,7 @@ export const updateCropStage = async (req, res) => {
                     description: `${crop.name} variety ${crop.variety} harvested from ${crop.farm.name}`,
                     price: 0, // Will be set by farmer later
                     category: 'vegetables', // Default category
-                    stock: crop.actualYield || crop.estimatedYield || 0,
+                    stock: Number(actualYield) || crop.estimatedYield || 0,
                     unit: crop.yieldUnit || 'kg',
                     farmer: crop.farmer,
                     farm: crop.farm._id,

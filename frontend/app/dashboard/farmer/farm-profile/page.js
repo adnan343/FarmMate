@@ -11,6 +11,8 @@ export default function FarmProfilePage() {
   const [showEditFarmModal, setShowEditFarmModal] = useState(false);
   const [showAddCropModal, setShowAddCropModal] = useState(false);
   const [selectedCrop, setSelectedCrop] = useState(null);
+  const [showHarvestModal, setShowHarvestModal] = useState(false);
+  const [harvestForm, setHarvestForm] = useState({ actualYield: '', totalCost: '' });
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState(null);
 
@@ -216,6 +218,14 @@ export default function FarmProfilePage() {
 
   const handleUpdateCropStage = async (cropId, stage) => {
     try {
+      if (stage === 'harvested') {
+        const crop = crops.find(c => c._id === cropId);
+        setSelectedCrop(crop);
+        setHarvestForm({ actualYield: '', totalCost: '' });
+        setShowHarvestModal(true);
+        return;
+      }
+
       const response = await fetch(`http://localhost:5000/api/crops/${cropId}/stage`, {
         method: 'PATCH',
         headers: {
@@ -227,11 +237,6 @@ export default function FarmProfilePage() {
       const data = await response.json();
       if (data.success) {
         setCrops(crops.map(crop => crop._id === cropId ? data.data : crop));
-        
-        // Show notification if crop is harvested
-        if (stage === 'harvested') {
-          alert('Crop harvested! A product has been automatically created. You can edit and publish it in the "My Products" page.');
-        }
       }
     } catch (error) {
       console.error('Error updating crop stage:', error);
@@ -685,7 +690,7 @@ export default function FarmProfilePage() {
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Estimated Yield</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Expected Yield</label>
                   <input
                     type="number"
                     value={cropForm.estimatedYield}
@@ -736,7 +741,73 @@ export default function FarmProfilePage() {
         </div>
       )}
 
-      
+      {/* Harvest Modal */}
+      {showHarvestModal && selectedCrop && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md">
+            <h2 className="text-xl font-semibold mb-4">Mark Harvest for {selectedCrop.name} - {selectedCrop.variety}</h2>
+            <form
+              onSubmit={async (e) => {
+                e.preventDefault();
+                try {
+                  const response = await fetch(`http://localhost:5000/api/crops/${selectedCrop._id}/stage`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({ stage: 'harvested', actualYield: parseFloat(harvestForm.actualYield), totalCost: parseFloat(harvestForm.totalCost || '0') })
+                  });
+                  const data = await response.json();
+                  if (data.success) {
+                    setCrops(crops.map(c => c._id === selectedCrop._id ? data.data : c));
+                    setShowHarvestModal(false);
+                    setSelectedCrop(null);
+                    alert('Crop harvested! A product has been created. You can set price and publish it in My Products.');
+                  } else {
+                    alert(data.message || 'Failed to mark as harvested');
+                  }
+                } catch (err) {
+                  console.error('Error harvesting crop:', err);
+                }
+              }}
+              className="space-y-4"
+            >
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Actual Yield</label>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={harvestForm.actualYield}
+                  onChange={(e) => setHarvestForm({ ...harvestForm, actualYield: e.target.value })}
+                  placeholder={`Enter actual yield in ${selectedCrop.yieldUnit}`}
+                  className="w-full border rounded-lg px-3 py-2"
+                  required
+                />
+                <p className="text-xs text-gray-500 mt-1">Unit: {selectedCrop.yieldUnit}</p>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Total Cost</label>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={harvestForm.totalCost}
+                  onChange={(e) => setHarvestForm({ ...harvestForm, totalCost: e.target.value })}
+                  placeholder="Enter total cost for this crop"
+                  className="w-full border rounded-lg px-3 py-2"
+                  required
+                />
+                <p className="text-xs text-gray-500 mt-1">Includes seeds, inputs, labor, etc.</p>
+              </div>
+              <div className="flex gap-2">
+                <button type="submit" className="flex-1 bg-teal-600 text-white py-2 rounded-lg hover:bg-teal-700">Confirm Harvest</button>
+                <button type="button" onClick={() => { setShowHarvestModal(false); setSelectedCrop(null); }} className="flex-1 bg-gray-300 text-gray-700 py-2 rounded-lg hover:bg-gray-400">Cancel</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 } 

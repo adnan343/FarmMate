@@ -74,6 +74,17 @@ const cropSchema = new mongoose.Schema({
         type: Number,
         min: 0
     },
+    // Total cost for this crop (inputs, labor, etc.) recorded at harvest
+    totalCost: {
+        type: Number,
+        min: 0,
+        default: 0
+    },
+    // AI predicted yield generated from available information (e.g., crop, area, farm location)
+    predictedYield: {
+        type: Number,
+        min: 0
+    },
     product: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Product'

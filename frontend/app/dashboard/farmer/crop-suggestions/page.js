@@ -268,17 +268,17 @@ export default function CropSuggestionsPage() {
         <h2 className="text-xl font-semibold text-gray-900 mb-4">Market Analysis</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="text-center p-4 bg-green-50 rounded-lg">
-            <p className="text-2xl font-bold text-green-600">₹2,500</p>
+            <p className="text-2xl font-bold text-green-600">৳2,500</p>
             <p className="text-sm text-gray-600">Rice per ton</p>
             <p className="text-xs text-green-600">+12% from last month</p>
           </div>
           <div className="text-center p-4 bg-blue-50 rounded-lg">
-            <p className="text-2xl font-bold text-blue-600">₹1,800</p>
+            <p className="text-2xl font-bold text-blue-600">৳1,800</p>
             <p className="text-sm text-gray-600">Wheat per ton</p>
             <p className="text-xs text-blue-600">+8% from last month</p>
           </div>
           <div className="text-center p-4 bg-purple-50 rounded-lg">
-            <p className="text-2xl font-bold text-purple-600">₹45</p>
+            <p className="text-2xl font-bold text-purple-600">৳45</p>
             <p className="text-sm text-gray-600">Tomatoes per kg</p>
             <p className="text-xs text-purple-600">+15% from last month</p>
           </div>
