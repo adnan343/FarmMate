@@ -15,6 +15,8 @@ export default function FarmProfilePage() {
   const [harvestForm, setHarvestForm] = useState({ actualYield: '', totalCost: '' });
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState(null);
+  const [addingCrop, setAddingCrop] = useState(false);
+  const [generatingTimeline, setGeneratingTimeline] = useState(new Set());
 
   // Form states
   const [farmForm, setFarmForm] = useState({
@@ -180,6 +182,7 @@ export default function FarmProfilePage() {
 
   const handleAddCrop = async (e) => {
     e.preventDefault();
+    setAddingCrop(true);
     try {
       const response = await fetch('http://localhost:5000/api/crops', {
         method: 'POST',
@@ -210,9 +213,13 @@ export default function FarmProfilePage() {
           yieldUnit: 'kg',
           notes: ''
         });
+        alert('Crop added successfully! AI yield prediction generated.');
       }
     } catch (error) {
       console.error('Error adding crop:', error);
+      alert('Failed to add crop. Please try again.');
+    } finally {
+      setAddingCrop(false);
     }
   };
 
@@ -244,6 +251,7 @@ export default function FarmProfilePage() {
   };
 
   const handleGenerateTimelineForCrop = async (cropId) => {
+    setGeneratingTimeline(prev => new Set(prev).add(cropId));
     try {
       const res = await fetch(`http://localhost:5000/api/crops/${cropId}/timeline/generate`, {
         method: 'POST',
@@ -258,6 +266,12 @@ export default function FarmProfilePage() {
       }
     } catch (e) {
       alert(e.message || 'Failed to generate timeline');
+    } finally {
+      setGeneratingTimeline(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(cropId);
+        return newSet;
+      });
     }
   };
 
@@ -418,10 +432,18 @@ export default function FarmProfilePage() {
                     </span>
                     <button
                       onClick={() => handleGenerateTimelineForCrop(crop._id)}
-                      className="text-xs px-2 py-1 rounded border hover:bg-white bg-white"
+                      disabled={generatingTimeline.has(crop._id)}
+                      className="text-xs px-2 py-1 rounded border hover:bg-white bg-white disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
                       title="Generate timeline for this crop"
                     >
-                      Generate Timeline
+                      {generatingTimeline.has(crop._id) ? (
+                        <>
+                          <div className="w-3 h-3 border border-gray-600 border-t-transparent rounded-full animate-spin"></div>
+                          AI Generating...
+                        </>
+                      ) : (
+                        'Generate Timeline'
+                      )}
                     </button>
                                          {crop.stage === 'harvested' && (
                        <span className="text-xs text-green-600 font-medium">
@@ -646,6 +668,7 @@ export default function FarmProfilePage() {
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 w-full max-w-md">
             <h2 className="text-xl font-semibold mb-4">Add New Crop</h2>
+            <p className="text-sm text-blue-600 mb-4">✨ AI will automatically predict yield using Gemini API</p>
             <form onSubmit={handleAddCrop} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Crop Name</label>
@@ -749,14 +772,23 @@ export default function FarmProfilePage() {
               <div className="flex gap-2">
                 <button
                   type="submit"
-                  className="flex-1 bg-teal-600 text-white py-2 rounded-lg hover:bg-teal-700"
+                  disabled={addingCrop}
+                  className="flex-1 bg-teal-600 text-white py-2 rounded-lg hover:bg-teal-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
-                  Add Crop
+                  {addingCrop ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                      Generating AI Prediction...
+                    </>
+                  ) : (
+                    'Add Crop'
+                  )}
                 </button>
                 <button
                   type="button"
                   onClick={() => setShowAddCropModal(false)}
-                  className="flex-1 bg-gray-300 text-gray-700 py-2 rounded-lg hover:bg-gray-400"
+                  disabled={addingCrop}
+                  className="flex-1 bg-gray-300 text-gray-700 py-2 rounded-lg hover:bg-gray-400 disabled:opacity-50"
                 >
                   Cancel
                 </button>

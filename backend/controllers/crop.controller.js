@@ -661,6 +661,28 @@ export const acceptCropSuggestion = async (req, res) => {
             })) : []
         };
 
+        // Attempt AI predicted yield using Gemini
+        try {
+            const predicted = await predictYieldWithGemini({
+                cropName: cropData.name,
+                variety: cropData.variety,
+                area: cropData.area,
+                areaUnit: cropData.unit,
+                farmLocation: farm.location,
+                soilType: farm.soilType,
+                plantingDate: cropData.plantingDate,
+                expectedHarvestDate: cropData.expectedHarvestDate,
+                yieldUnit: cropData.yieldUnit
+            });
+
+            if (predicted !== null) {
+                cropData.predictedYield = predicted;
+            }
+        } catch (error) {
+            console.log('Failed to predict yield with Gemini:', error.message);
+            // Continue without prediction if Gemini fails
+        }
+
         const newCrop = new Crop(cropData);
         await newCrop.save();
         const populatedCrop = await Crop.findById(newCrop._id).populate('farm', 'name location');

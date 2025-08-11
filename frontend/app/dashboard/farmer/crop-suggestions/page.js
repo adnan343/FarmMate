@@ -325,6 +325,7 @@ export default function CropSuggestionsPage() {
                 <X className="w-5 h-5" />
               </button>
             </div>
+            <p className="text-sm text-blue-600 mb-4">✨ AI will automatically predict yield using Gemini API</p>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-3">
                 <div>
@@ -399,8 +400,15 @@ export default function CropSuggestionsPage() {
             </div>
             <div className="flex justify-end gap-2 mt-4">
               <button className="px-4 py-2 rounded border" onClick={()=>setShowAcceptModal(false)}>Cancel</button>
-              <button onClick={handleConfirmAccept} disabled={accepting} className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
-                {accepting ? 'Saving...' : 'Save Crop'}
+              <button onClick={handleConfirmAccept} disabled={accepting} className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 flex items-center gap-2">
+                {accepting ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    Generating AI Prediction...
+                  </>
+                ) : (
+                  'Save Crop'
+                )}
               </button>
             </div>
           </div>
