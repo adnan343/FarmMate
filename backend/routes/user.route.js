@@ -1,6 +1,6 @@
 import express from 'express';
 import auth from '../middleware/auth.js';
-import { createUser, updateUser, deleteUser, loginUser, getUserById, getUsers, getUserIdByUsername, getFarmers, addToFavorites, removeFromFavorites, getUserFavorites } from '../controllers/user.controller.js';
+import { createUser, updateUser, deleteUser, loginUser, getUserById, getUsers, getUserIdByUsername, getFarmers, addToFavorites, removeFromFavorites, getUserFavorites,changePassword } from '../controllers/user.controller.js';
 
 const router = express.Router();
 
@@ -17,5 +17,8 @@ router.get('/farmers/all', getFarmers);
 router.post('/:userId/favorites', auth, addToFavorites);
 router.delete('/:userId/favorites/:productId', auth, removeFromFavorites);
 router.get('/:userId/favorites', auth, getUserFavorites);
+router.put('/:id/change-password', auth, changePassword); 
+
+
 
 export default router;

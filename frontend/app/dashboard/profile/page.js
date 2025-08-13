@@ -4,6 +4,8 @@ import { Calendar, Edit, Mail, MapPin, Save, Shield, User, X } from 'lucide-reac
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
+
+
 export default function ProfilePage() {
   const [userData, setUserData] = useState({
     name: '',
@@ -17,6 +19,14 @@ export default function ProfilePage() {
   const [isEditing, setIsEditing] = useState(false);
   const [editedData, setEditedData] = useState({});
   const [isLoading, setIsLoading] = useState(true);
+
+  const [showChangePasswordForm, setShowChangePasswordForm] = useState(false);
+
+  // Password change states
+  const [oldPassword, setOldPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+
   const router = useRouter();
 
   useEffect(() => {
@@ -30,7 +40,7 @@ export default function ProfilePage() {
         }, {});
 
         const userId = cookies.userId;
-        
+
         if (userId) {
           // Fetch user data from API
           const response = await fetch(`http://localhost:5000/api/users/${userId}`);
@@ -97,6 +107,35 @@ export default function ProfilePage() {
     getUserData();
   }, []);
 
+  const handleChangePassword = async () => {
+    if (newPassword !== confirmPassword) {
+      alert('Passwords do not match');
+      return;
+    }
+
+    const userId = document.cookie.split('; ')
+      .find(row => row.startsWith('userId='))
+      ?.split('=')[1];
+
+    if (!userId) {
+      alert('User not logged in');
+      return;
+    }
+
+    const res = await fetch(`http://localhost:5000/api/users/${userId}/change-password`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({
+        currentPassword: oldPassword,
+        newPassword: newPassword
+      })
+    });
+
+    const data = await res.json();
+    alert(data.msg || data.message || 'Unknown response');
+  };
+
   const handleEdit = () => {
     setIsEditing(true);
     setEditedData({ ...userData });
@@ -115,9 +154,9 @@ export default function ProfilePage() {
         acc[key] = value;
         return acc;
       }, {});
-      
+
       const userId = cookies.userId;
-      
+
       if (!userId) {
         throw new Error('User ID not found');
       }
@@ -143,18 +182,18 @@ export default function ProfilePage() {
       }
 
       const result = await response.json();
-      
+
       if (result.success) {
         setUserData(editedData);
         setIsEditing(false);
-        
+
         // Update cookies with new data
         document.cookie = `userName=${editedData.name}; path=/`;
         document.cookie = `userEmail=${editedData.email}; path=/`;
         document.cookie = `userPhone=${editedData.phone}; path=/`;
         document.cookie = `userLocation=${editedData.location}; path=/`;
         document.cookie = `userBio=${editedData.bio}; path=/`;
-        
+
         // Show success message
         alert('Profile updated successfully!');
       } else {
@@ -171,6 +210,57 @@ export default function ProfilePage() {
       ...prev,
       [field]: value
     }));
+  };
+
+  // New handler for Delete Account button
+  const handleDeleteAccount = async () => {
+    const confirmed = window.confirm('Are you sure you want to delete your account? This action cannot be undone.');
+    if (!confirmed) return;
+
+    const cookies = document.cookie.split(';').reduce((acc, cookie) => {
+      const [key, value] = cookie.trim().split('=');
+      acc[key] = value;
+      return acc;
+    }, {});
+    const userId = cookies.userId;
+
+    if (!userId) {
+      alert('User not logged in');
+      return;
+    }
+
+    try {
+      const response = await fetch(`http://localhost:5000/api/users/${userId}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.msg || 'Failed to delete account');
+      }
+
+      const result = await response.json();
+
+      if (result.success) {
+        alert('Account deleted successfully.');
+
+        // Clear cookies
+        document.cookie = 'userId=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+        document.cookie = 'userName=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+        document.cookie = 'userEmail=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+        document.cookie = 'userPhone=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+        document.cookie = 'userLocation=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+        document.cookie = 'userBio=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+
+        // Redirect to landing page
+        router.push('/');
+      } else {
+        throw new Error(result.msg || 'Failed to delete account');
+      }
+    } catch (error) {
+      console.error('Error deleting account:', error);
+      alert('Failed to delete account. Please try again.');
+    }
   };
 
   const getRoleDisplayName = (role) => {
@@ -364,13 +454,49 @@ export default function ProfilePage() {
           <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mt-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-4">Account Settings</h3>
             <div className="space-y-4">
-              <button className="w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 rounded-lg transition-colors">
+              <button
+                onClick={() => setShowChangePasswordForm(!showChangePasswordForm)}
+                className="w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
+              >
                 Change Password
               </button>
-              <button className="w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 rounded-lg transition-colors">
-                Notification Preferences
-              </button>
-              <button className="w-full text-left px-4 py-3 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors">
+
+              {showChangePasswordForm && (
+                <div className="mt-4 space-y-4">
+                  <input
+                    type="password"
+                    placeholder="Old Password"
+                    value={oldPassword}
+                    onChange={(e) => setOldPassword(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                  />
+                  <input
+                    type="password"
+                    placeholder="New Password"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                  />
+                  <input
+                    type="password"
+                    placeholder="Confirm New Password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                  />
+                  <button
+                    onClick={handleChangePassword}
+                    className="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700"
+                  >
+                    Submit
+                  </button>
+                </div>
+              )}
+
+              <button
+                onClick={handleDeleteAccount}
+                className="w-full text-left px-4 py-3 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+              >
                 Delete Account
               </button>
             </div>
@@ -379,4 +505,5 @@ export default function ProfilePage() {
       </div>
     </div>
   );
-} 
+}
+

@@ -1,6 +1,41 @@
 import bcrypt from "bcrypt"; // Import bcrypt for password hashing and verification
 import User from "../models/user.model.js"; // User model
 
+
+// ... other imports and functions
+
+export const changePassword = async (req, res) => {
+    const { id } = req.params;
+    const { currentPassword, newPassword } = req.body;
+
+    if (!currentPassword || !newPassword) {
+        return res.status(400).json({ success: false, msg: "Please provide both current and new passwords." });
+    }
+
+    try {
+        const user = await User.findById(id);
+        if (!user) {
+            return res.status(404).json({ success: false, msg: "User not found." });
+        }
+
+        // Check if the current password is correct
+        const isMatch = await bcrypt.compare(currentPassword, user.password);
+        if (!isMatch) {
+            return res.status(401).json({ success: false, msg: "Invalid current password." });
+        }
+
+        // Hash the new password and save it
+        const salt = await bcrypt.genSalt(10);
+        user.password = await bcrypt.hash(newPassword, salt);
+        await user.save();
+
+        res.status(200).json({ success: true, msg: "Password updated successfully." });
+    } catch (error) {
+        console.error("Error changing password:", error);
+        res.status(500).json({ success: false, msg: "Internal Server Error." });
+    }
+};
+
 export const createUser = async (req, res) => {
     const user = req.body;
 
@@ -108,6 +143,8 @@ export const deleteUser = async (req, res) => {
     }
 };
 
+// In user.controller.js
+
 export const loginUser = async (req, res) => {
     const { email, password } = req.body;
     console.log(email, password);
@@ -133,7 +170,16 @@ export const loginUser = async (req, res) => {
             return res.status(401).json({ success: false, msg: "Invalid password" });
         }
 
-        // If login is successful, respond back with user data (you can also generate a token here)
+        // 🍪 ADD THIS PART TO SET THE COOKIE
+        // Set the userId in an httpOnly cookie
+        res.cookie('userId', user._id, {
+            httpOnly: true, // Prevents client-side JavaScript from accessing the cookie
+            maxAge: 3600000, // Cookie expires in 1 hour (in milliseconds)
+            // secure: true, // Use this in production with HTTPS
+            // sameSite: 'strict'
+        });
+
+        // If login is successful, respond back with user data
         res.status(200).json({
             success: true,
             msg: "User logged in successfully",
@@ -141,7 +187,7 @@ export const loginUser = async (req, res) => {
                 userId: user._id,
                 email: user.email,
                 name: user.name,
-                role: user.role, // Use role from model
+                role: user.role,
             },
         });
     } catch (error) {

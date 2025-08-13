@@ -1,7 +1,10 @@
+// server.js
+
 import cors from 'cors';
 import dotenv from 'dotenv';
 import express from 'express';
 import { connectDB } from "./config/db.js";
+import cookieParser from 'cookie-parser'; // 1. Add this import
 
 import cartRoutes from "./routes/cart.routes.js";
 import cropRoutes from "./routes/crop.routes.js";
@@ -24,10 +27,10 @@ app.use(cors({
 const PORT = process.env.PORT || 5000;
 
 app.use(express.json()); // allows us to accept json data in the req.body.
+app.use(cookieParser()); // 2. Add this middleware after express.json()
 
 app.use("/api/farms", farmRoutes);
 app.use("/api/crops", cropRoutes);
-
 app.use("/api/users", userRoute);
 app.use("/api/cart", cartRoutes);
 app.use("/api/products", productRoutes);
@@ -48,5 +51,3 @@ app.listen(PORT, () => {
         console.log('Database connection failed, but server is still running');
     });
 });
-
-
