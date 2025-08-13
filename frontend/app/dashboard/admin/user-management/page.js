@@ -1,7 +1,7 @@
 "use client";
 import { Edit, Eye, Filter, Search, Trash2, Users, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { fetchAllUsers, updateUserRole, deleteUserById } from '../../../../lib/api';
+import { deleteUserById, fetchAllUsers, updateUserRole } from '../../../../lib/api';
 
 export default function UserManagementPage() {
   const [users, setUsers] = useState([]);

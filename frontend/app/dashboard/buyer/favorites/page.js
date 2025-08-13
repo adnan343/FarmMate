@@ -1,6 +1,6 @@
 'use client';
 
-import { Heart, MapPin, Minus, Plus, Search, ShoppingCart, Star, Trash2 } from 'lucide-react';
+import { Heart, MapPin, Plus, Search, Star, Trash2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 export default function FavoritesPage() {
@@ -199,7 +199,7 @@ export default function FavoritesPage() {
           <div className="text-center py-12">
             <div className="text-4xl mb-4">💔</div>
             <h3 className="text-lg font-semibold text-gray-900 mb-2">No favorites found</h3>
-            <p className="text-gray-600">You haven't added any products to your favorites yet</p>
+            <p className="text-gray-600">You haven&apos;t added any products to your favorites yet</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">

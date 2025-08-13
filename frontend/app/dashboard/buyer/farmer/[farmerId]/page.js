@@ -265,7 +265,7 @@ export default function FarmerProductsPage() {
             <ArrowLeft className="w-5 h-5" />
           </button>
           <div>
-            <h1 className="text-3xl font-bold text-gray-900">{farmer.name}'s Products</h1>
+            <h1 className="text-3xl font-bold text-gray-900">{farmer.name}&apos;s Products</h1>
             <p className="text-gray-600 mt-2">Fresh products from {farmer.name}</p>
           </div>
         </div>
@@ -373,7 +373,7 @@ export default function FarmerProductsPage() {
           <div className="text-center py-12">
             <div className="text-4xl mb-4">🌾</div>
             <h3 className="text-lg font-semibold text-gray-900 mb-2">No products found</h3>
-            <p className="text-gray-600">This farmer doesn't have any products available</p>
+            <p className="text-gray-600">This farmer doesn&apos;t have any products available</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">

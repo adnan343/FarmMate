@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { ArrowLeft, CreditCard, Truck, CheckCircle, Lock } from 'lucide-react';
+import { ArrowLeft, CheckCircle, CreditCard, Lock, Truck } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
 
 export default function CheckoutPage() {
   const [cart, setCart] = useState({
@@ -341,9 +341,9 @@ export default function CheckoutPage() {
                   onChange={(e) => handleShippingChange('country', e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
                 >
-                  <option value="United States">United States</option>
-                  <option value="Canada">Canada</option>
-                  <option value="Mexico">Mexico</option>
+                  <option value="Bangladesh">Bangladesh</option>
+                  <option value="India">India</option>
+                  <option value="USA">USA</option>
                 </select>
               </div>
             </div>

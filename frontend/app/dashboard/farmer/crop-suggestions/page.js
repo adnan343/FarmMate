@@ -1,8 +1,8 @@
 'use client';
 
-import { Calendar, Lightbulb, MapPin, TrendingUp, RefreshCw, Loader2, AlertCircle, X } from 'lucide-react';
+import { AlertCircle, Calendar, Lightbulb, Loader2, MapPin, RefreshCw, TrendingUp, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { getCropSuggestions, getStoredCropSuggestions, refreshCropSuggestions, generateCropTimeline, acceptSuggestionAndCreateCrop } from '../../../../lib/api';
+import { acceptSuggestionAndCreateCrop, generateCropTimeline, getCropSuggestions, getStoredCropSuggestions, refreshCropSuggestions } from '../../../../lib/api';
 
 export default function CropSuggestionsPage() {
   const [suggestions, setSuggestions] = useState([]);
@@ -267,7 +267,7 @@ export default function CropSuggestionsPage() {
           <h2 className="text-xl font-semibold text-gray-900">AI Recommendations</h2>
         </div>
         <p className="text-gray-600 mb-4">
-          Based on your farm's location, soil conditions, and weather patterns, here are our top recommendations for this season.
+          Based on your farm&apos;s location, soil conditions, and weather patterns, here are our top recommendations for this season.
         </p>
       </div>
 
@@ -310,7 +310,7 @@ export default function CropSuggestionsPage() {
             <AlertCircle className="w-6 h-6 text-yellow-600" />
             <div>
               <h3 className="text-lg font-semibold text-yellow-800">No Suggestions Available</h3>
-              <p className="text-yellow-700">Click "Get New Suggestions" to generate crop recommendations for your farm.</p>
+              <p className="text-yellow-700">Click &quot;Get New Suggestions&quot; to generate crop recommendations for your farm.</p>
             </div>
           </div>
         </div>
@@ -420,17 +420,17 @@ export default function CropSuggestionsPage() {
         <h2 className="text-xl font-semibold text-gray-900 mb-4">Market Analysis</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="text-center p-4 bg-green-50 rounded-lg">
-            <p className="text-2xl font-bold text-green-600">৳2,500</p>
+            <p className="text-2xl font-bold text-green-600">$2,500</p>
             <p className="text-sm text-gray-600">Rice per ton</p>
             <p className="text-xs text-green-600">+12% from last month</p>
           </div>
           <div className="text-center p-4 bg-blue-50 rounded-lg">
-            <p className="text-2xl font-bold text-blue-600">৳1,800</p>
+            <p className="text-2xl font-bold text-blue-600">$1,800</p>
             <p className="text-sm text-gray-600">Wheat per ton</p>
             <p className="text-xs text-blue-600">+8% from last month</p>
           </div>
           <div className="text-center p-4 bg-purple-50 rounded-lg">
-            <p className="text-2xl font-bold text-purple-600">৳45</p>
+            <p className="text-2xl font-bold text-purple-600">$45</p>
             <p className="text-sm text-gray-600">Tomatoes per kg</p>
             <p className="text-xs text-purple-600">+15% from last month</p>
           </div>

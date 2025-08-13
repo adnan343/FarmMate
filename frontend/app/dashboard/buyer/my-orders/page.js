@@ -1,6 +1,6 @@
 'use client';
 
-import { Calendar, Clock, MapPin, Package, ShoppingBag, Truck, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
+import { AlertCircle, Calendar, CheckCircle, Clock, MapPin, Package, ShoppingBag, Truck, XCircle } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 export default function MyOrdersPage() {
@@ -109,7 +109,7 @@ export default function MyOrdersPage() {
           <div className="text-center py-12">
             <div className="text-4xl mb-4">📦</div>
             <h3 className="text-lg font-semibold text-gray-900 mb-2">No orders found</h3>
-            <p className="text-gray-600">You haven't placed any orders yet</p>
+            <p className="text-gray-600">You haven&apos;t placed any orders yet</p>
           </div>
         ) : (
           <div className="space-y-4">

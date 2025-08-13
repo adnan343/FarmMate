@@ -97,10 +97,10 @@ export default function LoginPage() {
     <div className="min-h-screen bg-white grid lg:grid-cols-2">
       {/* Left Column (Branding) */}
       <div className="hidden lg:flex flex-col bg-teal-900 text-white p-12">
-        <a href="/" className="flex items-center gap-2">
+        <Link href="/" className="flex items-center gap-2">
           <Link2 className="h-6 w-6" />
           <span className="text-xl font-bold">FarmMate</span>
-        </a>
+        </Link>
         <div className="my-auto">
           <h1 className="text-6xl font-bold mb-6">FarmMate</h1>
           <p className="text-4xl font-semibold text-gray-200">
@@ -118,10 +118,10 @@ export default function LoginPage() {
         <div className="w-full max-w-md">
           {/* Mobile Header */}
           <div className="lg:hidden mb-8 text-center">
-             <a href="/" className="flex items-center justify-center gap-2 text-teal-900">
+             <Link href="/" className="flex items-center justify-center gap-2 text-teal-900">
                 <Link2 className="h-7 w-7" />
                 <span className="text-2xl font-bold">FarmMate</span>
-            </a>
+            </Link>
           </div>
           
           {/* Tabs */}

@@ -1,21 +1,21 @@
 "use client";
 
-import { useEffect, useMemo, useState } from 'react';
-import { BarChart3, TrendingUp, TrendingDown } from 'lucide-react';
 import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  BarElement,
-  Title,
-  Tooltip,
-  Legend,
-  ArcElement,
-  PointElement,
-  LineElement,
-  Filler,
+    ArcElement,
+    BarElement,
+    CategoryScale,
+    Chart as ChartJS,
+    Filler,
+    Legend,
+    LinearScale,
+    LineElement,
+    PointElement,
+    Title,
+    Tooltip,
 } from 'chart.js';
-import { Bar, Doughnut, Line } from 'react-chartjs-2';
+import { BarChart3, Loader2, TrendingDown, TrendingUp } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { Bar, Doughnut } from 'react-chartjs-2';
 
 ChartJS.register(
   CategoryScale,
@@ -30,11 +30,54 @@ ChartJS.register(
   Filler,
 );
 
+// Skeleton Loading Components
+const SkeletonCard = ({ className = "" }) => (
+  <div className={`bg-white rounded-xl shadow-sm p-6 animate-pulse ${className}`}>
+    <div className="flex items-center justify-between mb-4">
+      <div className="h-4 bg-gray-200 rounded w-24"></div>
+      <div className="h-8 w-8 bg-gray-200 rounded"></div>
+    </div>
+    <div className="h-8 bg-gray-200 rounded w-20 mb-2"></div>
+    <div className="h-3 bg-gray-200 rounded w-32"></div>
+  </div>
+);
+
+const SkeletonChart = ({ className = "" }) => (
+  <div className={`bg-white rounded-xl shadow-sm p-6 animate-pulse ${className}`}>
+    <div className="h-6 bg-gray-200 rounded w-32 mb-4"></div>
+    <div className="h-64 bg-gray-200 rounded"></div>
+  </div>
+);
+
+const SkeletonTable = () => (
+  <div className="bg-white rounded-xl shadow-sm p-6 animate-pulse">
+    <div className="h-6 bg-gray-200 rounded w-48 mb-4"></div>
+    <div className="space-y-3">
+      {[1, 2, 3].map((i) => (
+        <div key={i} className="p-3 rounded-lg border border-gray-200">
+          <div className="flex items-center justify-between">
+            <div className="h-4 bg-gray-200 rounded w-32 mb-2"></div>
+            <div className="grid grid-cols-5 gap-6">
+              {[1, 2, 3, 4, 5].map((j) => (
+                <div key={j}>
+                  <div className="h-3 bg-gray-200 rounded w-16 mb-1"></div>
+                  <div className="h-4 bg-gray-200 rounded w-20"></div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  </div>
+);
+
 export default function AnalyticsPage() {
   const [user, setUser] = useState(null);
   const [crops, setCrops] = useState([]);
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [dataLoading, setDataLoading] = useState(true);
   const [error, setError] = useState(null);
   const [data, setData] = useState(null);
   const [userId, setUserId] = useState(null);
@@ -46,21 +89,33 @@ export default function AnalyticsPage() {
       if (parts.length === 2) return parts.pop().split(';').shift();
       return null;
     };
+    
     const uid = getCookie('userId');
     setUserId(uid);
+    
     if (!uid) {
       setError('User not authenticated');
       setLoading(false);
+      setDataLoading(false);
       return;
     }
+    
     setUser({ _id: uid });
 
     const fetchAnalyticsData = async () => {
       try {
+        setDataLoading(true);
         const [cropsRes, ordersRes] = await Promise.all([
           fetch(`http://localhost:5000/api/crops/farmer/${uid}`, { credentials: 'include' }),
           fetch(`http://localhost:5000/api/orders/farmer/${uid}?status=delivered`, { credentials: 'include' })
         ]);
+
+        if (!cropsRes.ok) {
+          throw new Error(`Failed to fetch crops: ${cropsRes.status}`);
+        }
+        if (!ordersRes.ok) {
+          throw new Error(`Failed to fetch orders: ${ordersRes.status}`);
+        }
 
         const cropsData = await cropsRes.json();
         if (cropsData.success) setCrops(cropsData.data);
@@ -70,10 +125,13 @@ export default function AnalyticsPage() {
 
       } catch (error) {
         console.error('Error fetching analytics data:', error);
+        setError(`Failed to load analytics data: ${error.message}`);
       } finally {
+        setDataLoading(false);
         setLoading(false);
       }
     };
+    
     fetchAnalyticsData();
   }, []);
 
@@ -117,15 +175,26 @@ export default function AnalyticsPage() {
     return { expected, predicted, actual, totalIncome, totalCost, netProfit, revenueByProductId };
   }, [crops, orders, user]);
 
+  // Show loading state while initial data is being fetched
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-64">
-        <div className="w-8 h-8 animate-spin text-teal-600">Loading...</div>
-        <span className="ml-2 text-gray-600">Loading analytics...</span>
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <h1 className="text-3xl font-bold text-gray-900">Analytics</h1>
+        </div>
+        
+        <div className="flex items-center justify-center min-h-64">
+          <div className="text-center">
+            <Loader2 className="w-12 h-12 animate-spin text-teal-600 mx-auto mb-4" />
+            <p className="text-lg text-gray-600">Loading analytics dashboard...</p>
+            <p className="text-sm text-gray-500 mt-2">Please wait while we gather your data</p>
+          </div>
+        </div>
       </div>
     );
   }
 
+  // Show error state
   if (error) {
     return (
       <div className="space-y-6">
@@ -136,8 +205,14 @@ export default function AnalyticsPage() {
           <div className="flex items-center gap-3">
             <div className="w-6 h-6 text-red-600">!</div>
             <div>
-              <h3 className="text-lg font-semibold text-red-800">Error</h3>
+              <h3 className="text-lg font-semibold text-red-800">Error Loading Analytics</h3>
               <p className="text-red-700">{error}</p>
+              <button 
+                onClick={() => window.location.reload()} 
+                className="mt-3 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+              >
+                Try Again
+              </button>
             </div>
           </div>
         </div>
@@ -149,359 +224,434 @@ export default function AnalyticsPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold text-gray-900">Analytics</h1>
+        {dataLoading && (
+          <div className="flex items-center gap-2 text-sm text-gray-600">
+            <Loader2 className="w-4 h-4 animate-spin" />
+            Updating data...
+          </div>
+        )}
       </div>
 
+      {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-white rounded-xl shadow-sm p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-500">Total Expected Yield</p>
-              <p className="text-2xl font-bold text-gray-900">{totals.expected.toFixed(2)}</p>
+        {dataLoading ? (
+          <>
+            <SkeletonCard />
+            <SkeletonCard />
+            <SkeletonCard />
+          </>
+        ) : (
+          <>
+            <div className="bg-white rounded-xl shadow-sm p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-500">Total Expected Yield</p>
+                  <p className="text-2xl font-bold text-gray-900">{totals.expected.toFixed(2)}</p>
+                </div>
+                <BarChart3 className="w-8 h-8 text-gray-500" />
+              </div>
+              <p className="text-sm text-gray-500 mt-2">Sum of manual expected yields</p>
             </div>
-            <BarChart3 className="w-8 h-8 text-gray-500" />
-          </div>
-          <p className="text-sm text-gray-500 mt-2">Sum of manual expected yields</p>
-        </div>
 
-        <div className="bg-white rounded-xl shadow-sm p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-500">Total Predicted Yield</p>
-              <p className="text-2xl font-bold text-gray-900">{totals.predicted.toFixed(2)}</p>
+            <div className="bg-white rounded-xl shadow-sm p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-500">Total Predicted Yield</p>
+                  <p className="text-2xl font-bold text-gray-900">{totals.predicted.toFixed(2)}</p>
+                </div>
+                <BarChart3 className="w-8 h-8 text-blue-500" />
+              </div>
+              <p className="text-sm text-gray-500 mt-2">AI predicted using Gemini</p>
             </div>
-            <BarChart3 className="w-8 h-8 text-blue-500" />
-          </div>
-          <p className="text-sm text-gray-500 mt-2">AI predicted using Gemini</p>
-        </div>
 
-        <div className="bg-white rounded-xl shadow-sm p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-500">Total Actual Yield</p>
-              <p className="text-2xl font-bold text-gray-900">{totals.actual.toFixed(2)}</p>
+            <div className="bg-white rounded-xl shadow-sm p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-500">Total Actual Yield</p>
+                  <p className="text-2xl font-bold text-gray-900">{totals.actual.toFixed(2)}</p>
+                </div>
+                <BarChart3 className="w-8 h-8 text-green-600" />
+              </div>
+              <p className="text-sm text-gray-500 mt-2">Captured at harvest</p>
             </div>
-            <BarChart3 className="w-8 h-8 text-green-600" />
-          </div>
-          <p className="text-sm text-gray-500 mt-2">Captured at harvest</p>
-        </div>
+          </>
+        )}
       </div>
 
+      {/* Financial Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-white rounded-xl shadow-sm p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-500">Total Income</p>
-              <p className="text-2xl font-bold text-gray-900">৳{totals.totalIncome.toFixed(2)}</p>
+        {dataLoading ? (
+          <>
+            <SkeletonCard />
+            <SkeletonCard />
+            <SkeletonCard />
+          </>
+        ) : (
+          <>
+            <div className="bg-white rounded-xl shadow-sm p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-500">Total Income</p>
+                  <p className="text-2xl font-bold text-gray-900">${totals.totalIncome.toFixed(2)}</p>
+                </div>
+              </div>
             </div>
-          </div>
-        </div>
-        
-        <div className="bg-white rounded-xl shadow-sm p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-500">Total Cost</p>
-              <p className="text-2xl font-bold text-gray-900">৳{totals.totalCost.toFixed(2)}</p>
+            
+            <div className="bg-white rounded-xl shadow-sm p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-500">Total Cost</p>
+                  <p className="text-2xl font-bold text-gray-900">${totals.totalCost.toFixed(2)}</p>
+                </div>
+              </div>
             </div>
-          </div>
-        </div>
-        
-        <div className="bg-white rounded-xl shadow-sm p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-500">Net Profit</p>
-              <p className="text-2xl font-bold text-gray-900">৳{totals.netProfit.toFixed(2)}</p>
+            
+            <div className="bg-white rounded-xl shadow-sm p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-gray-500">Net Profit</p>
+                  <p className="text-2xl font-bold text-gray-900">${totals.netProfit.toFixed(2)}</p>
+                </div>
+              </div>
             </div>
-          </div>
-        </div>
+          </>
+        )}
       </div>
-
-
-
-
 
       {/* Charts Section */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Yield Comparison Chart */}
-        <div className="bg-white rounded-xl shadow-sm p-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">Yield Comparison</h2>
-          <Bar
-            data={{
-              labels: crops.map(c => `${c.name} - ${c.variety}`),
-              datasets: [
-                {
-                  label: 'Expected Yield',
-                  data: crops.map(c => Number(c.estimatedYield) || 0),
-                  backgroundColor: 'rgba(156, 163, 175, 0.8)',
-                  borderColor: 'rgb(156, 163, 175)',
-                  borderWidth: 1,
-                },
-                {
-                  label: 'Predicted Yield',
-                  data: crops.map(c => Number(c.predictedYield) || 0),
-                  backgroundColor: 'rgba(59, 130, 246, 0.8)',
-                  borderColor: 'rgb(59, 130, 246)',
-                  borderWidth: 1,
-                },
-                {
-                  label: 'Actual Yield',
-                  data: crops.map(c => Number(c.actualYield) || 0),
-                  backgroundColor: 'rgba(16, 185, 129, 0.8)',
-                  borderColor: 'rgb(16, 185, 129)',
-                  borderWidth: 1,
-                },
-              ],
-            }}
-            options={{
-              responsive: true,
-              plugins: {
-                legend: {
-                  position: 'top',
-                },
-                title: {
-                  display: true,
-                  text: 'Yield Comparison by Crop',
-                },
-              },
-              scales: {
-                y: {
-                  beginAtZero: true,
-                  title: {
-                    display: true,
-                    text: 'Yield',
-                  },
-                },
-              },
-            }}
-          />
-        </div>
+        {dataLoading ? (
+          <>
+            <SkeletonChart />
+            <SkeletonChart />
+          </>
+        ) : (
+          <>
+            {/* Yield Comparison Chart */}
+            <div className="bg-white rounded-xl shadow-sm p-6">
+              <h2 className="text-xl font-semibold text-gray-900 mb-4">Yield Comparison</h2>
+              {crops.length > 0 ? (
+                <Bar
+                  data={{
+                    labels: crops.map(c => `${c.name} - ${c.variety}`),
+                    datasets: [
+                      {
+                        label: 'Expected Yield',
+                        data: crops.map(c => Number(c.estimatedYield) || 0),
+                        backgroundColor: 'rgba(156, 163, 175, 0.8)',
+                        borderColor: 'rgb(156, 163, 175)',
+                        borderWidth: 1,
+                      },
+                      {
+                        label: 'Predicted Yield',
+                        data: crops.map(c => Number(c.predictedYield) || 0),
+                        backgroundColor: 'rgba(59, 130, 246, 0.8)',
+                        borderColor: 'rgb(59, 130, 246)',
+                        borderWidth: 1,
+                      },
+                      {
+                        label: 'Actual Yield',
+                        data: crops.map(c => Number(c.actualYield) || 0),
+                        backgroundColor: 'rgba(16, 185, 129, 0.8)',
+                        borderColor: 'rgb(16, 185, 129)',
+                        borderWidth: 1,
+                      },
+                    ],
+                  }}
+                  options={{
+                    responsive: true,
+                    plugins: {
+                      legend: {
+                        position: 'top',
+                      },
+                      title: {
+                        display: true,
+                        text: 'Yield Comparison by Crop',
+                      },
+                    },
+                    scales: {
+                      y: {
+                        beginAtZero: true,
+                        title: {
+                          display: true,
+                          text: 'Yield',
+                        },
+                      },
+                    },
+                  }}
+                />
+              ) : (
+                <div className="h-64 flex items-center justify-center text-gray-500">
+                  <p>No crop data available to display</p>
+                </div>
+              )}
+            </div>
 
-        {/* Profit Analysis Chart */}
-        <div className="bg-white rounded-xl shadow-sm p-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">Profit Analysis</h2>
-          <Doughnut
-            data={{
-              labels: ['Total Income', 'Total Cost', 'Net Profit'],
-              datasets: [
-                {
-                  data: [totals.totalIncome, totals.totalCost, totals.netProfit],
-                  backgroundColor: [
-                    'rgba(16, 185, 129, 0.8)',
-                    'rgba(239, 68, 68, 0.8)',
-                    'rgba(59, 130, 246, 0.8)',
-                  ],
-                  borderColor: [
-                    'rgb(16, 185, 129)',
-                    'rgb(239, 68, 68)',
-                    'rgb(59, 130, 246)',
-                  ],
-                  borderWidth: 2,
-                },
-              ],
-            }}
-            options={{
-              responsive: true,
-              plugins: {
-                legend: {
-                  position: 'bottom',
-                },
-                title: {
-                  display: true,
-                  text: 'Financial Overview',
-                },
-              },
-            }}
-          />
-        </div>
+            {/* Profit Analysis Chart */}
+            <div className="bg-white rounded-xl shadow-sm p-6">
+              <h2 className="text-xl font-semibold text-gray-900 mb-4">Profit Analysis</h2>
+              {totals.totalIncome > 0 || totals.totalCost > 0 ? (
+                <Doughnut
+                  data={{
+                    labels: ['Total Income', 'Total Cost', 'Net Profit'],
+                    datasets: [
+                      {
+                        data: [totals.totalIncome, totals.totalCost, totals.netProfit],
+                        backgroundColor: [
+                          'rgba(16, 185, 129, 0.8)',
+                          'rgba(239, 68, 68, 0.8)',
+                          'rgba(59, 130, 246, 0.8)',
+                        ],
+                        borderColor: [
+                          'rgb(16, 185, 129)',
+                          'rgb(239, 68, 68)',
+                          'rgb(59, 130, 246)',
+                        ],
+                        borderWidth: 2,
+                      },
+                    ],
+                  }}
+                  options={{
+                    responsive: true,
+                    plugins: {
+                      legend: {
+                        position: 'bottom',
+                      },
+                      title: {
+                        display: true,
+                        text: 'Financial Overview',
+                      },
+                    },
+                  }}
+                />
+              ) : (
+                <div className="h-64 flex items-center justify-center text-gray-500">
+                  <p>No financial data available to display</p>
+                </div>
+              )}
+            </div>
+          </>
+        )}
       </div>
 
       {/* Per-Crop Profit Chart */}
-      <div className="bg-white rounded-xl shadow-sm p-6">
-        <h2 className="text-xl font-semibold text-gray-900 mb-4">Per-Crop Profit Analysis</h2>
-        <Bar
-          data={{
-            labels: crops.map(c => `${c.name} - ${c.variety}`),
-            datasets: [
-              {
-                label: 'Income',
-                data: crops.map(c => {
-                  const income = (c.product && totals.revenueByProductId.get(c.product?.toString())) || 0;
-                  return income;
-                }),
-                backgroundColor: 'rgba(16, 185, 129, 0.8)',
-                borderColor: 'rgb(16, 185, 129)',
-                borderWidth: 1,
-              },
-              {
-                label: 'Cost',
-                data: crops.map(c => Number(c.totalCost) || 0),
-                backgroundColor: 'rgba(239, 68, 68, 0.8)',
-                borderColor: 'rgb(239, 68, 68)',
-                borderWidth: 1,
-              },
-              {
-                label: 'Profit',
-                data: crops.map(c => {
-                  const income = (c.product && totals.revenueByProductId.get(c.product?.toString())) || 0;
-                  const cost = Number(c.totalCost) || 0;
-                  return income - cost;
-                }),
-                backgroundColor: 'rgba(59, 130, 246, 0.8)',
-                borderColor: 'rgb(59, 130, 246)',
-                borderWidth: 1,
-              },
-            ],
-          }}
-          options={{
-            responsive: true,
-            plugins: {
-              legend: {
-                position: 'top',
-              },
-              title: {
-                display: true,
-                text: 'Income, Cost, and Profit by Crop',
-              },
-            },
-            scales: {
-              y: {
-                beginAtZero: true,
-                title: {
-                  display: true,
-                  text: 'Amount (৳)',
+      {dataLoading ? (
+        <SkeletonChart />
+      ) : (
+        <div className="bg-white rounded-xl shadow-sm p-6">
+          <h2 className="text-xl font-semibold text-gray-900 mb-4">Per-Crop Profit Analysis</h2>
+          {crops.length > 0 ? (
+            <Bar
+              data={{
+                labels: crops.map(c => `${c.name} - ${c.variety}`),
+                datasets: [
+                  {
+                    label: 'Income',
+                    data: crops.map(c => {
+                      const income = (c.product && totals.revenueByProductId.get(c.product?.toString())) || 0;
+                      return income;
+                    }),
+                    backgroundColor: 'rgba(16, 185, 129, 0.8)',
+                    borderColor: 'rgb(16, 185, 129)',
+                    borderWidth: 1,
+                  },
+                  {
+                    label: 'Cost',
+                    data: crops.map(c => Number(c.totalCost) || 0),
+                    backgroundColor: 'rgba(239, 68, 68, 0.8)',
+                    borderColor: 'rgb(239, 68, 68)',
+                    borderWidth: 1,
+                  },
+                  {
+                    label: 'Profit',
+                    data: crops.map(c => {
+                      const income = (c.product && totals.revenueByProductId.get(c.product?.toString())) || 0;
+                      const cost = Number(c.totalCost) || 0;
+                      return income - cost;
+                    }),
+                    backgroundColor: 'rgba(59, 130, 246, 0.8)',
+                    borderColor: 'rgb(59, 130, 246)',
+                    borderWidth: 1,
+                  },
+                ],
+              }}
+              options={{
+                responsive: true,
+                plugins: {
+                  legend: {
+                    position: 'top',
+                  },
+                  title: {
+                    display: true,
+                    text: 'Income, Cost, and Profit by Crop',
+                  },
                 },
-              },
-            },
-          }}
-        />
-      </div>
+                scales: {
+                  y: {
+                    beginAtZero: true,
+                    title: {
+                      display: true,
+                      text: 'Amount ($)',
+                    },
+                  },
+                },
+              }}
+            />
+          ) : (
+            <div className="h-64 flex items-center justify-center text-gray-500">
+              <p>No crop data available to display</p>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Performance Metrics */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-white rounded-xl shadow-sm p-6 text-center">
-          <div className="flex items-center justify-center mb-2">
-            {totals.netProfit >= 0 ? (
-              <TrendingUp className="w-8 h-8 text-green-500" />
-            ) : (
-              <TrendingDown className="w-8 h-8 text-red-500" />
-            )}
-          </div>
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">Profit Trend</h3>
-          <p className={`text-2xl font-bold ${totals.netProfit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-            {totals.netProfit >= 0 ? '+' : ''}{totals.netProfit.toFixed(2)} ৳
-          </p>
-          <p className="text-sm text-gray-600">Net Profit</p>
-        </div>
-
-        <div className="bg-white rounded-xl shadow-sm p-6 text-center">
-          <div className="w-24 h-24 mx-auto mb-4 relative">
-            <svg className="w-24 h-24 transform -rotate-90" viewBox="0 0 100 100">
-              <circle
-                cx="50"
-                cy="50"
-                r="40"
-                stroke="currentColor"
-                strokeWidth="8"
-                fill="transparent"
-                className="text-gray-200"
-              />
-              <circle
-                cx="50"
-                cy="50"
-                r="40"
-                stroke="currentColor"
-                strokeWidth="8"
-                fill="transparent"
-                strokeDasharray={`${(totals.actual / Math.max(totals.expected, 1)) * 251.2} 251.2`}
-                className="text-green-500"
-              />
-            </svg>
-            <div className="absolute inset-0 flex items-center justify-center">
-              <span className="text-lg font-bold text-gray-900">
-                {((totals.actual / Math.max(totals.expected, 1)) * 100).toFixed(1)}%
-              </span>
+        {dataLoading ? (
+          <>
+            <SkeletonCard />
+            <SkeletonCard />
+            <SkeletonCard />
+          </>
+        ) : (
+          <>
+            <div className="bg-white rounded-xl shadow-sm p-6 text-center">
+              <div className="flex items-center justify-center mb-2">
+                {totals.netProfit >= 0 ? (
+                  <TrendingUp className="w-8 h-8 text-green-500" />
+                ) : (
+                  <TrendingDown className="w-8 h-8 text-red-500" />
+                )}
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">Profit Trend</h3>
+              <p className={`text-2xl font-bold ${totals.netProfit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                {totals.netProfit >= 0 ? '+' : ''}{totals.netProfit.toFixed(2)} $
+              </p>
+              <p className="text-sm text-gray-600">Net Profit</p>
             </div>
-          </div>
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">Yield Achievement</h3>
-          <p className="text-sm text-gray-600">Actual vs Expected</p>
-        </div>
 
-        <div className="bg-white rounded-xl shadow-sm p-6 text-center">
-          <div className="w-24 h-24 mx-auto mb-4 relative">
-            <svg className="w-24 h-24 transform -rotate-90" viewBox="0 0 100 100">
-              <circle
-                cx="50"
-                cy="50"
-                r="40"
-                stroke="currentColor"
-                strokeWidth="8"
-                fill="transparent"
-                className="text-gray-200"
-              />
-              <circle
-                cx="50"
-                cy="50"
-                r="40"
-                stroke="currentColor"
-                strokeWidth="8"
-                fill="transparent"
-                strokeDasharray={`${(totals.totalIncome / Math.max(totals.totalCost, 1)) * 251.2} 251.2`}
-                className="text-blue-500"
-              />
-            </svg>
-            <div className="absolute inset-0 flex items-center justify-center">
-              <span className="text-lg font-bold text-gray-900">
-                {((totals.totalIncome / Math.max(totals.totalCost, 1)) * 100).toFixed(1)}%
-              </span>
-            </div>
-          </div>
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">ROI</h3>
-          <p className="text-sm text-gray-600">Return on Investment</p>
-        </div>
-      </div>
-
-      <div className="bg-white rounded-xl shadow-sm p-6">
-        <h2 className="text-xl font-semibold text-gray-900 mb-4">Yield and Profit by Crop</h2>
-        <div className="space-y-3">
-          {crops.length === 0 && (
-            <p className="text-gray-500">No crops yet.</p>
-          )}
-          {crops.map((c) => {
-            const income = (c.product && totals.revenueByProductId.get(c.product?.toString())) || 0;
-            const cost = Number(c.totalCost || 0);
-            const profit = income - cost;
-            return (
-              <div key={c._id} className="p-3 rounded-lg border border-gray-200 flex items-center justify-between">
-                <div>
-                  <p className="font-medium text-gray-900">{c.name} - {c.variety}</p>
-                  <p className="text-xs text-gray-500">Area: {c.area} {c.unit} • Unit: {c.yieldUnit}</p>
-                </div>
-                <div className="grid grid-cols-5 gap-6 text-sm">
-                  <div>
-                    <p className="text-gray-500">Expected</p>
-                    <p className="font-semibold">{c.estimatedYield ?? '-'} {c.yieldUnit}</p>
-                  </div>
-                  <div>
-                    <p className="text-gray-500">Predicted</p>
-                    <p className="font-semibold">{c.predictedYield ?? '-'} {c.yieldUnit}</p>
-                  </div>
-                  <div>
-                    <p className="text-gray-500">Actual</p>
-                    <p className="font-semibold">{c.actualYield ?? '-'} {c.yieldUnit}</p>
-                  </div>
-                  <div>
-                    <p className="text-gray-500">Income</p>
-                    <p className="font-semibold">৳{income.toFixed(2)}</p>
-                  </div>
-                  <div>
-                    <p className="text-gray-500">Profit</p>
-                    <p className="font-semibold">৳{profit.toFixed(2)}</p>
-                  </div>
+            <div className="bg-white rounded-xl shadow-sm p-6 text-center">
+              <div className="w-24 h-24 mx-auto mb-4 relative">
+                <svg className="w-24 h-24 transform -rotate-90" viewBox="0 0 100 100">
+                  <circle
+                    cx="50"
+                    cy="50"
+                    r="40"
+                    stroke="currentColor"
+                    strokeWidth="8"
+                    fill="transparent"
+                    className="text-gray-200"
+                  />
+                  <circle
+                    cx="50"
+                    cy="50"
+                    r="40"
+                    stroke="currentColor"
+                    strokeWidth="8"
+                    fill="transparent"
+                    strokeDasharray={`${(totals.actual / Math.max(totals.expected, 1)) * 251.2} 251.2`}
+                    className="text-green-500"
+                  />
+                </svg>
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <span className="text-lg font-bold text-gray-900">
+                    {((totals.actual / Math.max(totals.expected, 1)) * 100).toFixed(1)}%
+                  </span>
                 </div>
               </div>
-            );
-          })}
-        </div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">Yield Achievement</h3>
+              <p className="text-sm text-gray-600">Actual vs Expected</p>
+            </div>
+
+            <div className="bg-white rounded-xl shadow-sm p-6 text-center">
+              <div className="w-24 h-24 mx-auto mb-4 relative">
+                <svg className="w-24 h-24 transform -rotate-90" viewBox="0 0 100 100">
+                  <circle
+                    cx="50"
+                    cy="50"
+                    r="40"
+                    stroke="currentColor"
+                    strokeWidth="8"
+                    fill="transparent"
+                    className="text-gray-200"
+                  />
+                  <circle
+                    cx="50"
+                    cy="50"
+                    r="40"
+                    stroke="currentColor"
+                    strokeWidth="8"
+                    fill="transparent"
+                    strokeDasharray={`${(totals.totalIncome / Math.max(totals.totalCost, 1)) * 251.2} 251.2`}
+                    className="text-blue-500"
+                  />
+                </svg>
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <span className="text-lg font-bold text-gray-900">
+                    {((totals.totalIncome / Math.max(totals.totalCost, 1)) * 100).toFixed(1)}%
+                  </span>
+                </div>
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">ROI</h3>
+              <p className="text-sm text-gray-600">Return on Investment</p>
+            </div>
+          </>
+        )}
       </div>
+
+      {/* Crop Details Table */}
+      {dataLoading ? (
+        <SkeletonTable />
+      ) : (
+        <div className="bg-white rounded-xl shadow-sm p-6">
+          <h2 className="text-xl font-semibold text-gray-900 mb-4">Yield and Profit by Crop</h2>
+          <div className="space-y-3">
+            {crops.length === 0 ? (
+              <div className="text-center py-8 text-gray-500">
+                <BarChart3 className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+                <p className="text-lg">No crops found</p>
+                <p className="text-sm">Add some crops to see analytics data</p>
+              </div>
+            ) : (
+              crops.map((c) => {
+                const income = (c.product && totals.revenueByProductId.get(c.product?.toString())) || 0;
+                const cost = Number(c.totalCost || 0);
+                const profit = income - cost;
+                return (
+                  <div key={c._id} className="p-3 rounded-lg border border-gray-200 flex items-center justify-between">
+                    <div>
+                      <p className="font-medium text-gray-900">{c.name} - {c.variety}</p>
+                      <p className="text-xs text-gray-500">Area: {c.area} {c.unit} • Unit: {c.yieldUnit}</p>
+                    </div>
+                    <div className="grid grid-cols-5 gap-6 text-sm">
+                      <div>
+                        <p className="text-gray-500">Expected</p>
+                        <p className="font-semibold">{c.estimatedYield ?? '-'} {c.yieldUnit}</p>
+                      </div>
+                      <div>
+                        <p className="text-gray-500">Predicted</p>
+                        <p className="font-semibold">{c.predictedYield ?? '-'} {c.yieldUnit}</p>
+                      </div>
+                      <div>
+                        <p className="text-gray-500">Actual</p>
+                        <p className="font-semibold">{c.actualYield ?? '-'} {c.yieldUnit}</p>
+                      </div>
+                      <div>
+                        <p className="text-gray-500">Income</p>
+                        <p className="font-semibold">${income.toFixed(2)}</p>
+                      </div>
+                      <div>
+                        <p className="text-gray-500">Profit</p>
+                        <p className="font-semibold">${profit.toFixed(2)}</p>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Environmental Insights */}
       <div className="bg-white rounded-xl shadow-sm p-6">
@@ -526,7 +676,10 @@ export default function AnalyticsPage() {
             ))}
           </div>
         ) : (
-          <p className="text-gray-600">Environmental data unavailable.</p>
+          <div className="text-center py-8 text-gray-500">
+            <p className="text-lg">Environmental data unavailable</p>
+            <p className="text-sm">Weather data will appear here when available</p>
+          </div>
         )}
       </div>
     </div>
