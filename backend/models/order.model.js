@@ -31,6 +31,12 @@ const OrderSchema = new mongoose.Schema({
                 type: mongoose.Schema.Types.ObjectId,
                 ref: 'User',
                 required: true
+            },
+            // Per-item status so each farmer can manage their part of an order
+            status: {
+                type: String,
+                enum: ['pending', 'confirmed', 'shipped', 'delivered', 'cancelled'],
+                default: 'pending'
             }
         }
     ],
