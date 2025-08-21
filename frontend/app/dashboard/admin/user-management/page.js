@@ -84,16 +84,16 @@ export default function UserManagementPage() {
     setLoading(true);
     try {
       await deleteUserById(selectedUser._id);
-      // Remove the user from the local state
+
       setUsers(users.filter(user => user._id !== selectedUser._id));
       setShowDeleteModal(false);
       setSelectedUser(null);
       
-      // Show success message
+
       setSuccessMessage(`${selectedUser.name} has been successfully deleted.`);
       setShowSuccessModal(true);
       
-      // Auto-dismiss after 3 seconds
+
       setTimeout(() => {
         setShowSuccessModal(false);
         setSuccessMessage('');

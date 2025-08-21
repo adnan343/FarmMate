@@ -67,10 +67,10 @@ export default function Sidebar({ userRole, userName, userEmail }) {
             label: 'My Farm',
             icon: Monitor,
             children: [
-              { label: 'Farm Profile', path: '/dashboard/farmer/farm-profile' },
-              { label: 'My Products', path: '/dashboard/farmer/my-products' },
-              { label: 'My Orders', path: '/dashboard/farmer/my-orders' },
-              { label: 'Condition Reports', path: '/dashboard/farmer/condition-reports' }
+                             { label: 'Farm Profile', path: '/dashboard/farmer/farm-profile' },
+               { label: 'My Products', path: '/dashboard/farmer/my-products' },
+               { label: 'My Orders', path: '/dashboard/farmer/my-orders' },
+               { label: 'Farm Condition Reports', path: '/dashboard/farmer/farm-condition-reports' }
             ]
           },
           {
@@ -190,6 +190,7 @@ export default function Sidebar({ userRole, userName, userEmail }) {
             path: '/dashboard/buyer/favorites',
             children: []
           },
+          
           {
             id: 'cart',
             label: 'Cart',

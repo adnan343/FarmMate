@@ -1,6 +1,7 @@
 // app/dashboard/farmer/page.js
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
+import WeatherWidget from '@/app/components/WeatherWidget';
 
 export default async function FarmerDashboard() {
   const cookieStore = cookies();
@@ -12,6 +13,7 @@ export default async function FarmerDashboard() {
 
   return (
     <div className="space-y-6">
+      <WeatherWidget />
       <div className="bg-white shadow rounded-lg p-6">
         <h2 className="text-2xl font-bold text-gray-900 mb-4">Welcome, Farmer</h2>
         <p className="text-gray-600">Manage your farm operations and view your listings.</p>

@@ -2,7 +2,6 @@ import bcrypt from 'bcrypt';
 import dotenv from 'dotenv';
 import mongoose from 'mongoose';
 import { connectDB } from './config/db.js';
-import Crop from './models/crop.model.js';
 import Farm from './models/farm.model.js';
 import Product from './models/product.model.js';
 import User from './models/user.model.js';
@@ -18,7 +17,7 @@ const dummyFarmers = [
   {
     name: 'Azmain Adib',
     email: 'azmain@gmial.com',
-    password: '123456',
+    password: '12345678',
     role: 'farmer',
     phone: '+1-555-0101',
     location: 'Springfield, IL',
@@ -60,36 +59,28 @@ const dummyFarms = [
     location: 'Springfield, IL',
     landSize: '50 acres',
     soilType: 'Loamy',
-    mapView: 'https://maps.google.com/?q=Springfield,IL',
-    description: 'Organic vegetable and fruit farm specializing in tomatoes, lettuce, and berries.',
-    establishedYear: 2018
+    mapView: 'https://maps.google.com/?q=Springfield,IL'
   },
   {
     name: 'Sunny Meadows Dairy',
     location: 'Madison, WI',
     landSize: '100 acres',
     soilType: 'Clay',
-    mapView: 'https://maps.google.com/?q=Madison,WI',
-    description: 'Dairy farm producing organic milk, cheese, and yogurt products.',
-    establishedYear: 2015
+    mapView: 'https://maps.google.com/?q=Madison,WI'
   },
   {
     name: 'Golden Fields Farm',
     location: 'Des Moines, IA',
     landSize: '200 acres',
     soilType: 'Silty',
-    mapView: 'https://maps.google.com/?q=Des+Moines,IA',
-    description: 'Grain farm specializing in corn and wheat cultivation.',
-    establishedYear: 2010
+    mapView: 'https://maps.google.com/?q=Des+Moines,IA'
   },
   {
     name: 'Orchard Hill Farm',
     location: 'Fresno, CA',
     landSize: '75 acres',
     soilType: 'Sandy',
-    mapView: 'https://maps.google.com/?q=Fresno,CA',
-    description: 'Fruit orchard producing apples, oranges, and various berries.',
-    establishedYear: 2012
+    mapView: 'https://maps.google.com/?q=Fresno,CA'
   }
 ];
 
@@ -286,7 +277,6 @@ async function seedData() {
     // Clear existing data
     await User.deleteMany({});
     await Farm.deleteMany({});
-    await Crop.deleteMany({});
     await Product.deleteMany({});
     
     console.log('Cleared existing data');
@@ -311,10 +301,7 @@ async function seedData() {
     const createdFarms = [];
     for (let i = 0; i < dummyFarms.length; i++) {
       const farmData = dummyFarms[i];
-      const farm = new Farm({
-        ...farmData,
-        farmer: createdFarmers[i]._id
-      });
+      const farm = new Farm(farmData);
       
       const savedFarm = await farm.save();
       createdFarms.push(savedFarm);
@@ -325,105 +312,6 @@ async function seedData() {
     for (let i = 0; i < createdFarmers.length; i++) {
       createdFarmers[i].farms.push(createdFarms[i]._id);
       await createdFarmers[i].save();
-    }
-
-    // Create sample crops for each farm
-    const sampleCrops = [
-      {
-        name: 'Tomatoes',
-        variety: 'Roma',
-        area: 5,
-        unit: 'acres',
-        plantingDate: new Date('2024-03-15'),
-        expectedHarvestDate: new Date('2024-07-15'),
-        estimatedYield: 2000,
-        yieldUnit: 'kg',
-        notes: 'Organic tomatoes for market sale',
-        stage: 'harvested',
-        status: 'completed',
-        isHarvested: true,
-        harvestDate: new Date('2024-07-10'),
-        actualYield: 1800
-      },
-      {
-        name: 'Lettuce',
-        variety: 'Romaine',
-        area: 2,
-        unit: 'acres',
-        plantingDate: new Date('2024-04-01'),
-        expectedHarvestDate: new Date('2024-06-01'),
-        estimatedYield: 800,
-        yieldUnit: 'kg',
-        notes: 'Fresh lettuce for local restaurants',
-        stage: 'harvested',
-        status: 'completed',
-        isHarvested: true,
-        harvestDate: new Date('2024-06-05'),
-        actualYield: 750
-      },
-      {
-        name: 'Corn',
-        variety: 'Sweet',
-        area: 10,
-        unit: 'acres',
-        plantingDate: new Date('2024-05-01'),
-        expectedHarvestDate: new Date('2024-09-01'),
-        estimatedYield: 5000,
-        yieldUnit: 'kg',
-        notes: 'Sweet corn for canning and fresh market',
-        stage: 'growing'
-      },
-      {
-        name: 'Apples',
-        variety: 'Gala',
-        area: 8,
-        unit: 'acres',
-        plantingDate: new Date('2020-03-01'),
-        expectedHarvestDate: new Date('2024-09-15'),
-        estimatedYield: 12000,
-        yieldUnit: 'kg',
-        notes: 'Mature apple orchard',
-        stage: 'fruiting'
-      }
-    ];
-
-    const createdCrops = [];
-    for (let i = 0; i < createdFarms.length; i++) {
-      const cropData = sampleCrops[i];
-      const crop = new Crop({
-        ...cropData,
-        farm: createdFarms[i]._id,
-        farmer: createdFarmers[i]._id
-      });
-      
-      const savedCrop = await crop.save();
-      createdCrops.push(savedCrop);
-      console.log(`Created crop: ${cropData.name} for farm: ${createdFarms[i].name}`);
-      
-      // Create product from harvested crops
-      if (cropData.stage === 'harvested') {
-        const product = new Product({
-          name: `${cropData.name} - ${cropData.variety}`,
-          description: `${cropData.name} variety ${cropData.variety} harvested from ${createdFarms[i].name}`,
-          price: 0, // Will be set by farmer later
-          category: 'vegetables',
-          stock: cropData.actualYield || cropData.estimatedYield || 0,
-          unit: cropData.yieldUnit || 'kg',
-          farmer: createdFarmers[i]._id,
-          farm: createdFarms[i]._id,
-          isAvailable: false, // Not published to marketplace yet
-          rating: 0,
-          reviewCount: 0
-        });
-        
-        await product.save();
-        
-        // Link the product to the crop
-        savedCrop.product = product._id;
-        await savedCrop.save();
-        
-        console.log(`Created product from harvested crop: ${cropData.name}`);
-      }
     }
     
     // Create products and assign to farmers

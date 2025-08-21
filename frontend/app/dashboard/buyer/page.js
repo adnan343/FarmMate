@@ -2,6 +2,7 @@ import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { Store, Package, Heart } from 'lucide-react';
+import WeatherWidget from '@/app/components/WeatherWidget';
 
 export default async function BuyerDashboard() {
   const cookieStore = await cookies(); // ✅ Await the cookies
@@ -13,6 +14,7 @@ export default async function BuyerDashboard() {
 
   return (
     <div className="space-y-6">
+      <WeatherWidget />
       <div className="bg-white shadow rounded-lg p-6">
         <h2 className="text-2xl font-bold text-gray-900 mb-4">Welcome, Buyer</h2>
         <p className="text-gray-600">Browse and purchase fresh farm products.</p>

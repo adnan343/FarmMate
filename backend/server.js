@@ -10,6 +10,7 @@ import analyticsRoutes from "./routes/analytics.routes.js";
 import cartRoutes from "./routes/cart.routes.js";
 import cropRoutes from "./routes/crop.routes.js";
 import farmRoutes from "./routes/farm.routes.js";
+import farmConditionRoutes from "./routes/farmCondition.routes.js";
 import forumRoutes from "./routes/forum.routes.js";
 import orderRoutes from "./routes/order.routes.js";
 import productRoutes from "./routes/product.routes.js";
@@ -32,6 +33,11 @@ app.use(cookieParser()); // 2. Add this middleware after express.json()
 
 app.use("/api/farms", farmRoutes);
 app.use("/api/crops", cropRoutes);
+<<<<<<< HEAD
+=======
+app.use("/api/farm-conditions", farmConditionRoutes);
+
+>>>>>>> 28d56ee (Added live weather update and AI report analysis)
 app.use("/api/users", userRoute);
 app.use("/api/cart", cartRoutes);
 app.use("/api/products", productRoutes);

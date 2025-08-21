@@ -664,3 +664,138 @@ export async function deleteTaskById(id) {
   return data;
 }
 
+// Farm Condition API functions
+const FARM_CONDITION_API = getApiUrl('/farm-conditions');
+
+// Helper function to get auth headers (cookies are automatically sent)
+function getAuthHeaders() {
+  return {
+    'Content-Type': 'application/json',
+  };
+}
+
+export async function createFarmCondition(reportData) {
+  try {
+    const res = await fetch(FARM_CONDITION_API, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      credentials: 'include',
+      body: JSON.stringify(reportData),
+    });
+    
+    const responseData = await res.json();
+    
+    if (!res.ok) {
+      throw new Error(responseData.msg || 'Failed to create farm condition report');
+    }
+    
+    return responseData;
+  } catch (error) {
+    if (error.name === 'TypeError' && error.message.includes('fetch')) {
+      throw new Error(getErrorMessage());
+    }
+    throw error;
+  }
+}
+
+export async function getFarmerFarmConditions(params = {}) {
+  try {
+    const queryParams = new URLSearchParams(params);
+    const res = await fetch(`${FARM_CONDITION_API}?${queryParams}`, {
+      headers: getAuthHeaders(),
+      credentials: 'include',
+    });
+    if (!res.ok) throw new Error('Failed to fetch farm conditions');
+    const data = await res.json();
+    return data.data;
+  } catch (error) {
+    if (error.name === 'TypeError' && error.message.includes('fetch')) {
+      throw new Error(getErrorMessage());
+    }
+    throw error;
+  }
+}
+
+export async function getFarmCondition(reportId) {
+  try {
+    const res = await fetch(`${FARM_CONDITION_API}/${reportId}`, {
+      headers: getAuthHeaders(),
+      credentials: 'include',
+    });
+    if (!res.ok) throw new Error('Failed to fetch farm condition');
+    const data = await res.json();
+    return data.data;
+  } catch (error) {
+    if (error.name === 'TypeError' && error.message.includes('fetch')) {
+      throw new Error(getErrorMessage());
+    }
+    throw error;
+  }
+}
+
+export async function updateFarmConditionStatus(reportId, status) {
+  try {
+    const res = await fetch(`${FARM_CONDITION_API}/${reportId}/status`, {
+      method: 'PATCH',
+      headers: getAuthHeaders(),
+      credentials: 'include',
+      body: JSON.stringify({ status }),
+    });
+    
+    const responseData = await res.json();
+    
+    if (!res.ok) {
+      throw new Error(responseData.msg || 'Failed to update farm condition status');
+    }
+    
+    return responseData;
+  } catch (error) {
+    if (error.name === 'TypeError' && error.message.includes('fetch')) {
+      throw new Error(getErrorMessage());
+    }
+    throw error;
+  }
+}
+
+export async function deleteFarmCondition(reportId) {
+  try {
+    const res = await fetch(`${FARM_CONDITION_API}/${reportId}`, {
+      method: 'DELETE',
+      headers: getAuthHeaders(),
+      credentials: 'include',
+    });
+    
+    const responseData = await res.json();
+    
+    if (!res.ok) {
+      throw new Error(responseData.msg || 'Failed to delete farm condition');
+    }
+    
+    return responseData;
+  } catch (error) {
+    if (error.name === 'TypeError' && error.message.includes('fetch')) {
+      throw new Error(getErrorMessage());
+    }
+    throw error;
+  }
+}
+
+export async function getFarmConditionStats() {
+  try {
+    const res = await fetch(`${FARM_CONDITION_API}/stats`, {
+      headers: getAuthHeaders(),
+      credentials: 'include',
+    });
+    if (!res.ok) throw new Error('Failed to fetch farm condition stats');
+    const data = await res.json();
+    return data.data;
+  } catch (error) {
+    if (error.name === 'TypeError' && error.message.includes('fetch')) {
+      throw new Error(getErrorMessage());
+    }
+    throw error;
+  }
+}
+
+
+
