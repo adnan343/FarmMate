@@ -1,11 +1,12 @@
 // server.js
 
+import cookieParser from 'cookie-parser'; // 1. Add this import
 import cors from 'cors';
 import dotenv from 'dotenv';
 import express from 'express';
 import { connectDB } from "./config/db.js";
-import cookieParser from 'cookie-parser'; // 1. Add this import
 
+import analyticsRoutes from "./routes/analytics.routes.js";
 import cartRoutes from "./routes/cart.routes.js";
 import cropRoutes from "./routes/crop.routes.js";
 import farmRoutes from "./routes/farm.routes.js";
@@ -13,8 +14,8 @@ import forumRoutes from "./routes/forum.routes.js";
 import orderRoutes from "./routes/order.routes.js";
 import productRoutes from "./routes/product.routes.js";
 import qaRoutes from "./routes/qa.routes.js";
+import taskRoutes from "./routes/task.routes.js";
 import userRoute from "./routes/user.route.js";
-import analyticsRoutes from "./routes/analytics.routes.js";
 
 dotenv.config();
 
@@ -38,6 +39,7 @@ app.use("/api/orders", orderRoutes);
 app.use("/api/forum", forumRoutes);
 app.use("/api/qa", qaRoutes);
 app.use("/api/analytics", analyticsRoutes);
+app.use("/api/tasks", taskRoutes);
 
 // Add a simple health check endpoint
 app.get('/api/health', (req, res) => {

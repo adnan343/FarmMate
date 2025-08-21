@@ -5,6 +5,7 @@ const FARM_API_BASE = getApiUrl('/farms');
 const PRODUCT_API_BASE = getApiUrl('/products');
 const CROP_API_BASE = getApiUrl('/crops');
 const ANALYTICS_API_BASE = getApiUrl('/analytics');
+const TASKS_API_BASE = getApiUrl('/tasks');
 
 export async function registerUser(data) {
   try {
@@ -581,5 +582,85 @@ export function clearAuthCookies() {
       return { message: 'Cookies cleared' };
     }
   };
+}
+
+// Task API functions
+export async function createTask(task) {
+  const res = await fetch(`${TASKS_API_BASE}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify(task),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message || 'Failed to create task');
+  return data.data;
+}
+
+export async function getTasksByFarmer(farmerId) {
+  const res = await fetch(`${TASKS_API_BASE}/farmer/${farmerId}`, {
+    method: 'GET',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message || 'Failed to fetch tasks');
+  return data.data;
+}
+
+export async function getTaskSummary(farmerId) {
+  const res = await fetch(`${TASKS_API_BASE}/summary/${farmerId}`, {
+    method: 'GET',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message || 'Failed to fetch task summary');
+  return data.data;
+}
+
+export async function getUpcomingTasks(farmerId) {
+  const res = await fetch(`${TASKS_API_BASE}/upcoming/${farmerId}`, {
+    method: 'GET',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message || 'Failed to fetch upcoming tasks');
+  return data.data;
+}
+
+export async function getCategoryProgressByFarmer(farmerId) {
+  const res = await fetch(`${TASKS_API_BASE}/categories/${farmerId}`, {
+    method: 'GET',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message || 'Failed to fetch category progress');
+  return data.data;
+}
+
+export async function updateTaskById(id, updates) {
+  const res = await fetch(`${TASKS_API_BASE}/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify(updates),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message || 'Failed to update task');
+  return data.data;
+}
+
+export async function deleteTaskById(id) {
+  const res = await fetch(`${TASKS_API_BASE}/${id}`, {
+    method: 'DELETE',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.message || 'Failed to delete task');
+  return data;
 }
 
