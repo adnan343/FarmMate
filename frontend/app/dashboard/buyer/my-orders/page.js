@@ -1,6 +1,6 @@
 'use client';
 
-import { AlertCircle, Calendar, CheckCircle, Clock, MapPin, Package, ShoppingBag, Truck, XCircle } from 'lucide-react';
+import { AlertCircle, Calendar, CheckCircle, Clock, FileDown, MapPin, Package, ShoppingBag, Truck, XCircle } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 export default function MyOrdersPage() {
@@ -135,6 +135,104 @@ export default function MyOrdersPage() {
 
   const groupedOrders = orders.flatMap(splitOrderByFarmer);
 
+  const downloadPayslip = (g) => {
+    try {
+      const html = `<!DOCTYPE html>
+        <html>
+          <head>
+            <meta charset=\"utf-8\" />
+            <title>Payslip - ${g.parentOrderId.slice(-8)} - ${g.farmer?.name || 'Farmer'}</title>
+            <style>
+              body { font-family: Arial, sans-serif; padding: 24px; color: #111827; }
+              h1 { margin: 0 0 4px 0; font-size: 22px; }
+              h2 { margin: 16px 0 8px; font-size: 16px; }
+              .muted { color: #6B7280; }
+              .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+              .row { display: flex; gap: 24px; }
+              .col { flex: 1; }
+              table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+              th, td { border: 1px solid #E5E7EB; padding: 8px; text-align: left; font-size: 14px; }
+              th { background: #F9FAFB; }
+              .totals { text-align: right; margin-top: 12px; font-weight: 600; }
+            </style>
+          </head>
+          <body>
+            <div class=\"header\">
+              <div>
+                <h1>FarmMate Payslip</h1>
+                <div class=\"muted\">Sub-order for ${g.farmer?.name || 'Unknown farmer'}</div>
+              </div>
+              <div class=\"muted\">Generated: ${new Date().toLocaleString()}</div>
+            </div>
+
+            <div class=\"row\">
+              <div class=\"col\">
+                <h2>Order</h2>
+                <div class=\"muted\">Parent Order ID: ${g.parentOrderId}</div>
+                <div class=\"muted\">Order Date: ${new Date(g.orderDate).toLocaleString()}</div>
+                <div class=\"muted\">Status: ${g.status}</div>
+              </div>
+              <div class=\"col\">
+                <h2>Shipping</h2>
+                ${g.shippingAddress ? `
+                  <div>${g.shippingAddress.street || ''}</div>
+                  <div>${g.shippingAddress.city || ''}, ${g.shippingAddress.state || ''} ${g.shippingAddress.zipCode || ''}</div>
+                  <div>${g.shippingAddress.country || ''}</div>
+                ` : '<div class=\"muted\">N/A</div>'}
+              </div>
+            </div>
+
+            <h2>Items</h2>
+            <table>
+              <thead>
+                <tr>
+                  <th>Product</th>
+                  <th>Qty</th>
+                  <th>Price</th>
+                  <th>Subtotal</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${g.items.map(i => `
+                  <tr>
+                    <td>${i.name}</td>
+                    <td>${i.quantity}</td>
+                    <td>$${Number(i.price).toFixed(2)}</td>
+                    <td>$${(Number(i.price) * Number(i.quantity)).toFixed(2)}</td>
+                    <td>${i.status || 'pending'}</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+            <div class=\"totals\">Total due: $${g.total.toFixed(2)}</div>
+            ${g.notes ? `<h2>Notes</h2><div>${g.notes}</div>` : ''}
+            <script>window.onload = () => { try { window.print(); } catch(e){} }<\/script>
+          </body>
+        </html>`;
+
+      const blob = new Blob([html], { type: 'text/html' });
+      const url = URL.createObjectURL(blob);
+      const w = window.open(url, '_blank', 'noopener');
+      if (w) {
+        // Cleanup after some time
+        setTimeout(() => URL.revokeObjectURL(url), 60_000);
+      } else {
+        // Popup blocked: fallback to file download
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `payslip-${g.parentOrderId.slice(-8)}-${(g.farmer?.name || 'farmer').replace(/\s+/g,'_')}.html`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 0);
+      }
+    } catch (e) {
+      console.error('Payslip generation failed', e);
+      alert('Could not generate payslip.');
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -180,6 +278,15 @@ export default function MyOrdersPage() {
                     <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(g.status)}`}>
                       {g.status.charAt(0).toUpperCase() + g.status.slice(1)}
                     </span>
+                    {(g.status === 'confirmed' || g.status === 'shipped' || g.status === 'delivered') && (
+                      <button
+                        onClick={() => downloadPayslip(g)}
+                        className="inline-flex items-center gap-1 px-3 py-1 text-sm rounded-md bg-teal-600 text-white hover:bg-teal-700"
+                        title="Download payslip"
+                      >
+                        <FileDown className="w-4 h-4" /> Payslip
+                      </button>
+                    )}
                   </div>
                 </div>
 
