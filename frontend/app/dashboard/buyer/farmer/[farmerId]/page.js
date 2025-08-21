@@ -45,7 +45,9 @@ export default function FarmerProductsPage() {
       setUser({ _id: userId });
 
       // Fetch user's favorites
-      const response = await fetch(`http://localhost:5000/api/users/${userId}/favorites`);
+      const response = await fetch(`http://localhost:5000/api/users/${userId}/favorites`, {
+        credentials: 'include'
+      });
       if (response.ok) {
         const result = await response.json();
         if (result.success) {
@@ -144,7 +146,9 @@ export default function FarmerProductsPage() {
       const userId = cookies.userId;
       if (!userId) return;
 
-      const response = await fetch(`http://localhost:5000/api/cart/${userId}`);
+      const response = await fetch(`http://localhost:5000/api/cart/${userId}`, {
+        credentials: 'include'
+      });
       if (response.ok) {
         const result = await response.json();
         if (result.success) {
@@ -176,6 +180,7 @@ export default function FarmerProductsPage() {
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include',
         body: JSON.stringify({
           productId: productId,
           quantity: qty
