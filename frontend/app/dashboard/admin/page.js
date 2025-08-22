@@ -23,14 +23,10 @@ export default async function AdminDashboard() {
         </div>
         
         <div className="bg-white shadow rounded-lg p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">System Analytics</h3>
-          <p className="text-gray-600">View platform statistics and performance</p>
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">Q&A Management</h3>
+          <p className="text-gray-600">View and manage questions and answers</p>
         </div>
-        
-        <div className="bg-white shadow rounded-lg p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">Content Moderation</h3>
-          <p className="text-gray-600">Review and moderate product listings</p>
-        </div>
+    
       </div>
     </div>
   );

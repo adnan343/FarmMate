@@ -80,12 +80,12 @@ export default function FarmerOrdersPage() {
       if (response.ok) {
         const result = await response.json();
         if (result.success) {
-          // Update the order in the local state
-          setOrders(orders.map(order => 
-            order._id === orderId ? { ...order, status: newStatus } : order
+          // Replace with server-updated order so item-level statuses are accurate
+          setOrders(prev => prev.map(order => 
+            order._id === orderId ? result.data : order
           ));
           if (selectedOrder && selectedOrder._id === orderId) {
-            setSelectedOrder({ ...selectedOrder, status: newStatus });
+            setSelectedOrder(result.data);
           }
         }
       } else {
@@ -154,8 +154,32 @@ export default function FarmerOrdersPage() {
     });
   };
 
+  // Some historical orders may have items where farmer was deleted
+  // or not populated (null). This helper safely determines ownership.
+  const isMyItem = (item) => {
+    if (!item || !user) return false;
+    const farmerId = item?.farmer?._id || item?.farmer; // populated doc or ObjectId/string
+    if (!farmerId || !user._id) return false;
+    return String(farmerId) === String(user._id);
+  };
+
   const getMyProductsFromOrder = (order) => {
-    return order.items.filter(item => item.farmer._id === user._id);
+    if (!order || !Array.isArray(order.items)) return [];
+    return order.items.filter((item) => isMyItem(item));
+  };
+
+  const getMyActionPermissions = (order) => {
+    const myItems = getMyProductsFromOrder(order);
+    const hasPending = myItems.some(i => (i.status || 'pending') === 'pending');
+    const hasConfirmed = myItems.some(i => i.status === 'confirmed');
+    const hasShipped = myItems.some(i => i.status === 'shipped');
+    const hasActive = myItems.some(i => !['cancelled', 'delivered'].includes(i.status));
+    return {
+      canConfirm: hasPending,
+      canShip: !hasPending && hasConfirmed,
+      canDeliver: !hasPending && !hasConfirmed && hasShipped,
+      canCancel: hasActive,
+    };
   };
 
   const getMyProductsTotal = (order) => {
@@ -297,42 +321,49 @@ export default function FarmerOrdersPage() {
                     
                     {/* Status Update Buttons */}
                     <div className="flex items-center gap-2">
-                      {order.status === 'pending' && (
-                        <button
-                          onClick={() => updateOrderStatus(order._id, 'confirmed')}
-                          disabled={updatingStatus === order._id}
-                          className="px-3 py-1 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
-                        >
-                          {updatingStatus === order._id ? 'Updating...' : 'Confirm'}
-                        </button>
-                      )}
-                      {order.status === 'confirmed' && (
-                        <button
-                          onClick={() => updateOrderStatus(order._id, 'shipped')}
-                          disabled={updatingStatus === order._id}
-                          className="px-3 py-1 bg-purple-600 text-white text-sm rounded-lg hover:bg-purple-700 transition-colors disabled:opacity-50"
-                        >
-                          {updatingStatus === order._id ? 'Updating...' : 'Mark Shipped'}
-                        </button>
-                      )}
-                      {order.status === 'shipped' && (
-                        <button
-                          onClick={() => updateOrderStatus(order._id, 'delivered')}
-                          disabled={updatingStatus === order._id}
-                          className="px-3 py-1 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50"
-                        >
-                          {updatingStatus === order._id ? 'Updating...' : 'Mark Delivered'}
-                        </button>
-                      )}
-                      {(order.status === 'pending' || order.status === 'confirmed') && (
-                        <button
-                          onClick={() => updateOrderStatus(order._id, 'cancelled')}
-                          disabled={updatingStatus === order._id}
-                          className="px-3 py-1 bg-red-600 text-white text-sm rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50"
-                        >
-                          {updatingStatus === order._id ? 'Updating...' : 'Cancel'}
-                        </button>
-                      )}
+                      {(() => {
+                        const p = getMyActionPermissions(order);
+                        return (
+                          <>
+                            {p.canConfirm && (
+                              <button
+                                onClick={() => updateOrderStatus(order._id, 'confirmed')}
+                                disabled={updatingStatus === order._id}
+                                className="px-3 py-1 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
+                              >
+                                {updatingStatus === order._id ? 'Updating...' : 'Confirm'}
+                              </button>
+                            )}
+                            {p.canShip && (
+                              <button
+                                onClick={() => updateOrderStatus(order._id, 'shipped')}
+                                disabled={updatingStatus === order._id}
+                                className="px-3 py-1 bg-purple-600 text-white text-sm rounded-lg hover:bg-purple-700 transition-colors disabled:opacity-50"
+                              >
+                                {updatingStatus === order._id ? 'Updating...' : 'Mark Shipped'}
+                              </button>
+                            )}
+                            {p.canDeliver && (
+                              <button
+                                onClick={() => updateOrderStatus(order._id, 'delivered')}
+                                disabled={updatingStatus === order._id}
+                                className="px-3 py-1 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50"
+                              >
+                                {updatingStatus === order._id ? 'Updating...' : 'Mark Delivered'}
+                              </button>
+                            )}
+                            {p.canCancel && (
+                              <button
+                                onClick={() => updateOrderStatus(order._id, 'cancelled')}
+                                disabled={updatingStatus === order._id}
+                                className="px-3 py-1 bg-red-600 text-white text-sm rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50"
+                              >
+                                {updatingStatus === order._id ? 'Updating...' : 'Cancel'}
+                              </button>
+                            )}
+                          </>
+                        );
+                      })()}
                     </div>
                   </div>
                 </div>
@@ -413,21 +444,15 @@ export default function FarmerOrdersPage() {
                 </div>
               )}
 
-              {/* Order Items */}
+              {/* Order Items (only your products) */}
               <div className="mb-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-3">Order Items</h3>
+                <h3 className="text-lg font-semibold text-gray-900 mb-3">Your Items in this Order</h3>
                 <div className="space-y-3">
-                  {selectedOrder.items.map((item, index) => (
-                    <div key={index} className={`flex items-center justify-between p-4 rounded-lg ${
-                      item.farmer._id === user._id ? 'bg-green-50 border border-green-200' : 'bg-gray-50'
-                    }`}>
+                  {getMyProductsFromOrder(selectedOrder).map((item, index) => (
+                    <div key={index} className={`flex items-center justify-between p-4 rounded-lg bg-green-50 border border-green-200`}>
                       <div className="flex items-center gap-3">
-                        <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${
-                          item.farmer._id === user._id ? 'bg-green-100' : 'bg-gray-100'
-                        }`}>
-                          <Package className={`w-6 h-6 ${
-                            item.farmer._id === user._id ? 'text-green-600' : 'text-gray-600'
-                          }`} />
+                        <div className={`w-12 h-12 rounded-lg flex items-center justify-center bg-green-100`}>
+                          <Package className={`w-6 h-6 text-green-600`} />
                         </div>
                         <div>
                           <h4 className="font-medium text-gray-900">{item.name}</h4>
@@ -435,10 +460,8 @@ export default function FarmerOrdersPage() {
                             Qty: {item.quantity} × ${item.price.toFixed(2)}
                           </p>
                           <p className="text-xs text-gray-500">
-                            Farmer: {item.farmer.name}
-                            {item.farmer._id === user._id && (
-                              <span className="ml-2 text-green-600 font-medium">(Your Product)</span>
-                            )}
+                            Farmer: {item?.farmer?.name || 'You'}
+                            <span className="ml-2 text-green-600 font-medium">(Your Product)</span>
                           </p>
                         </div>
                       </div>
@@ -452,19 +475,19 @@ export default function FarmerOrdersPage() {
                 </div>
               </div>
 
-              {/* Order Summary */}
+              {/* Order Summary (your share only) */}
               <div className="border-t border-gray-200 pt-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <DollarSign className="w-4 h-4 text-gray-400" />
-                    <span className="text-sm text-gray-600">Your Products Total:</span>
+                    <span className="text-sm text-gray-600">Your Total:</span>
                     <span className="font-semibold text-gray-900">
                       ${getMyProductsTotal(selectedOrder).toFixed(2)}
                     </span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="text-sm text-gray-600">Order Total:</span>
-                    <span className="font-semibold text-gray-900">${selectedOrder.total.toFixed(2)}</span>
+                    <span className="text-sm text-gray-600">Buyer Paid Total (all sellers):</span>
+                    <span className="font-semibold text-gray-900">${getMyProductsTotal(selectedOrder).toFixed(2)}</span>
                   </div>
                 </div>
               </div>

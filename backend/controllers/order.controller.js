@@ -56,7 +56,8 @@ export const createOrder = async (req, res) => {
                 price: item.price,
                 quantity: item.quantity,
                 image: item.image,
-                farmer: item.farmer
+                farmer: item.farmer,
+                status: 'pending'
             })),
             total: user.cart.total,
             shippingAddress,
@@ -148,19 +149,7 @@ export const updateOrderStatus = async (req, res) => {
             return res.status(404).json({ success: false, msg: 'Order not found' });
         }
 
-        // Check if user is admin or if they are a farmer with products in this order
-        const isAdmin = user.role === 'admin';
-        const isFarmerWithProducts = user.role === 'farmer' && 
-            order.items.some(item => item.farmer._id.toString() === user._id.toString());
-
-        if (!isAdmin && !isFarmerWithProducts) {
-            return res.status(403).json({ 
-                success: false, 
-                msg: 'Not authorized to update this order' 
-            });
-        }
-
-        // Validate status transition
+        // Validate status
         const validStatuses = ['pending', 'confirmed', 'shipped', 'delivered', 'cancelled'];
         if (!validStatuses.includes(status)) {
             return res.status(400).json({ 
@@ -169,24 +158,60 @@ export const updateOrderStatus = async (req, res) => {
             });
         }
 
-        // Store the previous status to check if we need to restore stock
-        const previousStatus = order.status;
-        
-        order.status = status;
-        
-        if (status === 'delivered') {
-            order.deliveryDate = new Date();
-        }
-
-        // If order is being cancelled, restore product stock
-        if (status === 'cancelled' && previousStatus !== 'cancelled') {
-            for (const item of order.items) {
-                const product = await Product.findById(item.productId);
-                if (product) {
-                    product.stock += item.quantity;
-                    await product.save();
+        // Admin can update whole order; farmers update only their items
+        const isAdmin = user.role === 'admin';
+        if (isAdmin) {
+            const previousStatus = order.status;
+            order.status = status;
+            if (status === 'delivered') {
+                order.deliveryDate = new Date();
+            }
+            if (status === 'cancelled' && previousStatus !== 'cancelled') {
+                for (const item of order.items) {
+                    const product = await Product.findById(item.productId);
+                    if (product) {
+                        product.stock += item.quantity;
+                        await product.save();
+                    }
                 }
             }
+        } else if (user.role === 'farmer') {
+            let updatedAny = false;
+            for (const item of order.items) {
+                const itemFarmerId = item.farmer?._id?.toString() || item.farmer?.toString();
+                if (itemFarmerId === user._id.toString()) {
+                    const previousItemStatus = item.status || 'pending';
+                    item.status = status;
+                    updatedAny = true;
+
+                    // Stock restore on cancellation per-item
+                    if (status === 'cancelled' && previousItemStatus !== 'cancelled') {
+                        const product = await Product.findById(item.productId);
+                        if (product) {
+                            product.stock += item.quantity;
+                            await product.save();
+                        }
+                    }
+                }
+            }
+            if (!updatedAny) {
+                return res.status(403).json({ success: false, msg: 'No items owned by this farmer in order' });
+            }
+
+            // If all items are cancelled, mark order cancelled; if all delivered, mark delivered
+            const itemStatuses = order.items.map(i => i.status || 'pending');
+            if (itemStatuses.every(s => s === 'cancelled')) {
+                order.status = 'cancelled';
+            } else if (itemStatuses.every(s => s === 'delivered')) {
+                order.status = 'delivered';
+                order.deliveryDate = new Date();
+            } else if (itemStatuses.some(s => s === 'confirmed') && order.status === 'pending') {
+                order.status = 'confirmed';
+            } else if (itemStatuses.some(s => s === 'shipped')) {
+                order.status = 'shipped';
+            }
+        } else {
+            return res.status(403).json({ success: false, msg: 'Not authorized to update this order' });
         }
 
         await order.save();
