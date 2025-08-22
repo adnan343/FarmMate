@@ -45,7 +45,7 @@ const SkeletonCard = ({ className = "" }) => (
 const SkeletonChart = ({ className = "" }) => (
   <div className={`bg-white rounded-xl shadow-sm p-6 animate-pulse ${className}`}>
     <div className="h-6 bg-gray-200 rounded w-32 mb-4"></div>
-    <div className="h-64 bg-gray-200 rounded"></div>
+    <div className="h-48 bg-gray-200 rounded"></div>
   </div>
 );
 
@@ -81,6 +81,8 @@ export default function AnalyticsPage() {
   const [error, setError] = useState(null);
   const [data, setData] = useState(null);
   const [userId, setUserId] = useState(null);
+  const [farms, setFarms] = useState([]);
+  const [selectedFarmId, setSelectedFarmId] = useState('');
 
   useEffect(() => {
     const getCookie = (name) => {
@@ -105,16 +107,28 @@ export default function AnalyticsPage() {
     const fetchAnalyticsData = async () => {
       try {
         setDataLoading(true);
-        const [cropsRes, ordersRes] = await Promise.all([
+        const [farmsRes, cropsRes, ordersRes] = await Promise.all([
+          fetch(`http://localhost:5000/api/farms/farmer/${uid}`, { credentials: 'include' }),
           fetch(`http://localhost:5000/api/crops/farmer/${uid}`, { credentials: 'include' }),
           fetch(`http://localhost:5000/api/orders/farmer/${uid}?status=delivered`, { credentials: 'include' })
         ]);
 
+        if (!farmsRes.ok) {
+          throw new Error(`Failed to fetch farms: ${farmsRes.status}`);
+        }
         if (!cropsRes.ok) {
           throw new Error(`Failed to fetch crops: ${cropsRes.status}`);
         }
         if (!ordersRes.ok) {
           throw new Error(`Failed to fetch orders: ${ordersRes.status}`);
+        }
+
+        const farmsJson = await farmsRes.json();
+        if (farmsJson.success) {
+          setFarms(farmsJson.data);
+          if (farmsJson.data?.length && !selectedFarmId) {
+            setSelectedFarmId(farmsJson.data[0]._id);
+          }
         }
 
         const cropsData = await cropsRes.json();
@@ -135,10 +149,15 @@ export default function AnalyticsPage() {
     fetchAnalyticsData();
   }, []);
 
+  const filteredCrops = useMemo(() => {
+    if (!selectedFarmId) return crops;
+    return crops.filter(c => (c.farm?._id || c.farm) === selectedFarmId);
+  }, [crops, selectedFarmId]);
+
   const totals = useMemo(() => {
-    const expected = crops.reduce((sum, c) => sum + (Number(c.estimatedYield) || 0), 0);
-    const predicted = crops.reduce((sum, c) => sum + (Number(c.predictedYield) || 0), 0);
-    const actual = crops.reduce((sum, c) => sum + (Number(c.actualYield) || 0), 0);
+    const expected = filteredCrops.reduce((sum, c) => sum + (Number(c.estimatedYield) || 0), 0);
+    const predicted = filteredCrops.reduce((sum, c) => sum + (Number(c.predictedYield) || 0), 0);
+    const actual = filteredCrops.reduce((sum, c) => sum + (Number(c.actualYield) || 0), 0);
 
     let totalIncome = 0;
     const revenueByProductId = new Map();
@@ -169,11 +188,11 @@ export default function AnalyticsPage() {
       }
     });
 
-    const totalCost = crops.reduce((sum, c) => sum + (Number(c.totalCost) || 0), 0);
+    const totalCost = filteredCrops.reduce((sum, c) => sum + (Number(c.totalCost) || 0), 0);
     const netProfit = totalIncome - totalCost;
 
     return { expected, predicted, actual, totalIncome, totalCost, netProfit, revenueByProductId };
-  }, [crops, orders, user]);
+  }, [filteredCrops, orders, user]);
 
   // Show loading state while initial data is being fetched
   if (loading) {
@@ -224,12 +243,25 @@ export default function AnalyticsPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold text-gray-900">Analytics</h1>
-        {dataLoading && (
-          <div className="flex items-center gap-2 text-sm text-gray-600">
-            <Loader2 className="w-4 h-4 animate-spin" />
-            Updating data...
-          </div>
-        )}
+        <div className="flex items-center gap-3">
+          {farms.length > 0 && (
+            <select
+              className="border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-teal-500"
+              value={selectedFarmId}
+              onChange={(e) => setSelectedFarmId(e.target.value)}
+            >
+              {farms.map(f => (
+                <option key={f._id} value={f._id}>{f.name}</option>
+              ))}
+            </select>
+          )}
+          {dataLoading && (
+            <div className="flex items-center gap-2 text-sm text-gray-600">
+              <Loader2 className="w-4 h-4 animate-spin" />
+              Updating data...
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Summary Cards */}
@@ -330,28 +362,29 @@ export default function AnalyticsPage() {
             {/* Yield Comparison Chart */}
             <div className="bg-white rounded-xl shadow-sm p-6">
               <h2 className="text-xl font-semibold text-gray-900 mb-4">Yield Comparison</h2>
-              {crops.length > 0 ? (
-                <Bar
+              {filteredCrops.length > 0 ? (
+                <div className="h-56">
+                  <Bar
                   data={{
-                    labels: crops.map(c => `${c.name} - ${c.variety}`),
+                    labels: filteredCrops.map(c => `${c.name} - ${c.variety}`),
                     datasets: [
                       {
                         label: 'Expected Yield',
-                        data: crops.map(c => Number(c.estimatedYield) || 0),
+                        data: filteredCrops.map(c => Number(c.estimatedYield) || 0),
                         backgroundColor: 'rgba(156, 163, 175, 0.8)',
                         borderColor: 'rgb(156, 163, 175)',
                         borderWidth: 1,
                       },
                       {
                         label: 'Predicted Yield',
-                        data: crops.map(c => Number(c.predictedYield) || 0),
+                        data: filteredCrops.map(c => Number(c.predictedYield) || 0),
                         backgroundColor: 'rgba(59, 130, 246, 0.8)',
                         borderColor: 'rgb(59, 130, 246)',
                         borderWidth: 1,
                       },
                       {
                         label: 'Actual Yield',
-                        data: crops.map(c => Number(c.actualYield) || 0),
+                        data: filteredCrops.map(c => Number(c.actualYield) || 0),
                         backgroundColor: 'rgba(16, 185, 129, 0.8)',
                         borderColor: 'rgb(16, 185, 129)',
                         borderWidth: 1,
@@ -360,6 +393,7 @@ export default function AnalyticsPage() {
                   }}
                   options={{
                     responsive: true,
+                    maintainAspectRatio: false,
                     plugins: {
                       legend: {
                         position: 'top',
@@ -380,6 +414,7 @@ export default function AnalyticsPage() {
                     },
                   }}
                 />
+                </div>
               ) : (
                 <div className="h-64 flex items-center justify-center text-gray-500">
                   <p>No crop data available to display</p>
@@ -390,41 +425,47 @@ export default function AnalyticsPage() {
             {/* Profit Analysis Chart */}
             <div className="bg-white rounded-xl shadow-sm p-6">
               <h2 className="text-xl font-semibold text-gray-900 mb-4">Profit Analysis</h2>
-              {totals.totalIncome > 0 || totals.totalCost > 0 ? (
-                <Doughnut
-                  data={{
-                    labels: ['Total Income', 'Total Cost', 'Net Profit'],
-                    datasets: [
-                      {
-                        data: [totals.totalIncome, totals.totalCost, totals.netProfit],
-                        backgroundColor: [
-                          'rgba(16, 185, 129, 0.8)',
-                          'rgba(239, 68, 68, 0.8)',
-                          'rgba(59, 130, 246, 0.8)',
-                        ],
-                        borderColor: [
-                          'rgb(16, 185, 129)',
-                          'rgb(239, 68, 68)',
-                          'rgb(59, 130, 246)',
-                        ],
-                        borderWidth: 2,
+              {totals.totalIncome > 0 || totals.totalCost > 0 ? (() => {
+                const income = Math.max(0, Number(totals.totalIncome) || 0);
+                const cost = Math.max(0, Number(totals.totalCost) || 0);
+                const isProfit = income >= cost;
+                const labels = isProfit ? ['Cost', 'Profit'] : ['Income', 'Loss'];
+                const data = isProfit ? [cost, income - cost] : [income, cost - income];
+                const colors = isProfit
+                  ? ['rgba(239, 68, 68, 0.8)', 'rgba(16, 185, 129, 0.8)']
+                  : ['rgba(16, 185, 129, 0.8)', 'rgba(239, 68, 68, 0.8)'];
+                const borders = isProfit
+                  ? ['rgb(239, 68, 68)', 'rgb(16, 185, 129)']
+                  : ['rgb(16, 185, 129)', 'rgb(239, 68, 68)'];
+                return (
+                  <div className="h-56">
+                    <Doughnut
+                    data={{
+                      labels,
+                      datasets: [
+                        {
+                          data,
+                          backgroundColor: colors,
+                          borderColor: borders,
+                          borderWidth: 2,
+                        },
+                      ],
+                    }}
+                    options={{
+                      responsive: true,
+                      maintainAspectRatio: false,
+                      plugins: {
+                        legend: { position: 'bottom' },
+                        title: {
+                          display: true,
+                          text: isProfit ? 'Income Breakdown (Cost vs Profit)' : 'P&L Breakdown (Income vs Loss)',
+                        },
                       },
-                    ],
-                  }}
-                  options={{
-                    responsive: true,
-                    plugins: {
-                      legend: {
-                        position: 'bottom',
-                      },
-                      title: {
-                        display: true,
-                        text: 'Financial Overview',
-                      },
-                    },
-                  }}
-                />
-              ) : (
+                    }}
+                  />
+                  </div>
+                );
+              })() : (
                 <div className="h-64 flex items-center justify-center text-gray-500">
                   <p>No financial data available to display</p>
                 </div>
@@ -440,14 +481,15 @@ export default function AnalyticsPage() {
       ) : (
         <div className="bg-white rounded-xl shadow-sm p-6">
           <h2 className="text-xl font-semibold text-gray-900 mb-4">Per-Crop Profit Analysis</h2>
-          {crops.length > 0 ? (
-            <Bar
+          {filteredCrops.length > 0 ? (
+            <div className="h-56">
+              <Bar
               data={{
-                labels: crops.map(c => `${c.name} - ${c.variety}`),
+                labels: filteredCrops.map(c => `${c.name} - ${c.variety}`),
                 datasets: [
                   {
                     label: 'Income',
-                    data: crops.map(c => {
+                    data: filteredCrops.map(c => {
                       const income = (c.product && totals.revenueByProductId.get(c.product?.toString())) || 0;
                       return income;
                     }),
@@ -457,14 +499,14 @@ export default function AnalyticsPage() {
                   },
                   {
                     label: 'Cost',
-                    data: crops.map(c => Number(c.totalCost) || 0),
+                    data: filteredCrops.map(c => Number(c.totalCost) || 0),
                     backgroundColor: 'rgba(239, 68, 68, 0.8)',
                     borderColor: 'rgb(239, 68, 68)',
                     borderWidth: 1,
                   },
                   {
                     label: 'Profit',
-                    data: crops.map(c => {
+                    data: filteredCrops.map(c => {
                       const income = (c.product && totals.revenueByProductId.get(c.product?.toString())) || 0;
                       const cost = Number(c.totalCost) || 0;
                       return income - cost;
@@ -477,6 +519,7 @@ export default function AnalyticsPage() {
               }}
               options={{
                 responsive: true,
+                maintainAspectRatio: false,
                 plugins: {
                   legend: {
                     position: 'top',
@@ -497,6 +540,7 @@ export default function AnalyticsPage() {
                 },
               }}
             />
+            </div>
           ) : (
             <div className="h-64 flex items-center justify-center text-gray-500">
               <p>No crop data available to display</p>
@@ -606,14 +650,14 @@ export default function AnalyticsPage() {
         <div className="bg-white rounded-xl shadow-sm p-6">
           <h2 className="text-xl font-semibold text-gray-900 mb-4">Yield and Profit by Crop</h2>
           <div className="space-y-3">
-            {crops.length === 0 ? (
+            {filteredCrops.length === 0 ? (
               <div className="text-center py-8 text-gray-500">
                 <BarChart3 className="w-12 h-12 mx-auto mb-3 text-gray-300" />
                 <p className="text-lg">No crops found</p>
                 <p className="text-sm">Add some crops to see analytics data</p>
               </div>
             ) : (
-              crops.map((c) => {
+              filteredCrops.map((c) => {
                 const income = (c.product && totals.revenueByProductId.get(c.product?.toString())) || 0;
                 const cost = Number(c.totalCost || 0);
                 const profit = income - cost;

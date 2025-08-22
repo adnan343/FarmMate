@@ -710,15 +710,7 @@ export default function FarmProfilePage() {
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Unit</label>
-                  <select
-                    value={cropForm.unit}
-                    onChange={(e) => setCropForm({...cropForm, unit: e.target.value})}
-                    className="w-full border rounded-lg px-3 py-2"
-                  >
-                    <option value="acres">Acres</option>
-                    <option value="hectares">Hectares</option>
-                    <option value="square_meters">Square Meters</option>
-                  </select>
+                  <input type="text" value="acres" readOnly className="w-full border rounded-lg px-3 py-2 bg-gray-100 text-gray-700" />
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-4">
@@ -737,7 +729,14 @@ export default function FarmProfilePage() {
                   <input
                     type="date"
                     value={cropForm.expectedHarvestDate}
-                    onChange={(e) => setCropForm({...cropForm, expectedHarvestDate: e.target.value})}
+                    min={cropForm.plantingDate || undefined}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      if (cropForm.plantingDate && val && new Date(val) < new Date(cropForm.plantingDate)) {
+                        return; // prevent earlier date selection
+                      }
+                      setCropForm({...cropForm, expectedHarvestDate: val});
+                    }}
                     className="w-full border rounded-lg px-3 py-2"
                     required
                   />

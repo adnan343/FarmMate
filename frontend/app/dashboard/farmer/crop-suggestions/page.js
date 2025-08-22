@@ -342,11 +342,7 @@ export default function CropSuggestionsPage() {
                   </div>
                   <div>
                     <label className="text-sm text-gray-600">Unit</label>
-                    <select className="w-full border rounded px-3 py-2" value={cropInput.unit} onChange={(e)=>setCropInput({...cropInput, unit: e.target.value})}>
-                      <option value="acres">Acres</option>
-                      <option value="hectares">Hectares</option>
-                      <option value="square_meters">Square Meters</option>
-                    </select>
+                    <input className="w-full border rounded px-3 py-2 bg-gray-100 text-gray-700" value="acres" readOnly />
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
@@ -356,7 +352,19 @@ export default function CropSuggestionsPage() {
                   </div>
                   <div>
                     <label className="text-sm text-gray-600">Expected Harvest</label>
-                    <input type="date" className="w-full border rounded px-3 py-2" value={cropInput.expectedHarvestDate} onChange={(e)=>setCropInput({...cropInput, expectedHarvestDate: e.target.value})} />
+                    <input
+                      type="date"
+                      className="w-full border rounded px-3 py-2"
+                      value={cropInput.expectedHarvestDate}
+                      min={cropInput.plantingDate || undefined}
+                      onChange={(e)=>{
+                        const val = e.target.value;
+                        if (cropInput.plantingDate && val && new Date(val) < new Date(cropInput.plantingDate)) {
+                          return;
+                        }
+                        setCropInput({...cropInput, expectedHarvestDate: val});
+                      }}
+                    />
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-3">

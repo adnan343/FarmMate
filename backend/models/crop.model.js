@@ -27,7 +27,7 @@ const cropSchema = new mongoose.Schema({
     unit: {
         type: String,
         required: true,
-        enum: ['acres', 'hectares', 'square_meters'],
+        enum: ['acres'],
         default: 'acres'
     },
     plantingDate: {

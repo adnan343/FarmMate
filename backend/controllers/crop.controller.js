@@ -175,6 +175,8 @@ export const addCrop = async (req, res) => {
             cropData.estimatedYield = Number(cropData.estimatedYield);
         }
         cropData.area = Number(cropData.area);
+        // Force unit to acres everywhere
+        cropData.unit = AREA_UNITS.acres;
 
         // Validate available area on the farm (considering existing active crops)
         const { value: farmSizeValue, unit: farmSizeUnit } = parseFarmLandSize(farm.landSize);
@@ -183,24 +185,35 @@ export const addCrop = async (req, res) => {
             return res.status(400).json({ success: false, message: 'Invalid farm land size configuration' });
         }
 
+        // Validate dates: expected harvest should not be earlier than planting date
+        const plantingDateObj = new Date(cropData.plantingDate);
+        const harvestDateObj = new Date(cropData.expectedHarvestDate);
+        if (isNaN(plantingDateObj.getTime()) || isNaN(harvestDateObj.getTime())) {
+            return res.status(400).json({ success: false, message: 'Invalid planting or harvest date' });
+        }
+        if (harvestDateObj < plantingDateObj) {
+            return res.status(400).json({ success: false, message: 'Expected harvest date cannot be earlier than planting date' });
+        }
+
         const existingCrops = await Crop.find({ farm: farm._id, status: 'active' }).select('area unit');
         const usedSqM = existingCrops.reduce((sum, c) => {
             const cSqm = convertToSquareMeters(Number(c.area), c.unit || AREA_UNITS.acres);
             return isNaN(cSqm) ? sum : sum + cSqm;
         }, 0);
 
-        const requestedSqM = convertToSquareMeters(cropData.area, cropData.unit || AREA_UNITS.acres);
+        const requestedSqM = convertToSquareMeters(cropData.area, AREA_UNITS.acres);
         if (isNaN(requestedSqM) || requestedSqM <= 0) {
             return res.status(400).json({ success: false, message: 'Invalid crop area or unit' });
         }
 
         const remainingSqM = Math.max(0, farmSizeSqM - usedSqM);
-        if (requestedSqM > remainingSqM) {
-            // Report remaining in the unit the farmer chose for clarity
-            const remainingInRequestedUnit = convertFromSquareMeters(remainingSqM, cropData.unit || AREA_UNITS.acres);
+        const EPSILON = 1e-6; // allow tiny floating-point tolerance
+        if (requestedSqM - remainingSqM > EPSILON) {
+            // Report remaining in acres for clarity
+            const remainingInRequestedUnit = convertFromSquareMeters(remainingSqM, AREA_UNITS.acres);
             return res.status(400).json({
                 success: false,
-                message: `Insufficient available area on this farm. Remaining: ${remainingInRequestedUnit.toFixed(2)} ${cropData.unit || AREA_UNITS.acres}`
+                message: `Insufficient available area on this farm. Remaining: ${remainingInRequestedUnit.toFixed(2)} acres`
             });
         }
 
@@ -209,7 +222,7 @@ export const addCrop = async (req, res) => {
             cropName: cropData.name,
             variety: cropData.variety,
             area: cropData.area,
-            areaUnit: cropData.unit,
+            areaUnit: AREA_UNITS.acres,
             farmLocation: farm.location,
             soilType: farm.soilType,
             plantingDate: cropData.plantingDate,
@@ -705,7 +718,7 @@ export const acceptCropSuggestion = async (req, res) => {
             farm: farmId,
             farmer: farmerId,
             area: Number(cropInput?.area || 1),
-            unit: cropInput?.unit || 'acres',
+            unit: AREA_UNITS.acres,
             plantingDate: cropInput?.plantingDate ? new Date(cropInput.plantingDate) : new Date(),
             expectedHarvestDate: cropInput?.expectedHarvestDate ? new Date(cropInput.expectedHarvestDate) : new Date(Date.now() + 1000*60*60*24*120),
             stage: 'planning',
@@ -732,6 +745,14 @@ export const acceptCropSuggestion = async (req, res) => {
             })) : []
         };
 
+        // Validate dates: expected harvest should not be earlier than planting date
+        if (isNaN(cropData.plantingDate.getTime()) || isNaN(cropData.expectedHarvestDate.getTime())) {
+            return res.status(400).json({ success: false, message: 'Invalid planting or harvest date' });
+        }
+        if (cropData.expectedHarvestDate < cropData.plantingDate) {
+            return res.status(400).json({ success: false, message: 'Expected harvest date cannot be earlier than planting date' });
+        }
+
         // Validate available area similar to addCrop
         const { value: farmSizeValue, unit: farmSizeUnit } = parseFarmLandSize(farm.landSize);
         const farmSizeSqM = convertToSquareMeters(farmSizeValue, farmSizeUnit);
@@ -745,17 +766,18 @@ export const acceptCropSuggestion = async (req, res) => {
             return isNaN(cSqm) ? sum : sum + cSqm;
         }, 0);
 
-        const requestedSqM = convertToSquareMeters(cropData.area, cropData.unit || AREA_UNITS.acres);
+        const requestedSqM = convertToSquareMeters(cropData.area, AREA_UNITS.acres);
         if (isNaN(requestedSqM) || requestedSqM <= 0) {
             return res.status(400).json({ success: false, message: 'Invalid crop area or unit' });
         }
 
         const remainingSqM = Math.max(0, farmSizeSqM - usedSqM);
-        if (requestedSqM > remainingSqM) {
-            const remainingInRequestedUnit = convertFromSquareMeters(remainingSqM, cropData.unit || AREA_UNITS.acres);
+        const EPSILON = 1e-6;
+        if (requestedSqM - remainingSqM > EPSILON) {
+            const remainingInRequestedUnit = convertFromSquareMeters(remainingSqM, AREA_UNITS.acres);
             return res.status(400).json({
                 success: false,
-                message: `Insufficient available area on this farm. Remaining: ${remainingInRequestedUnit.toFixed(2)} ${cropData.unit || AREA_UNITS.acres}`
+                message: `Insufficient available area on this farm. Remaining: ${remainingInRequestedUnit.toFixed(2)} acres`
             });
         }
 
@@ -765,7 +787,7 @@ export const acceptCropSuggestion = async (req, res) => {
                 cropName: cropData.name,
                 variety: cropData.variety,
                 area: cropData.area,
-                areaUnit: cropData.unit,
+                areaUnit: AREA_UNITS.acres,
                 farmLocation: farm.location,
                 soilType: farm.soilType,
                 plantingDate: cropData.plantingDate,
