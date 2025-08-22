@@ -15,6 +15,8 @@ export default function CropSuggestionsPage() {
   const [selectedFarm, setSelectedFarm] = useState(null);
   const [accepting, setAccepting] = useState(false);
   const [showAcceptModal, setShowAcceptModal] = useState(false);
+  const [showAreaErrorModal, setShowAreaErrorModal] = useState(false);
+  const [areaErrorMessage, setAreaErrorMessage] = useState('');
   const [selectedSuggestion, setSelectedSuggestion] = useState(null);
   const [cropInput, setCropInput] = useState({
     variety: 'General',
@@ -169,7 +171,8 @@ export default function CropSuggestionsPage() {
       setTimelinePreview([]);
       alert('Crop created with timeline! You can manage it in Planting Calendar.');
     } catch (e) {
-      alert(e.message || 'Failed to create crop');
+      setAreaErrorMessage(e.message || 'Failed to create crop');
+      setShowAreaErrorModal(true);
     } finally {
       setAccepting(false);
     }
@@ -409,6 +412,24 @@ export default function CropSuggestionsPage() {
                 ) : (
                   'Save Crop'
                 )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Area Error Modal */}
+      {showAreaErrorModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md">
+            <h2 className="text-xl font-semibold mb-2 text-red-700">Area exceeds available land</h2>
+            <p className="text-gray-700 mb-4">{areaErrorMessage}</p>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setShowAreaErrorModal(false)}
+                className="flex-1 bg-teal-600 text-white py-2 rounded-lg hover:bg-teal-700"
+              >
+                OK
               </button>
             </div>
           </div>

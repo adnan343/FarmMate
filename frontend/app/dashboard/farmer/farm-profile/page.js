@@ -10,6 +10,8 @@ export default function FarmProfilePage() {
   const [showAddFarmModal, setShowAddFarmModal] = useState(false);
   const [showEditFarmModal, setShowEditFarmModal] = useState(false);
   const [showAddCropModal, setShowAddCropModal] = useState(false);
+  const [showAreaErrorModal, setShowAreaErrorModal] = useState(false);
+  const [areaErrorMessage, setAreaErrorMessage] = useState('');
   const [selectedCrop, setSelectedCrop] = useState(null);
   const [showHarvestModal, setShowHarvestModal] = useState(false);
   const [harvestForm, setHarvestForm] = useState({ actualYield: '', totalCost: '' });
@@ -214,10 +216,15 @@ export default function FarmProfilePage() {
           notes: ''
         });
         alert('Crop added successfully! AI yield prediction generated.');
+      } else {
+        // Show a friendly modal for insufficient area or any validation failure
+        setAreaErrorMessage(data.message || 'Failed to add crop. Please check inputs.');
+        setShowAreaErrorModal(true);
       }
     } catch (error) {
       console.error('Error adding crop:', error);
-      alert('Failed to add crop. Please try again.');
+      setAreaErrorMessage('Failed to add crop. Please try again.');
+      setShowAreaErrorModal(true);
     } finally {
       setAddingCrop(false);
     }
@@ -794,6 +801,24 @@ export default function FarmProfilePage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Area Error Modal */}
+      {showAreaErrorModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-md">
+            <h2 className="text-xl font-semibold mb-2 text-red-700">Area exceeds available land</h2>
+            <p className="text-gray-700 mb-4">{areaErrorMessage}</p>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setShowAreaErrorModal(false)}
+                className="flex-1 bg-teal-600 text-white py-2 rounded-lg hover:bg-teal-700"
+              >
+                OK
+              </button>
+            </div>
           </div>
         </div>
       )}

@@ -5,6 +5,49 @@ import CropSuggestion from "../models/cropSuggestion.model.js";
 import Farm from "../models/farm.model.js";
 import Product from "../models/product.model.js";
 
+// ---- Area/Unit helpers ----
+const AREA_UNITS = {
+    acres: 'acres',
+    hectares: 'hectares',
+    square_meters: 'square_meters'
+};
+
+function convertToSquareMeters(value, unit) {
+    if (value === null || value === undefined) return NaN;
+    const n = Number(value);
+    if (isNaN(n)) return NaN;
+    switch (unit) {
+        case AREA_UNITS.acres: return n * 4046.8564224;
+        case AREA_UNITS.hectares: return n * 10000;
+        case AREA_UNITS.square_meters: return n;
+        default: return NaN;
+    }
+}
+
+function convertFromSquareMeters(squareMeters, targetUnit) {
+    switch (targetUnit) {
+        case AREA_UNITS.acres: return squareMeters / 4046.8564224;
+        case AREA_UNITS.hectares: return squareMeters / 10000;
+        case AREA_UNITS.square_meters: return squareMeters;
+        default: return NaN;
+    }
+}
+
+// Parse a farm land size string like "30 acres", "20 hectare", "10000 sqm"
+function parseFarmLandSize(landSizeRaw) {
+    if (!landSizeRaw || typeof landSizeRaw !== 'string') {
+        return { value: NaN, unit: AREA_UNITS.acres };
+    }
+    const lower = landSizeRaw.trim().toLowerCase();
+    const numberMatch = lower.match(/\d+(?:\.\d+)?/);
+    const value = numberMatch ? Number(numberMatch[0]) : NaN;
+    let unit = AREA_UNITS.acres; // default
+    if (/hectare|hectares|ha/.test(lower)) unit = AREA_UNITS.hectares;
+    else if (/acre|acres|ac\b/.test(lower)) unit = AREA_UNITS.acres;
+    else if (/square\s?meter|sqm|m2|sq\.?\s?m/.test(lower)) unit = AREA_UNITS.square_meters;
+    return { value, unit };
+}
+
 // Helper: build Gemini client
 function getGeminiModel() {
     const apiKey = process.env.GEMINI_API || process.env.GOOGLE_API_KEY;
@@ -132,6 +175,34 @@ export const addCrop = async (req, res) => {
             cropData.estimatedYield = Number(cropData.estimatedYield);
         }
         cropData.area = Number(cropData.area);
+
+        // Validate available area on the farm (considering existing active crops)
+        const { value: farmSizeValue, unit: farmSizeUnit } = parseFarmLandSize(farm.landSize);
+        const farmSizeSqM = convertToSquareMeters(farmSizeValue, farmSizeUnit);
+        if (isNaN(farmSizeSqM)) {
+            return res.status(400).json({ success: false, message: 'Invalid farm land size configuration' });
+        }
+
+        const existingCrops = await Crop.find({ farm: farm._id, status: 'active' }).select('area unit');
+        const usedSqM = existingCrops.reduce((sum, c) => {
+            const cSqm = convertToSquareMeters(Number(c.area), c.unit || AREA_UNITS.acres);
+            return isNaN(cSqm) ? sum : sum + cSqm;
+        }, 0);
+
+        const requestedSqM = convertToSquareMeters(cropData.area, cropData.unit || AREA_UNITS.acres);
+        if (isNaN(requestedSqM) || requestedSqM <= 0) {
+            return res.status(400).json({ success: false, message: 'Invalid crop area or unit' });
+        }
+
+        const remainingSqM = Math.max(0, farmSizeSqM - usedSqM);
+        if (requestedSqM > remainingSqM) {
+            // Report remaining in the unit the farmer chose for clarity
+            const remainingInRequestedUnit = convertFromSquareMeters(remainingSqM, cropData.unit || AREA_UNITS.acres);
+            return res.status(400).json({
+                success: false,
+                message: `Insufficient available area on this farm. Remaining: ${remainingInRequestedUnit.toFixed(2)} ${cropData.unit || AREA_UNITS.acres}`
+            });
+        }
 
         // Attempt AI predicted yield
         const predicted = await predictYieldWithGemini({
@@ -660,6 +731,33 @@ export const acceptCropSuggestion = async (req, res) => {
                 notes: t.notes || ''
             })) : []
         };
+
+        // Validate available area similar to addCrop
+        const { value: farmSizeValue, unit: farmSizeUnit } = parseFarmLandSize(farm.landSize);
+        const farmSizeSqM = convertToSquareMeters(farmSizeValue, farmSizeUnit);
+        if (isNaN(farmSizeSqM)) {
+            return res.status(400).json({ success: false, message: 'Invalid farm land size configuration' });
+        }
+
+        const existingCrops = await Crop.find({ farm: farm._id, status: 'active' }).select('area unit');
+        const usedSqM = existingCrops.reduce((sum, c) => {
+            const cSqm = convertToSquareMeters(Number(c.area), c.unit || AREA_UNITS.acres);
+            return isNaN(cSqm) ? sum : sum + cSqm;
+        }, 0);
+
+        const requestedSqM = convertToSquareMeters(cropData.area, cropData.unit || AREA_UNITS.acres);
+        if (isNaN(requestedSqM) || requestedSqM <= 0) {
+            return res.status(400).json({ success: false, message: 'Invalid crop area or unit' });
+        }
+
+        const remainingSqM = Math.max(0, farmSizeSqM - usedSqM);
+        if (requestedSqM > remainingSqM) {
+            const remainingInRequestedUnit = convertFromSquareMeters(remainingSqM, cropData.unit || AREA_UNITS.acres);
+            return res.status(400).json({
+                success: false,
+                message: `Insufficient available area on this farm. Remaining: ${remainingInRequestedUnit.toFixed(2)} ${cropData.unit || AREA_UNITS.acres}`
+            });
+        }
 
         // Attempt AI predicted yield using Gemini
         try {
