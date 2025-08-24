@@ -4,12 +4,13 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Save, Send, ArrowLeft, Lightbulb, AlertTriangle, CheckCircle } from 'lucide-react';
 import FarmPhotoUpload from './FarmPhotoUpload.js';
-import { createFarmCondition } from '@/lib/api';
+import { createFarmCondition, getFarmsByFarmer } from '@/lib/api';
 
 export default function FarmConditionForm({ farmerId, onCancel, onSuccess }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [farms, setFarms] = useState([]);
+  const [currentUserId, setCurrentUserId] = useState(null);
   const [formData, setFormData] = useState({
     farmId: '',
     weatherType: '',
@@ -21,13 +22,69 @@ export default function FarmConditionForm({ farmerId, onCancel, onSuccess }) {
   const [errors, setErrors] = useState({});
 
   useEffect(() => {
-    // In a real app, you'd fetch the farmer's farms here
-    // For now, we'll use placeholder data with proper ObjectId format
-    setFarms([
-      { _id: '507f1f77bcf86cd799439011', name: 'Main Farm' },
-      { _id: '507f1f77bcf86cd799439012', name: 'Greenhouse' },
-      { _id: '507f1f77bcf86cd799439013', name: 'Orchard' }
-    ]);
+    getCurrentUser();
+  }, []);
+
+  useEffect(() => {
+    if (currentUserId) {
+      fetchFarms();
+    }
+  }, [currentUserId]);
+
+  // Refresh farms when window gains focus (user returns from farm profile page)
+  useEffect(() => {
+    const handleFocus = () => {
+      if (currentUserId) {
+        fetchFarms();
+      }
+    };
+
+    window.addEventListener('focus', handleFocus);
+    return () => window.removeEventListener('focus', handleFocus);
+  }, [currentUserId]);
+
+  const getCurrentUser = () => {
+    const cookies = document.cookie.split(';').reduce((acc, cookie) => {
+      const [key, value] = cookie.trim().split('=');
+      acc[key] = value;
+      return acc;
+    }, {});
+    setCurrentUserId(cookies.userId);
+  };
+
+  const fetchFarms = async () => {
+    try {
+      const farmsData = await getFarmsByFarmer(currentUserId);
+      setFarms(farmsData || []);
+    } catch (error) {
+      console.error('Error fetching farms:', error);
+      // Fallback to empty array if API fails
+      setFarms([]);
+    }
+  };
+
+  // Function to refresh farms when returning from farm profile page
+  const handleAddFarmClick = () => {
+    // Store current form data in sessionStorage to restore when returning
+    sessionStorage.setItem('farmConditionFormData', JSON.stringify(formData));
+    sessionStorage.setItem('farmConditionFormPhoto', JSON.stringify(photo));
+    router.push('/dashboard/farmer/farm-profile');
+  };
+
+  // Restore form data when component mounts (if returning from farm profile)
+  useEffect(() => {
+    const savedFormData = sessionStorage.getItem('farmConditionFormData');
+    const savedPhoto = sessionStorage.getItem('farmConditionFormPhoto');
+    
+    if (savedFormData) {
+      setFormData(JSON.parse(savedFormData));
+      sessionStorage.removeItem('farmConditionFormData');
+    }
+    
+    if (savedPhoto) {
+      setPhoto(JSON.parse(savedPhoto));
+      sessionStorage.removeItem('farmConditionFormPhoto');
+    }
   }, []);
 
   const handleInputChange = (field, value) => {
@@ -128,27 +185,58 @@ export default function FarmConditionForm({ farmerId, onCancel, onSuccess }) {
       {/* Farm Selection */}
       <div className="bg-white rounded-xl shadow-sm p-6">
         <h2 className="text-xl font-semibold text-gray-900 mb-4">Farm Selection</h2>
-        <div>
-          <label htmlFor="farmId" className="block text-sm font-medium text-gray-700 mb-2">
-            Select Farm <span className="text-red-500">*</span>
-          </label>
-          <select
-            id="farmId"
-            value={formData.farmId}
-            onChange={(e) => handleInputChange('farmId', e.target.value)}
-            className={`w-full rounded-md border-gray-300 shadow-sm focus:border-teal-500 focus:ring-teal-500 sm:text-sm ${
-              errors.farmId ? 'border-red-500' : ''
-            }`}
-          >
-            <option value="">Select a farm</option>
-            {farms.map((farm) => (
-              <option key={farm._id} value={farm._id}>
-                {farm.name}
-              </option>
-            ))}
-          </select>
-          {errors.farmId && <p className="mt-1 text-sm text-red-600">{errors.farmId}</p>}
-        </div>
+        {farms.length === 0 ? (
+          <div className="text-center py-8">
+            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+              </svg>
+            </div>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">No Farms Available</h3>
+            <p className="text-gray-500 mb-4">You need to add a farm before creating condition reports.</p>
+            <button
+              type="button"
+              onClick={handleAddFarmClick}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+              </svg>
+              Add New Farm
+            </button>
+          </div>
+        ) : (
+          <div>
+            <label htmlFor="farmId" className="block text-sm font-medium text-gray-700 mb-2">
+              Select Farm <span className="text-red-500">*</span>
+            </label>
+            <select
+              id="farmId"
+              value={formData.farmId}
+              onChange={(e) => handleInputChange('farmId', e.target.value)}
+              className={`w-full rounded-md border-gray-300 shadow-sm focus:border-teal-500 focus:ring-teal-500 sm:text-sm ${
+                errors.farmId ? 'border-red-500' : ''
+              }`}
+            >
+              <option value="">Select a farm</option>
+              {farms.map((farm) => (
+                <option key={farm._id} value={farm._id}>
+                  {farm.name}
+                </option>
+              ))}
+            </select>
+            {errors.farmId && <p className="mt-1 text-sm text-red-600">{errors.farmId}</p>}
+            <div className="mt-3">
+              <button
+                type="button"
+                onClick={handleAddFarmClick}
+                className="text-sm text-teal-600 hover:text-teal-800 transition-colors"
+              >
+                + Add another farm
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Photo Upload */}
@@ -238,10 +326,17 @@ export default function FarmConditionForm({ farmerId, onCancel, onSuccess }) {
           </label>
           <textarea
             id="additionalNotes"
-            rows="3"
+            rows="4"
             value={formData.additionalNotes}
             onChange={(e) => handleInputChange('additionalNotes', e.target.value)}
-            className="w-full rounded-md border-gray-300 shadow-sm focus:border-teal-500 focus:ring-teal-500 sm:text-sm"
+            onFocus={(e) => {
+              e.target.style.caretColor = '#059669';
+              e.target.style.borderColor = '#059669';
+            }}
+            onBlur={(e) => {
+              e.target.style.borderColor = '#d1d5db';
+            }}
+            className="w-full rounded-md border-gray-300 shadow-sm focus:border-teal-500 focus:ring-teal-500 focus:ring-2 focus:ring-opacity-50 sm:text-sm resize-none"
             placeholder="Any additional observations or notes about the farm condition..."
           ></textarea>
         </div>
