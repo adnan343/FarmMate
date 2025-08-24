@@ -226,11 +226,7 @@ export default function FarmConditionReportsPage() {
                   </div>
                   <div>
                                          <p className="font-medium text-gray-900">
-                       {report.farm?.name || (report.farmId?.startsWith('507f1f77bcf86cd79943901') ? 
-                         (report.farmId === '507f1f77bcf86cd799439011' ? 'Main Farm' : 
-                          report.farmId === '507f1f77bcf86cd799439012' ? 'Greenhouse' : 
-                          report.farmId === '507f1f77bcf86cd799439013' ? 'Orchard' : 'Farm Report') : 
-                         'Farm Report')}
+                       {report.farm?.name || 'Farm Report'}
                      </p>
                     <p className="text-sm text-gray-500">
                       {new Date(report.reportDate).toLocaleDateString()}
@@ -338,11 +334,7 @@ export default function FarmConditionReportsPage() {
                 <div>
                   <h3 className="text-lg font-semibold mb-2">Basic Information</h3>
                   <div className="space-y-2 text-sm">
-                                         <p><strong>Farm:</strong> {selectedReport.farm?.name || (selectedReport.farmId?.startsWith('507f1f77bcf86cd79943901') ? 
-                       (selectedReport.farmId === '507f1f77bcf86cd799439011' ? 'Main Farm' : 
-                        selectedReport.farmId === '507f1f77bcf86cd799439012' ? 'Greenhouse' : 
-                        selectedReport.farmId === '507f1f77bcf86cd799439013' ? 'Orchard' : 'N/A') : 
-                       'N/A')}</p>
+                                         <p><strong>Farm:</strong> {selectedReport.farm?.name || 'N/A'}</p>
                     <p><strong>Date:</strong> {new Date(selectedReport.reportDate).toLocaleDateString()}</p>
                     <p><strong>Weather:</strong> {selectedReport.weatherType}</p>
                     <p><strong>Soil:</strong> {selectedReport.soilType}</p>

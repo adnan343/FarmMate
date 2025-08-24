@@ -33,3 +33,4 @@ router.patch('/:reportId/status', updateFarmConditionStatus);
 router.delete('/:reportId', deleteFarmCondition);
 
 export default router;
+

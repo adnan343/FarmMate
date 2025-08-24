@@ -122,3 +122,4 @@ export default function FarmPhotoUpload({ photo, onPhotoChange }) {
     </div>
   );
 }
+

@@ -274,5 +274,113 @@ export async function getFarmConditionStats() {
   }
 }
 
+// Farm API functions
+const FARM_API = getApiUrl('/farms');
+
+export async function getFarmsByFarmer(farmerId) {
+  try {
+    const res = await fetch(`${FARM_API}/farmer/${farmerId}`, {
+      headers: getAuthHeaders(),
+      credentials: 'include',
+    });
+    if (!res.ok) throw new Error('Failed to fetch farms');
+    const data = await res.json();
+    return data.data;
+  } catch (error) {
+    if (error.name === 'TypeError' && error.message.includes('fetch')) {
+      throw new Error(getErrorMessage());
+    }
+    throw error;
+  }
+}
+
+export async function getAllFarms() {
+  try {
+    const res = await fetch(FARM_API, {
+      headers: getAuthHeaders(),
+      credentials: 'include',
+    });
+    if (!res.ok) throw new Error('Failed to fetch farms');
+    const data = await res.json();
+    return data.data;
+  } catch (error) {
+    if (error.name === 'TypeError' && error.message.includes('fetch')) {
+      throw new Error(getErrorMessage());
+    }
+    throw error;
+  }
+}
+
+export async function createFarm(farmData) {
+  try {
+    const res = await fetch(FARM_API, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      credentials: 'include',
+      body: JSON.stringify(farmData),
+    });
+    
+    const responseData = await res.json();
+    
+    if (!res.ok) {
+      throw new Error(responseData.msg || 'Failed to create farm');
+    }
+    
+    return responseData;
+  } catch (error) {
+    if (error.name === 'TypeError' && error.message.includes('fetch')) {
+      throw new Error(getErrorMessage());
+    }
+    throw error;
+  }
+}
+
+export async function updateFarm(farmId, farmData) {
+  try {
+    const res = await fetch(`${FARM_API}/${farmId}`, {
+      method: 'PUT',
+      headers: getAuthHeaders(),
+      credentials: 'include',
+      body: JSON.stringify(farmData),
+    });
+    
+    const responseData = await res.json();
+    
+    if (!res.ok) {
+      throw new Error(responseData.msg || 'Failed to update farm');
+    }
+    
+    return responseData;
+  } catch (error) {
+    if (error.name === 'TypeError' && error.message.includes('fetch')) {
+      throw new Error(getErrorMessage());
+    }
+    throw error;
+  }
+}
+
+export async function deleteFarm(farmId) {
+  try {
+    const res = await fetch(`${FARM_API}/${farmId}`, {
+      method: 'DELETE',
+      headers: getAuthHeaders(),
+      credentials: 'include',
+    });
+    
+    const responseData = await res.json();
+    
+    if (!res.ok) {
+      throw new Error(responseData.msg || 'Failed to delete farm');
+    }
+    
+    return responseData;
+  } catch (error) {
+    if (error.name === 'TypeError' && error.message.includes('fetch')) {
+      throw new Error(getErrorMessage());
+    }
+    throw error;
+  }
+}
+
 
 
