@@ -18,4 +18,9 @@ router.post('/:userId/favorites', auth, addToFavorites);
 router.delete('/:userId/favorites/:productId', auth, removeFromFavorites);
 router.get('/:userId/favorites', auth, getUserFavorites);
 
+// Health check route
+router.get('/health', (req, res) => {
+  res.status(200).json({ status: 'ok', message: 'Backend is running' });
+});
+
 export default router;
