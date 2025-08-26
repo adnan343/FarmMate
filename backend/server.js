@@ -33,11 +33,10 @@ app.use(cookieParser()); // 2. Add this middleware after express.json()
 
 app.use("/api/farms", farmRoutes);
 app.use("/api/crops", cropRoutes);
-<<<<<<< HEAD
-=======
+
 app.use("/api/farm-conditions", farmConditionRoutes);
 
->>>>>>> 28d56ee (Added live weather update and AI report analysis)
+
 app.use("/api/users", userRoute);
 app.use("/api/cart", cartRoutes);
 app.use("/api/products", productRoutes);
