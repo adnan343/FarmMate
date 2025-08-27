@@ -698,34 +698,7 @@ export default function AnalyticsPage() {
       )}
 
       {/* Environmental Insights */}
-      <div className="bg-white rounded-xl shadow-sm p-6">
-        <h2 className="text-xl font-semibold text-gray-900 mb-4">Environmental Summary</h2>
-        {data?.env ? (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="text-center p-4 bg-blue-50 rounded-lg">
-              <p className="text-lg font-semibold text-gray-900">Location</p>
-              <p className="text-2xl font-bold text-blue-600">{data.env.location}</p>
-            </div>
-            {data.env.monthly?.slice(-1).map((m) => (
-              <div key={m.month} className="text-center p-4 bg-green-50 rounded-lg">
-                <p className="text-lg font-semibold text-gray-900">Last Month Avg Temp</p>
-                <p className="text-2xl font-bold text-green-600">{m.avgTempC ?? '-'} °C</p>
-              </div>
-            ))}
-            {data.env.monthly?.slice(-1).map((m) => (
-              <div key={m.month + '-p'} className="text-center p-4 bg-purple-50 rounded-lg">
-                <p className="text-lg font-semibold text-gray-900">Last Month Precip</p>
-                <p className="text-2xl font-bold text-purple-600">{m.totalPrecipMm} mm</p>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className="text-center py-8 text-gray-500">
-            <p className="text-lg">Environmental data unavailable</p>
-            <p className="text-sm">Weather data will appear here when available</p>
-          </div>
-        )}
-      </div>
+
     </div>
   );
 }
