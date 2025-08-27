@@ -153,51 +153,7 @@ export async function updateUserRole(userId, newRole) {
   }
 }
 
-export async function updateFarm(farmId, farmData) {
-  try {
-    const res = await fetch(`${FARM_API_BASE}/${farmId}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(farmData),
-    });
-
-    const responseData = await res.json();
-
-    if (!res.ok) {
-      throw new Error(responseData.message || 'Failed to update farm');
-    }
-
-    return responseData;
-  } catch (error) {
-    if (error.name === 'TypeError' && error.message.includes('fetch')) {
-      throw new Error(getErrorMessage());
-    }
-    throw error;
-  }
-}
-
-export async function createFarm(farmData) {
-  try {
-    const res = await fetch(`${FARM_API_BASE}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(farmData),
-    });
-
-    const responseData = await res.json();
-
-    if (!res.ok) {
-      throw new Error(responseData.message || 'Failed to create farm');
-    }
-
-    return responseData;
-  } catch (error) {
-    if (error.name === 'TypeError' && error.message.includes('fetch')) {
-      throw new Error(getErrorMessage());
-    }
-    throw error;
-  }
-}
+ 
 
 // Delete user (admin function)
 export async function deleteUserById(userId) {
