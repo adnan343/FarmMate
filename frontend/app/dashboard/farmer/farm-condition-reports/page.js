@@ -1,27 +1,28 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { 
-  AlertTriangle, 
-  CheckCircle, 
-  TrendingDown, 
-  TrendingUp, 
-  Plus, 
-  Eye, 
-  Edit, 
-  Trash2,
-  Lightbulb,
-  Clock,
-  DollarSign,
-  X
-} from 'lucide-react';
+import ConfirmDialog from '@/app/components/ConfirmDialog';
 import FarmConditionForm from '@/app/components/FarmConditionForm';
-import { 
-  getFarmerFarmConditions, 
-  getFarmConditionStats,
-  updateFarmConditionStatus,
-  deleteFarmCondition 
+import { useToast } from '@/app/components/ToastProvider';
+import {
+    deleteFarmCondition,
+    getFarmConditionStats,
+    getFarmerFarmConditions,
+    updateFarmConditionStatus
 } from '@/lib/api';
+import {
+    AlertTriangle,
+    CheckCircle,
+    Clock,
+    DollarSign,
+    Eye,
+    Lightbulb,
+    Plus,
+    Trash2,
+    TrendingDown,
+    TrendingUp,
+    X
+} from 'lucide-react';
+import { useEffect, useState } from 'react';
 
 export default function FarmConditionReportsPage() {
   const [showForm, setShowForm] = useState(false);
@@ -31,6 +32,8 @@ export default function FarmConditionReportsPage() {
   const [selectedReport, setSelectedReport] = useState(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [confirmDeleteId, setConfirmDeleteId] = useState(null);
+  const toast = useToast();
 
   useEffect(() => {
     loadReports();
@@ -75,23 +78,30 @@ export default function FarmConditionReportsPage() {
         )
       );
       loadStats();
+      toast.success('Status updated');
     } catch (error) {
       console.error('Error updating status:', error);
-      alert('Failed to update status');
+      toast.error('Failed to update status');
     }
   };
 
   const handleDeleteReport = async (reportId) => {
-    if (!confirm('Are you sure you want to delete this report?')) return;
-    
     try {
       await deleteFarmCondition(reportId);
       setReports(prev => prev.filter(report => report._id !== reportId));
       loadStats();
+      toast.success('Report deleted');
     } catch (error) {
       console.error('Error deleting report:', error);
-      alert('Failed to delete report');
+      toast.error('Failed to delete report');
     }
+  };
+  const openConfirmDelete = (id) => setConfirmDeleteId(id);
+  const closeConfirmDelete = () => setConfirmDeleteId(null);
+  const confirmDelete = async () => {
+    const id = confirmDeleteId;
+    closeConfirmDelete();
+    if (id) await handleDeleteReport(id);
   };
 
   const getStatusColor = (status) => {
@@ -264,7 +274,7 @@ export default function FarmConditionReportsPage() {
                       <option value="ignored">Ignored</option>
                     </select>
                     <button
-                      onClick={() => handleDeleteReport(report._id)}
+                      onClick={() => openConfirmDelete(report._id)}
                       className="p-2 rounded-full bg-red-100 hover:bg-red-200 transition-colors"
                       title="Delete Report"
                     >
@@ -405,6 +415,16 @@ export default function FarmConditionReportsPage() {
           </div>
         </div>
       )}
+      {/* Delete report confirmation */}
+      <ConfirmDialog
+        open={!!confirmDeleteId}
+        title="Delete report?"
+        description="This will permanently remove the report."
+        confirmText="Delete"
+        cancelText="Cancel"
+        onConfirm={confirmDelete}
+        onCancel={closeConfirmDelete}
+      />
     </div>
   );
 }

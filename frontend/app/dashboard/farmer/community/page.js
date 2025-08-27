@@ -1,4 +1,6 @@
 "use client";
+import ConfirmDialog from "@/app/components/ConfirmDialog";
+import { useToast } from "@/app/components/ToastProvider";
 import { Check, Edit, Trash2, X } from "lucide-react";
 import { useEffect, useState } from "react";
 
@@ -13,6 +15,8 @@ export default function CommunityForumPage() {
   const [editingReply, setEditingReply] = useState(null);
   const [deleting, setDeleting] = useState({});
   const [currentUser, setCurrentUser] = useState(null);
+  const [confirmState, setConfirmState] = useState({ open: false, type: null, postId: null, replyId: null });
+  const toast = useToast();
 
   useEffect(() => {
     fetchPosts();
@@ -83,21 +87,25 @@ export default function CommunityForumPage() {
     if (res.ok) {
       setEditingPost(null);
       fetchPosts();
+      toast.success("Post updated");
     } else {
-      alert("Failed to edit post");
+      toast.error("Failed to update post");
     }
   };
 
   const handleDeletePost = async (postId) => {
-    if (!confirm("Are you sure you want to delete this post?")) return;
     setDeleting({ ...deleting, [postId]: true });
     const res = await fetch(`http://localhost:5000/api/forum/${postId}`, {
       method: "DELETE",
       credentials: "include",
     });
     setDeleting({ ...deleting, [postId]: false });
-    if (res.ok) fetchPosts();
-    else alert("Failed to delete post");
+    if (res.ok) {
+      toast.success("Post deleted");
+      fetchPosts();
+    } else {
+      toast.error("Failed to delete post");
+    }
   };
 
   const handleEditReply = async (postId, replyId, content) => {
@@ -116,15 +124,38 @@ export default function CommunityForumPage() {
   };
 
   const handleDeleteReply = async (postId, replyId) => {
-    if (!confirm("Are you sure you want to delete this reply?")) return;
     setDeleting({ ...deleting, [replyId]: true });
     const res = await fetch(`http://localhost:5000/api/forum/${postId}/reply/${replyId}`, {
       method: "DELETE",
       credentials: "include",
     });
     setDeleting({ ...deleting, [replyId]: false });
-    if (res.ok) fetchPosts();
-    else alert("Failed to delete reply");
+    if (res.ok) {
+      toast.success("Reply deleted");
+      fetchPosts();
+    } else {
+      toast.error("Failed to delete reply");
+    }
+  };
+
+  const openConfirmForPost = (postId) => {
+    setConfirmState({ open: true, type: "post", postId, replyId: null });
+  };
+
+  const openConfirmForReply = (postId, replyId) => {
+    setConfirmState({ open: true, type: "reply", postId, replyId });
+  };
+
+  const closeConfirm = () => setConfirmState({ open: false, type: null, postId: null, replyId: null });
+
+  const confirmDeletion = async () => {
+    const { type, postId, replyId } = confirmState;
+    closeConfirm();
+    if (type === "post" && postId) {
+      await handleDeletePost(postId);
+    } else if (type === "reply" && postId && replyId) {
+      await handleDeleteReply(postId, replyId);
+    }
   };
 
   return (
@@ -180,7 +211,7 @@ export default function CommunityForumPage() {
                       <Edit className="w-4 h-4" />
                     </button>
                     <button
-                      onClick={() => handleDeletePost(post._id)}
+                      onClick={() => openConfirmForPost(post._id)}
                       disabled={deleting[post._id]}
                       className="text-red-600 hover:text-red-800"
                     >
@@ -254,7 +285,7 @@ export default function CommunityForumPage() {
                             <Edit className="w-3 h-3" />
                           </button>
                           <button
-                            onClick={() => handleDeleteReply(post._id, reply._id)}
+                            onClick={() => openConfirmForReply(post._id, reply._id)}
                             disabled={deleting[reply._id]}
                             className="text-red-600 hover:text-red-800"
                           >
@@ -318,6 +349,16 @@ export default function CommunityForumPage() {
           ))}
         </div>
       )}
+      {/* Delete confirmation dialog */}
+      <ConfirmDialog
+        open={confirmState.open}
+        title={confirmState.type === "post" ? "Delete post?" : "Delete reply?"}
+        description={confirmState.type === "post" ? "This will permanently remove the post and its replies." : "This will permanently remove the reply."}
+        confirmText="Delete"
+        cancelText="Cancel"
+        onConfirm={confirmDeletion}
+        onCancel={closeConfirm}
+      />
     </div>
   );
 }

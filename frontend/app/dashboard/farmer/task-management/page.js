@@ -1,10 +1,13 @@
 "use client";
 
+import ConfirmDialog from '@/app/components/ConfirmDialog';
+import { useToast } from '@/app/components/ToastProvider';
 import { createTask, deleteTaskById, getCategoryProgressByFarmer, getTaskSummary, getTasksByFarmer, getUpcomingTasks, updateTaskById } from '@/lib/api';
 import { AlertCircle, Calendar, CheckSquare, Clock, Edit, Plus, Trash2, Users } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 
 export default function TaskManagementPage() {
+  const { success, error, info } = useToast();
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [summary, setSummary] = useState({ total: 0, completed: 0, pending: 0, overdue: 0 });
@@ -14,6 +17,8 @@ export default function TaskManagementPage() {
   const [showModal, setShowModal] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editingId, setEditingId] = useState(null);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [pendingDeleteId, setPendingDeleteId] = useState(null);
   const [form, setForm] = useState({
     title: '',
     description: '',
@@ -109,15 +114,17 @@ export default function TaskManagementPage() {
       if (isEditing && editingId) {
         const updated = await updateTaskById(editingId, payload);
         setTasks(prev => prev.map(t => t._id === updated._id ? updated : t));
+        success('Task updated successfully');
       } else {
         const created = await createTask(payload);
         setTasks(prev => [created, ...prev]);
+        success('Task created successfully');
       }
       // refresh summary and categories
       loadData(user._id);
       setShowModal(false);
     } catch (err) {
-      alert(err.message || 'Failed to save task');
+      error(err.message || 'Failed to save task');
     }
   };
 
@@ -127,19 +134,29 @@ export default function TaskManagementPage() {
       // Immediately reflect: remove from team load and update categories via reload
       setTasks(prev => prev.map(t => t._id === updated._id ? updated : t));
       if (user) loadData(user._id);
+      success('Task marked as complete');
     } catch (e) {
-      alert('Failed to mark as complete');
+      error('Failed to mark as complete');
     }
   };
 
-  const deleteTask = async (taskId) => {
-    if (!confirm('Delete this task?')) return;
+  const requestDelete = (taskId) => {
+    setPendingDeleteId(taskId);
+    setConfirmOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!pendingDeleteId) return;
     try {
-      await deleteTaskById(taskId);
-      setTasks(prev => prev.filter(t => t._id !== taskId));
+      await deleteTaskById(pendingDeleteId);
+      setTasks(prev => prev.filter(t => t._id !== pendingDeleteId));
       if (user) loadData(user._id);
+      success('Task deleted');
     } catch (e) {
-      alert('Failed to delete');
+      error('Failed to delete');
+    } finally {
+      setConfirmOpen(false);
+      setPendingDeleteId(null);
     }
   };
 
@@ -273,7 +290,7 @@ export default function TaskManagementPage() {
                     <button onClick={() => openEditModal(task)} className="text-xs bg-blue-600 text-white px-2 py-1 rounded flex items-center gap-1">
                       <Edit className="w-3 h-3" /> Edit
                     </button>
-                    <button onClick={() => deleteTask(task._id)} className="text-xs bg-red-600 text-white px-2 py-1 rounded flex items-center gap-1">
+                    <button onClick={() => requestDelete(task._id)} className="text-xs bg-red-600 text-white px-2 py-1 rounded flex items-center gap-1">
                       <Trash2 className="w-3 h-3" />
                     </button>
                   </div>
@@ -424,6 +441,15 @@ export default function TaskManagementPage() {
           </div>
         </div>
       )}
+      <ConfirmDialog
+        open={confirmOpen}
+        title="Delete task?"
+        description="This action cannot be undone. The task will be permanently removed."
+        confirmText="Delete"
+        cancelText="Cancel"
+        onConfirm={confirmDelete}
+        onCancel={() => { setConfirmOpen(false); setPendingDeleteId(null); }}
+      />
     </div>
   );
 }

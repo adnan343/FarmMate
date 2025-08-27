@@ -1,7 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { Package, Edit, Trash2, Eye, EyeOff, Plus, DollarSign } from 'lucide-react';
+import ConfirmDialog from '@/app/components/ConfirmDialog';
+import { useToast } from '@/app/components/ToastProvider';
+import { DollarSign, Edit, Eye, EyeOff, Package, Trash2 } from 'lucide-react';
+import { useEffect, useState } from 'react';
 
 export default function MyProductsPage() {
   const [products, setProducts] = useState([]);
@@ -9,6 +11,7 @@ export default function MyProductsPage() {
   const [user, setUser] = useState(null);
   const [showEditModal, setShowEditModal] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState(null);
   const [editForm, setEditForm] = useState({
     name: '',
     description: '',
@@ -17,6 +20,7 @@ export default function MyProductsPage() {
     stock: '',
     unit: 'kg'
   });
+  const toast = useToast();
 
   useEffect(() => {
     // Get user data from cookies
@@ -95,9 +99,13 @@ export default function MyProductsPage() {
         setProducts(products.map(p => p._id === selectedProduct._id ? data.data : p));
         setShowEditModal(false);
         setSelectedProduct(null);
+        toast.success('Product updated');
+      } else {
+        toast.error(data.msg || 'Failed to update product');
       }
     } catch (error) {
       console.error('Error updating product:', error);
+      toast.error('Failed to update product');
     }
   };
 
@@ -114,18 +122,17 @@ export default function MyProductsPage() {
       const data = await response.json();
       if (data.success) {
         setProducts(products.map(p => p._id === productId ? data.data : p));
-        alert(data.msg);
+        toast.success(data.msg || 'Status updated');
       } else {
-        alert(data.msg);
+        toast.error(data.msg || 'Failed to update status');
       }
     } catch (error) {
       console.error('Error toggling product availability:', error);
+      toast.error('Failed to update status');
     }
   };
 
   const handleDeleteProduct = async (productId) => {
-    if (!confirm('Are you sure you want to delete this product?')) return;
-    
     try {
       const response = await fetch(`http://localhost:5000/api/products/${productId}`, {
         method: 'DELETE',
@@ -134,11 +141,21 @@ export default function MyProductsPage() {
       const data = await response.json();
       if (data.success) {
         setProducts(products.filter(p => p._id !== productId));
-        alert('Product deleted successfully');
+        toast.success('Product deleted');
+      } else {
+        toast.error(data.msg || 'Failed to delete product');
       }
     } catch (error) {
       console.error('Error deleting product:', error);
+      toast.error('Failed to delete product');
     }
+  };
+  const openConfirmDelete = (productId) => setConfirmDeleteId(productId);
+  const closeConfirmDelete = () => setConfirmDeleteId(null);
+  const confirmDelete = async () => {
+    const id = confirmDeleteId;
+    closeConfirmDelete();
+    if (id) await handleDeleteProduct(id);
   };
 
   const getCategoryColor = (category) => {
@@ -239,7 +256,7 @@ export default function MyProductsPage() {
                 )}
               </button>
               <button
-                onClick={() => handleDeleteProduct(product._id)}
+                onClick={() => openConfirmDelete(product._id)}
                 className="bg-red-600 text-white px-3 py-2 rounded-lg hover:bg-red-700 transition-colors text-sm"
               >
                 <Trash2 className="w-3 h-3" />
@@ -361,6 +378,16 @@ export default function MyProductsPage() {
           </div>
         </div>
       )}
+      {/* Delete product confirmation */}
+      <ConfirmDialog
+        open={!!confirmDeleteId}
+        title="Delete product?"
+        description="This will permanently remove the product."
+        confirmText="Delete"
+        cancelText="Cancel"
+        onConfirm={confirmDelete}
+        onCancel={closeConfirmDelete}
+      />
     </div>
   );
 } 

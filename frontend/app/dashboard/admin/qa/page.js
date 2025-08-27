@@ -1,4 +1,6 @@
 "use client";
+import ConfirmDialog from "@/app/components/ConfirmDialog";
+import { useToast } from "@/app/components/ToastProvider";
 import { ArrowLeft, Check, CheckCircle, Clock, Edit, MessageCircle, Reply, Trash2, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
@@ -11,6 +13,8 @@ export default function AdminQAPage() {
   const [answerText, setAnswerText] = useState("");
   const [currentAdmin, setCurrentAdmin] = useState(null);
   const [selectedFarmerId, setSelectedFarmerId] = useState(null);
+  const [confirmDeleteQuestionId, setConfirmDeleteQuestionId] = useState(null);
+  const toast = useToast();
 
   useEffect(() => {
     fetchQuestions();
@@ -46,8 +50,9 @@ export default function AdminQAPage() {
       setAnsweringQuestion(null);
       setAnswerText("");
       fetchQuestions();
+      toast.success("Answer submitted");
     } else {
-      alert("Failed to answer question");
+      toast.error("Failed to submit answer");
     }
   };
 
@@ -61,21 +66,35 @@ export default function AdminQAPage() {
     if (res.ok) {
       setEditingAnswer(null);
       fetchQuestions();
+      toast.success("Answer updated");
     } else {
-      alert("Failed to edit answer");
+      toast.error("Failed to update answer");
     }
   };
 
-  const handleDeleteAnswer = async (questionId) => {
-    if (!confirm("Are you sure you want to delete this answer?")) return;
+  // Removed separate delete-answer flow to simplify UI; deleting question covers both
+
+  const handleDeleteQuestion = async (questionId) => {
     setDeleting({ ...deleting, [questionId]: true });
-    const res = await fetch(`http://localhost:5000/api/qa/${questionId}/answer`, {
+    const res = await fetch(`http://localhost:5000/api/qa/${questionId}`, {
       method: "DELETE",
       credentials: "include",
     });
     setDeleting({ ...deleting, [questionId]: false });
-    if (res.ok) fetchQuestions();
-    else alert("Failed to delete answer");
+    if (res.ok) {
+      fetchQuestions();
+      toast.success("Question deleted");
+    } else {
+      toast.error("Failed to delete question");
+    }
+  };
+
+  const openConfirmForQuestion = (questionId) => setConfirmDeleteQuestionId(questionId);
+  const closeConfirmQuestion = () => setConfirmDeleteQuestionId(null);
+  const confirmDeleteQuestion = async () => {
+    const id = confirmDeleteQuestionId;
+    closeConfirmQuestion();
+    if (id) await handleDeleteQuestion(id);
   };
 
   const farmers = useMemo(() => {
@@ -185,12 +204,25 @@ export default function AdminQAPage() {
                         <span className="px-2 py-1 text-xs rounded bg-yellow-100 text-yellow-800">Pending</span>
                         <span className="text-xs text-gray-500">{new Date(qa.createdAt).toLocaleDateString()}</span>
                       </div>
-                      <button
-                        onClick={() => setAnsweringQuestion(qa)}
-                        className="text-green-600 hover:text-green-800"
-                      >
-                        <Reply className="w-4 h-4" />
-                      </button>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => setAnsweringQuestion(qa)}
+                          className="text-green-600 hover:text-green-800"
+                        >
+                          <Reply className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => openConfirmForQuestion(qa._id)}
+                          disabled={deleting[qa._id]}
+                          className="text-red-600 hover:text-red-800"
+                        >
+                          {deleting[qa._id] ? (
+                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
+                          ) : (
+                            <Trash2 className="w-4 h-4" />
+                          )}
+                        </button>
+                      </div>
                     </div>
                     <div className="mb-3">
                       <h4 className="font-semibold text-gray-900 mb-2">Question:</h4>
@@ -253,7 +285,7 @@ export default function AdminQAPage() {
                         <span className="text-xs text-gray-500">{new Date(qa.createdAt).toLocaleDateString()}</span>
                       </div>
                       {qa.admin?._id === currentAdmin && (
-                        <div className="flex gap-2">
+                        <div className="flex items-center gap-2">
                           <button
                             onClick={() => setEditingAnswer(qa)}
                             className="text-blue-600 hover:text-blue-800"
@@ -261,7 +293,7 @@ export default function AdminQAPage() {
                             <Edit className="w-4 h-4" />
                           </button>
                           <button
-                            onClick={() => handleDeleteAnswer(qa._id)}
+                            onClick={() => openConfirmForQuestion(qa._id)}
                             disabled={deleting[qa._id]}
                             className="text-red-600 hover:text-red-800"
                           >
@@ -321,6 +353,16 @@ export default function AdminQAPage() {
           </div>
         </>
       )}
+      {/* Delete question confirmation */}
+      <ConfirmDialog
+        open={!!confirmDeleteQuestionId}
+        title="Delete question?"
+        description="This will permanently remove the question."
+        confirmText="Delete"
+        cancelText="Cancel"
+        onConfirm={confirmDeleteQuestion}
+        onCancel={closeConfirmQuestion}
+      />
     </div>
   );
 }

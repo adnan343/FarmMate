@@ -1,4 +1,6 @@
 "use client";
+import ConfirmDialog from "@/app/components/ConfirmDialog";
+import { useToast } from "@/app/components/ToastProvider";
 import { Check, CheckCircle, Clock, Edit, MessageCircle, Trash2, X } from "lucide-react";
 import { useEffect, useState } from "react";
 
@@ -10,6 +12,8 @@ export default function QAPage() {
   const [editingQuestion, setEditingQuestion] = useState(null);
   const [deleting, setDeleting] = useState({});
   const [currentFarmer, setCurrentFarmer] = useState(null);
+  const [confirmState, setConfirmState] = useState({ open: false, questionId: null });
+  const toast = useToast();
 
   useEffect(() => {
     fetchQuestions();
@@ -45,8 +49,12 @@ export default function QAPage() {
     });
     setAsking(false);
     setNewQuestion("");
-    if (res.ok) fetchQuestions();
-    else alert("Failed to ask question");
+    if (res.ok) {
+      toast.success("Question posted");
+      fetchQuestions();
+    } else {
+      toast.error("Failed to ask question");
+    }
   };
 
   const handleEditQuestion = async (questionId, updatedQuestion) => {
@@ -59,21 +67,37 @@ export default function QAPage() {
     if (res.ok) {
       setEditingQuestion(null);
       fetchQuestions();
+      toast.success("Question updated");
     } else {
-      alert("Failed to edit question");
+      toast.error("Failed to update question");
     }
   };
 
   const handleDeleteQuestion = async (questionId) => {
-    if (!confirm("Are you sure you want to delete this question?")) return;
     setDeleting({ ...deleting, [questionId]: true });
     const res = await fetch(`http://localhost:5000/api/qa/${questionId}`, {
       method: "DELETE",
       credentials: "include",
     });
     setDeleting({ ...deleting, [questionId]: false });
-    if (res.ok) fetchQuestions();
-    else alert("Failed to delete question");
+    if (res.ok) {
+      toast.success("Question deleted");
+      fetchQuestions();
+    } else {
+      toast.error("Failed to delete question");
+    }
+  };
+
+  const openConfirmForQuestion = (questionId) => {
+    setConfirmState({ open: true, questionId });
+  };
+
+  const closeConfirm = () => setConfirmState({ open: false, questionId: null });
+
+  const confirmDeletion = async () => {
+    const { questionId } = confirmState;
+    closeConfirm();
+    if (questionId) await handleDeleteQuestion(questionId);
   };
 
   const unanswered = questions.filter(q => q.status !== 'answered');
@@ -131,7 +155,7 @@ export default function QAPage() {
                         <Edit className="w-4 h-4" />
                       </button>
                       <button
-                        onClick={() => handleDeleteQuestion(qa._id)}
+                        onClick={() => openConfirmForQuestion(qa._id)}
                         disabled={deleting[qa._id]}
                         className="text-red-600 hover:text-red-800"
                       >
@@ -208,7 +232,7 @@ export default function QAPage() {
                         <Edit className="w-4 h-4" />
                       </button>
                       <button
-                        onClick={() => handleDeleteQuestion(qa._id)}
+                        onClick={() => openConfirmForQuestion(qa._id)}
                         disabled={deleting[qa._id]}
                         className="text-red-600 hover:text-red-800"
                       >
@@ -266,6 +290,16 @@ export default function QAPage() {
           </div>
         )}
       </div>
+      {/* Delete confirmation dialog */}
+      <ConfirmDialog
+        open={confirmState.open}
+        title="Delete question?"
+        description="This will permanently remove the question."
+        confirmText="Delete"
+        cancelText="Cancel"
+        onConfirm={confirmDeletion}
+        onCancel={closeConfirm}
+      />
     </div>
   );
 } 

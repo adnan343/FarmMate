@@ -1,9 +1,11 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { ShoppingCart, Trash2, Plus, Minus, ArrowLeft, CreditCard } from 'lucide-react';
+import ConfirmDialog from '@/app/components/ConfirmDialog';
+import { useToast } from '@/app/components/ToastProvider';
+import { ArrowLeft, CreditCard, Minus, Plus, ShoppingCart, Trash2 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
 
 export default function CartPage() {
   const [cart, setCart] = useState({
@@ -13,7 +15,9 @@ export default function CartPage() {
   });
   const [loading, setLoading] = useState(true);
   const [updatingItem, setUpdatingItem] = useState(null);
+  const [confirmClearOpen, setConfirmClearOpen] = useState(false);
   const router = useRouter();
+  const toast = useToast();
 
   useEffect(() => {
     fetchCart();
@@ -80,11 +84,11 @@ export default function CartPage() {
         }
       } else {
         const errorData = await response.json();
-        alert(errorData.msg || 'Failed to update quantity');
+        toast.error(errorData.msg || 'Failed to update quantity');
       }
     } catch (error) {
       console.error('Error updating quantity:', error);
-      alert('Failed to update quantity');
+      toast.error('Failed to update quantity');
     } finally {
       setUpdatingItem(null);
     }
@@ -117,8 +121,6 @@ export default function CartPage() {
   };
 
   const clearCart = async () => {
-    if (!confirm('Are you sure you want to clear your cart?')) return;
-
     try {
       const cookies = document.cookie.split(';').reduce((acc, cookie) => {
         const [key, value] = cookie.trim().split('=');
@@ -137,11 +139,22 @@ export default function CartPage() {
         const result = await response.json();
         if (result.success) {
           setCart(result.data);
+          toast.success('Cart cleared');
         }
+      } else {
+        toast.error('Failed to clear cart');
       }
     } catch (error) {
       console.error('Error clearing cart:', error);
+      toast.error('Failed to clear cart');
     }
+  };
+
+  const onClickClearCart = () => setConfirmClearOpen(true);
+  const onCancelClear = () => setConfirmClearOpen(false);
+  const onConfirmClear = async () => {
+    setConfirmClearOpen(false);
+    await clearCart();
   };
 
   if (loading) {
@@ -192,7 +205,7 @@ export default function CartPage() {
                 <div className="flex items-center justify-between">
                   <h2 className="text-lg font-semibold text-gray-900">Cart Items</h2>
                   <button
-                    onClick={clearCart}
+                    onClick={onClickClearCart}
                     className="text-sm text-red-600 hover:text-red-700 transition-colors"
                   >
                     Clear Cart
@@ -315,6 +328,16 @@ export default function CartPage() {
           </div>
         </div>
       )}
+      {/* Clear cart confirmation */}
+      <ConfirmDialog
+        open={confirmClearOpen}
+        title="Clear cart?"
+        description="This will remove all items from your cart."
+        confirmText="Clear"
+        cancelText="Cancel"
+        onConfirm={onConfirmClear}
+        onCancel={onCancelClear}
+      />
     </div>
   );
 } 

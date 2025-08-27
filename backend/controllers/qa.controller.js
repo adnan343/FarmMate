@@ -94,8 +94,10 @@ export const deleteQuestion = async (req, res) => {
     if (!qa) {
       return res.status(404).json({ success: false, msg: 'Question not found' });
     }
-    if (!req.user || req.user.role !== 'farmer' || qa.farmer.toString() !== req.user._id.toString()) {
-      return res.status(403).json({ success: false, msg: 'You can only delete your own questions' });
+    const isFarmerOwner = req.user && req.user.role === 'farmer' && qa.farmer.toString() === req.user._id.toString();
+    const isAdmin = req.user && req.user.role === 'admin';
+    if (!isFarmerOwner && !isAdmin) {
+      return res.status(403).json({ success: false, msg: 'Not authorized to delete this question' });
     }
     await QA.findByIdAndDelete(req.params.id);
     res.json({ success: true, msg: 'Question deleted successfully' });

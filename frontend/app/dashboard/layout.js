@@ -1,4 +1,5 @@
 import Sidebar from '@/app/components/Sidebar';
+import { ToastProvider } from '@/app/components/ToastProvider';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 
@@ -23,13 +24,15 @@ export default async function DashboardLayout({ children }) {
   };
 
   return (
-    <div className="flex h-screen bg-gray-50">
-      <Sidebar userRole={userData.role} userName={userData.name} userEmail={userData.email} />
-      <div className="flex-1 ml-64 overflow-auto">
-        <main className="p-6">
-          {children}
-        </main>
+    <ToastProvider>
+      <div className="flex h-screen bg-gray-50">
+        <Sidebar userRole={userData.role} userName={userData.name} userEmail={userData.email} />
+        <div className="flex-1 ml-64 overflow-auto">
+          <main className="p-6">
+            {children}
+          </main>
+        </div>
       </div>
-    </div>
+    </ToastProvider>
   );
 }

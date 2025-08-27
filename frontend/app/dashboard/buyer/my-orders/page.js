@@ -135,98 +135,85 @@ export default function MyOrdersPage() {
 
   const groupedOrders = orders.flatMap(splitOrderByFarmer);
 
-  const downloadPayslip = (g) => {
+  const downloadPayslip = async (g) => {
     try {
-      const html = `<!DOCTYPE html>
-        <html>
-          <head>
-            <meta charset=\"utf-8\" />
-            <title>Payslip - ${g.parentOrderId.slice(-8)} - ${g.farmer?.name || 'Farmer'}</title>
-            <style>
-              body { font-family: Arial, sans-serif; padding: 24px; color: #111827; }
-              h1 { margin: 0 0 4px 0; font-size: 22px; }
-              h2 { margin: 16px 0 8px; font-size: 16px; }
-              .muted { color: #6B7280; }
-              .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
-              .row { display: flex; gap: 24px; }
-              .col { flex: 1; }
-              table { width: 100%; border-collapse: collapse; margin-top: 8px; }
-              th, td { border: 1px solid #E5E7EB; padding: 8px; text-align: left; font-size: 14px; }
-              th { background: #F9FAFB; }
-              .totals { text-align: right; margin-top: 12px; font-weight: 600; }
-            </style>
-          </head>
-          <body>
-            <div class=\"header\">
-              <div>
-                <h1>FarmMate Payslip</h1>
-                <div class=\"muted\">Sub-order for ${g.farmer?.name || 'Unknown farmer'}</div>
-              </div>
-              <div class=\"muted\">Generated: ${new Date().toLocaleString()}</div>
-            </div>
+      const [{ default: html2pdf }] = await Promise.all([
+        import('html2pdf.js')
+      ]);
 
-            <div class=\"row\">
-              <div class=\"col\">
-                <h2>Order</h2>
-                <div class=\"muted\">Parent Order ID: ${g.parentOrderId}</div>
-                <div class=\"muted\">Order Date: ${new Date(g.orderDate).toLocaleString()}</div>
-                <div class=\"muted\">Status: ${g.status}</div>
-              </div>
-              <div class=\"col\">
-                <h2>Shipping</h2>
-                ${g.shippingAddress ? `
-                  <div>${g.shippingAddress.street || ''}</div>
-                  <div>${g.shippingAddress.city || ''}, ${g.shippingAddress.state || ''} ${g.shippingAddress.zipCode || ''}</div>
-                  <div>${g.shippingAddress.country || ''}</div>
-                ` : '<div class=\"muted\">N/A</div>'}
-              </div>
-            </div>
+      const container = document.createElement('div');
+      container.style.padding = '24px';
+      container.style.fontFamily = 'Arial, sans-serif';
+      container.style.color = '#111827';
+      container.innerHTML = `
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+          <div>
+            <h1 style="margin:0 0 4px 0;font-size:22px;">FarmMate Payslip</h1>
+            <div style="color:#6B7280;">Sub-order for ${g.farmer?.name || 'Unknown farmer'}</div>
+          </div>
+          <div style="color:#6B7280;">Generated: ${new Date().toLocaleString()}</div>
+        </div>
 
-            <h2>Items</h2>
-            <table>
-              <thead>
-                <tr>
-                  <th>Product</th>
-                  <th>Qty</th>
-                  <th>Price</th>
-                  <th>Subtotal</th>
-                  <th>Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${g.items.map(i => `
-                  <tr>
-                    <td>${i.name}</td>
-                    <td>${i.quantity}</td>
-                    <td>$${Number(i.price).toFixed(2)}</td>
-                    <td>$${(Number(i.price) * Number(i.quantity)).toFixed(2)}</td>
-                    <td>${i.status || 'pending'}</td>
-                  </tr>
-                `).join('')}
-              </tbody>
-            </table>
-            <div class=\"totals\">Total due: $${g.total.toFixed(2)}</div>
-            ${g.notes ? `<h2>Notes</h2><div>${g.notes}</div>` : ''}
-            <script>window.onload = () => { try { window.print(); } catch(e){} }<\/script>
-          </body>
-        </html>`;
+        <div style="display:flex;gap:24px;">
+          <div style="flex:1;">
+            <h2 style="margin:16px 0 8px;font-size:16px;">Order</h2>
+            <div style="color:#6B7280;">Parent Order ID: ${g.parentOrderId}</div>
+            <div style="color:#6B7280;">Order Date: ${new Date(g.orderDate).toLocaleString()}</div>
+            <div style="color:#6B7280;">Status: ${g.status}</div>
+          </div>
+          <div style="flex:1;">
+            <h2 style="margin:16px 0 8px;font-size:16px;">Shipping</h2>
+            ${g.shippingAddress ? `
+              <div>${g.shippingAddress.street || ''}</div>
+              <div>${g.shippingAddress.city || ''}, ${g.shippingAddress.state || ''} ${g.shippingAddress.zipCode || ''}</div>
+              <div>${g.shippingAddress.country || ''}</div>
+            ` : '<div style="color:#6B7280;">N/A</div>'}
+          </div>
+        </div>
 
-      const blob = new Blob([html], { type: 'text/html' });
-      const url = URL.createObjectURL(blob);
-      const w = window.open(url, '_blank', 'noopener');
-      if (w) {
-        // Cleanup after some time
-        setTimeout(() => URL.revokeObjectURL(url), 60_000);
-      } else {
-        // Popup blocked: fallback to file download
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `payslip-${g.parentOrderId.slice(-8)}-${(g.farmer?.name || 'farmer').replace(/\s+/g,'_')}.html`;
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        setTimeout(() => URL.revokeObjectURL(url), 0);
-      }
+        <h2 style="margin:16px 0 8px;font-size:16px;">Items</h2>
+        <table style="width:100%;border-collapse:collapse;margin-top:8px;">
+          <thead>
+            <tr>
+              <th style="border:1px solid #E5E7EB;padding:8px;text-align:left;font-size:14px;background:#F9FAFB;">Product</th>
+              <th style="border:1px solid #E5E7EB;padding:8px;text-align:left;font-size:14px;background:#F9FAFB;">Qty</th>
+              <th style="border:1px solid #E5E7EB;padding:8px;text-align:left;font-size:14px;background:#F9FAFB;">Price</th>
+              <th style="border:1px solid #E5E7EB;padding:8px;text-align:left;font-size:14px;background:#F9FAFB;">Subtotal</th>
+              <th style="border:1px solid #E5E7EB;padding:8px;text-align:left;font-size:14px;background:#F9FAFB;">Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${g.items.map(i => `
+              <tr>
+                <td style="border:1px solid #E5E7EB;padding:8px;text-align:left;font-size:14px;">${i.name}</td>
+                <td style="border:1px solid #E5E7EB;padding:8px;text-align:left;font-size:14px;">${i.quantity}</td>
+                <td style="border:1px solid #E5E7EB;padding:8px;text-align:left;font-size:14px;">$${Number(i.price).toFixed(2)}</td>
+                <td style="border:1px solid #E5E7EB;padding:8px;text-align:left;font-size:14px;">$${(Number(i.price) * Number(i.quantity)).toFixed(2)}</td>
+                <td style="border:1px solid #E5E7EB;padding:8px;text-align:left;font-size:14px;">${i.status || 'pending'}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+        <div style="text-align:right;margin-top:12px;font-weight:600;">Total due: $${g.total.toFixed(2)}</div>
+        ${g.notes ? `<h2 style=\"margin:16px 0 8px;font-size:16px;\">Notes</h2><div>${g.notes}</div>` : ''}
+      `;
+
+      document.body.appendChild(container);
+
+      const fileName = `payslip-${g.parentOrderId.slice(-8)}-${(g.farmer?.name || 'farmer').replace(/\s+/g, '_')}.pdf`;
+
+      await html2pdf()
+        .set({
+          margin: 10,
+          filename: fileName,
+          image: { type: 'jpeg', quality: 0.98 },
+          html2canvas: { scale: 2, useCORS: true },
+          jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+        })
+        .from(container)
+        .save();
+
+      container.remove();
     } catch (e) {
       console.error('Payslip generation failed', e);
       alert('Could not generate payslip.');
