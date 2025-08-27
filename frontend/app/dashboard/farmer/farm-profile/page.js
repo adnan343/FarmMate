@@ -74,6 +74,34 @@ export default function FarmProfilePage() {
     }
   }, []);
 
+  const parseLandSizeToAcres = (landSizeStr) => {
+    if (!landSizeStr || typeof landSizeStr !== 'string') return NaN;
+    const lower = landSizeStr.trim().toLowerCase();
+    const match = lower.match(/\d+(?:\.\d+)?/);
+    const value = match ? Number(match[0]) : NaN;
+    if (isNaN(value)) return NaN;
+    let unit = 'acres';
+    if (/hectare|hectares|\bha\b/.test(lower)) unit = 'hectares';
+    else if (/acre|acres|\bac\b/.test(lower)) unit = 'acres';
+    else if (/square\s?meter|sqm|m2|sq\.?\s?m/.test(lower)) unit = 'sqm';
+    if (unit === 'acres') return value;
+    if (unit === 'hectares') return value * 2.47105;
+    if (unit === 'sqm') return value / 4046.8564224;
+    return value;
+  };
+
+  const getAvailableAcresForSelectedFarm = () => {
+    if (!selectedFarm) return null;
+    const totalAcres = parseLandSizeToAcres(selectedFarm.landSize || '');
+    if (isNaN(totalAcres)) return null;
+    const activeCrops = crops
+      .filter(c => c.farm && c.farm._id === selectedFarm._id)
+      .filter(c => c.stage !== 'harvested');
+    const usedAcres = activeCrops.reduce((sum, c) => sum + Number(c.area || 0), 0);
+    const remaining = Math.max(0, totalAcres - usedAcres);
+    return remaining;
+  };
+
   const fetchFarms = async (farmerId) => {
     try {
       const response = await fetch(`http://localhost:5000/api/farms/farmer/${farmerId}`, {
@@ -399,6 +427,10 @@ export default function FarmProfilePage() {
                 <p className="text-gray-900">{selectedFarm.landSize}</p>
               </div>
               <div>
+                <p className="text-sm text-gray-500 mb-1">Available Area</p>
+                <p className="text-gray-900">{getAvailableAcresForSelectedFarm() === null ? '—' : `${getAvailableAcresForSelectedFarm().toFixed(2)} acres`}</p>
+              </div>
+              <div>
                 <p className="text-sm text-gray-500 mb-1">Soil Type</p>
                 <p className="text-gray-900">{selectedFarm.soilType}</p>
               </div>
@@ -707,6 +739,9 @@ export default function FarmProfilePage() {
                     className="w-full border rounded-lg px-3 py-2"
                     required
                   />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Available: {getAvailableAcresForSelectedFarm() === null ? '—' : `${getAvailableAcresForSelectedFarm().toFixed(2)} acres`}
+                  </p>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Unit</label>
