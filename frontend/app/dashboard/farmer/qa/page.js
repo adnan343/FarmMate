@@ -31,7 +31,7 @@ export default function QAPage() {
 
   const fetchQuestions = async () => {
     setLoading(true);
-    const res = await fetch("http://localhost:5000/api/qa/farmer", { credentials: "include" });
+    const res = await fetch("https://farmmate-production.up.railway.app/api/qa/farmer", { credentials: "include" });
     const data = await res.json();
     if (data.success) setQuestions(data.data);
     setLoading(false);
@@ -41,7 +41,7 @@ export default function QAPage() {
     e.preventDefault();
     if (!newQuestion.trim()) return;
     setAsking(true);
-    const res = await fetch("http://localhost:5000/api/qa/ask", {
+    const res = await fetch("https://farmmate-production.up.railway.app/api/qa/ask", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       credentials: "include",
@@ -58,7 +58,7 @@ export default function QAPage() {
   };
 
   const handleEditQuestion = async (questionId, updatedQuestion) => {
-    const res = await fetch(`http://localhost:5000/api/qa/${questionId}`, {
+    const res = await fetch(`https://farmmate-production.up.railway.app/api/qa/${questionId}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       credentials: "include",
@@ -75,7 +75,7 @@ export default function QAPage() {
 
   const handleDeleteQuestion = async (questionId) => {
     setDeleting({ ...deleting, [questionId]: true });
-    const res = await fetch(`http://localhost:5000/api/qa/${questionId}`, {
+    const res = await fetch(`https://farmmate-production.up.railway.app/api/qa/${questionId}`, {
       method: "DELETE",
       credentials: "include",
     });

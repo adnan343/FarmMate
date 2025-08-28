@@ -21,7 +21,7 @@ export default function MarketplacePage() {
   const fetchProducts = useCallback(async () => {
     try {
       setLoading(true);
-      let url = 'http://localhost:5000/api/products';
+      let url = 'https://farmmate-production.up.railway.app/api/products';
       
       // Add category filter if not 'all'
       if (selectedCategory !== 'all') {
@@ -53,7 +53,7 @@ export default function MarketplacePage() {
       const userId = cookies.userId;
       if (!userId) return;
 
-      const response = await fetch(`http://localhost:5000/api/cart/${userId}`, {
+      const response = await fetch(`https://farmmate-production.up.railway.app/api/cart/${userId}`, {
         credentials: 'include'
       });
       if (response.ok) {
@@ -78,7 +78,7 @@ export default function MarketplacePage() {
       const userId = cookies.userId;
       if (!userId) return;
 
-      const response = await fetch(`http://localhost:5000/api/users/${userId}/favorites`, {
+      const response = await fetch(`https://farmmate-production.up.railway.app/api/users/${userId}/favorites`, {
         credentials: 'include'
       });
       if (response.ok) {
@@ -113,7 +113,7 @@ export default function MarketplacePage() {
         return;
       }
 
-      const response = await fetch(`http://localhost:5000/api/cart/${userId}/add`, {
+      const response = await fetch(`https://farmmate-production.up.railway.app/api/cart/${userId}/add`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -169,7 +169,7 @@ export default function MarketplacePage() {
       
       if (isFavorite) {
         // Remove from favorites
-        const response = await fetch(`http://localhost:5000/api/users/${userId}/favorites/${productId}`, {
+        const response = await fetch(`https://farmmate-production.up.railway.app/api/users/${userId}/favorites/${productId}`, {
           method: 'DELETE',
           credentials: 'include'
         });
@@ -182,7 +182,7 @@ export default function MarketplacePage() {
         }
       } else {
         // Add to favorites
-        const response = await fetch(`http://localhost:5000/api/users/${userId}/favorites`, {
+        const response = await fetch(`https://farmmate-production.up.railway.app/api/users/${userId}/favorites`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

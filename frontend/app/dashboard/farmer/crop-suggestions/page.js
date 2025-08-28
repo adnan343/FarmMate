@@ -61,7 +61,7 @@ export default function CropSuggestionsPage() {
 
   const fetchCropsForFarm = useCallback(async (farmId) => {
     try {
-      const res = await fetch(`http://localhost:5000/api/crops/farm/${farmId}`, {
+      const res = await fetch(`https://farmmate-production.up.railway.app/api/crops/farm/${farmId}`, {
         credentials: 'include'
       });
       const data = await res.json();
@@ -110,7 +110,7 @@ export default function CropSuggestionsPage() {
         setUser(userData);
         
         // Fetch user's farms
-        const response = await fetch(`http://localhost:5000/api/farms/farmer/${userId}`, {
+        const response = await fetch(`https://farmmate-production.up.railway.app/api/farms/farmer/${userId}`, {
           credentials: 'include'
         });
         const data = await response.json();

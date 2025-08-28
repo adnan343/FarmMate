@@ -57,7 +57,7 @@ export default function CheckoutPage() {
         return;
       }
 
-      const response = await fetch(`http://localhost:5000/api/cart/${userId}`, {
+      const response = await fetch(`https://farmmate-production.up.railway.app/api/cart/${userId}`, {
         credentials: 'include'
       });
       if (response.ok) {
@@ -66,7 +66,7 @@ export default function CheckoutPage() {
           setCart(result.data);
           
           // Pre-fill shipping info with user data
-          const userResponse = await fetch(`http://localhost:5000/api/users/${userId}`, {
+          const userResponse = await fetch(`https://farmmate-production.up.railway.app/api/users/${userId}`, {
             credentials: 'include'
           });
           if (userResponse.ok) {
@@ -151,7 +151,7 @@ export default function CheckoutPage() {
         notes: `Order placed by ${shippingInfo.firstName} ${shippingInfo.lastName}`
       };
 
-      const response = await fetch(`http://localhost:5000/api/orders/${userId}/checkout`, {
+      const response = await fetch(`https://farmmate-production.up.railway.app/api/orders/${userId}/checkout`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
