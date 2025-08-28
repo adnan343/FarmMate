@@ -1,6 +1,6 @@
 "use client";
-import { Edit, Eye, Filter, Search, Trash2, Users, X, ChevronLeft, ChevronRight } from 'lucide-react';
-import { useEffect, useState, useMemo } from 'react';
+import { ChevronLeft, ChevronRight, Edit, Eye, Filter, Search, Trash2, Users, X } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { deleteUserById, fetchAllUsers, updateUserRole } from '../../../../lib/api';
 
 export default function UserManagementPage() {
@@ -444,9 +444,10 @@ export default function UserManagementPage() {
       )}
 
       {/* View User Modal */}
-      {showViewModal && selectedUser && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+                      {showViewModal && selectedUser && (
+          <div className="fixed inset-0 z-50">
+            <div className="absolute inset-0 bg-black bg-opacity-50" onClick={() => setShowViewModal(false)} />
+            <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-white rounded-lg p-6 max-w-md w-full mx-4">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-lg font-semibold">User Profile</h3>
               <button onClick={() => setShowViewModal(false)}>
@@ -504,9 +505,10 @@ export default function UserManagementPage() {
       )}
 
       {/* Edit User Modal */}
-      {showEditModal && selectedUser && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+                      {showEditModal && selectedUser && (
+          <div className="fixed inset-0 z-50">
+            <div className="absolute inset-0 bg-black bg-opacity-50" onClick={() => setShowEditModal(false)} />
+            <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-white rounded-lg p-6 max-w-md w-full mx-4">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-lg font-semibold">Edit User Role</h3>
               <button onClick={() => setShowEditModal(false)}>
@@ -555,9 +557,10 @@ export default function UserManagementPage() {
       )}
 
       {/* Delete User Modal */}
-      {showDeleteModal && selectedUser && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+                      {showDeleteModal && selectedUser && (
+          <div className="fixed inset-0 z-50">
+            <div className="absolute inset-0 bg-black bg-opacity-50" onClick={() => setShowDeleteModal(false)} />
+            <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-white rounded-lg p-6 max-w-md w-full mx-4">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-lg font-semibold text-red-600">Delete User</h3>
               <button onClick={() => setShowDeleteModal(false)}>
@@ -592,9 +595,10 @@ export default function UserManagementPage() {
       )}
 
       {/* Success Notification Modal */}
-      {showSuccessModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+                      {showSuccessModal && (
+          <div className="fixed inset-0 z-50">
+            <div className="absolute inset-0 bg-black bg-opacity-50" onClick={() => setShowSuccessModal(false)} />
+            <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-white rounded-lg p-6 max-w-md w-full mx-4">
             <div className="flex items-center justify-center mb-4">
               <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
                 <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">

@@ -1,7 +1,7 @@
 "use client";
 import ConfirmDialog from "@/app/components/ConfirmDialog";
 import { useToast } from "@/app/components/ToastProvider";
-import { Check, Edit, Trash2, X } from "lucide-react";
+import { Check, CheckCircle, Clock, Edit, MessageCircle, Trash2, X } from "lucide-react";
 import { useEffect, useState } from "react";
 
 export default function CommunityForumPage() {

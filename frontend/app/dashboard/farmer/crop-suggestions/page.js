@@ -1,7 +1,7 @@
 'use client';
 
 import { AlertCircle, Calendar, Lightbulb, Loader2, MapPin, RefreshCw, TrendingUp, X } from 'lucide-react';
-import { useEffect, useState, useCallback } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { acceptSuggestionAndCreateCrop, generateCropTimeline, getCropSuggestions, getStoredCropSuggestions, refreshCropSuggestions } from '../../../../lib/api';
 
 export default function CropSuggestionsPage() {
@@ -367,9 +367,10 @@ export default function CropSuggestionsPage() {
         </div>
       )}
 
-      {showAcceptModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="bg-white rounded-xl w-full max-w-3xl p-6">
+                      {showAcceptModal && selectedSuggestion && (
+          <div className="fixed inset-0 z-50">
+            <div className="absolute inset-0 bg-black/50" onClick={() => setShowAcceptModal(false)} />
+            <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-white rounded-xl w-full max-w-3xl p-6">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-xl font-semibold">Accept Suggestion: {selectedSuggestion?.cropName}</h3>
               <button className="p-2" onClick={() => setShowAcceptModal(false)}>
@@ -478,9 +479,10 @@ export default function CropSuggestionsPage() {
       )}
 
       {/* Area Error Modal */}
-      {showAreaErrorModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md">
+                      {showAreaErrorModal && (
+          <div className="fixed inset-0 z-50">
+            <div className="absolute inset-0 bg-black/50" onClick={() => setShowAreaErrorModal(false)} />
+            <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-white rounded-xl w-full max-w-md p-6">
             <h2 className="text-xl font-semibold mb-2 text-red-700">Area exceeds available land</h2>
             <p className="text-gray-700 mb-4">{areaErrorMessage}</p>
             <div className="flex gap-2">

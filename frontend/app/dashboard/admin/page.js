@@ -1,6 +1,6 @@
 import { cookies } from 'next/headers';
-import { redirect } from 'next/navigation';
 import Link from 'next/link';
+import { redirect } from 'next/navigation';
 
 export default async function AdminDashboard() {
     const cookieStore = await cookies(); // ✅ Await the cookies

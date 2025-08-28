@@ -17,9 +17,9 @@ export default function ConfirmDialog({ open, title = 'Are you sure?', descripti
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
+    <div className="fixed inset-0 z-50">
       <div className="absolute inset-0 bg-black/50" onClick={onCancel} />
-      <div className="relative bg-white rounded-lg shadow-lg w-full max-w-md mx-4 p-6">
+      <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-white rounded-lg shadow-lg w-full max-w-md mx-4 p-6">
         <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
         {description && <p className="mt-2 text-sm text-gray-600">{description}</p>}
         <div className="mt-6 flex justify-end gap-2">

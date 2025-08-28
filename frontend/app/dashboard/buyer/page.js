@@ -1,7 +1,7 @@
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
-import { Store, Package, Heart } from 'lucide-react';
+import { Heart, Package, Store } from 'lucide-react';
 
 export default async function BuyerDashboard() {
     const cookieStore = await cookies(); // ✅ Await the cookies

@@ -2,7 +2,7 @@
 
 import { ChevronLeft, ChevronRight, X } from 'lucide-react';
 import Link from 'next/link';
-import { useEffect, useMemo, useState, useCallback } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 export default function PlantingCalendarPage() {
   const [user, setUser] = useState(null);
@@ -312,9 +312,10 @@ export default function PlantingCalendarPage() {
       )}
 
       {/* Tasks View Modal */}
-      {showTasks && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-xl w-full max-w-lg p-6 shadow-2xl">
+      {showTasks && selectedDate && (
+        <div className="fixed inset-0 z-50 p-4">
+          <div className="absolute inset-0 bg-black bg-opacity-50" onClick={() => setShowTasks(false)} />
+          <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-white rounded-xl w-full max-w-lg p-6 shadow-2xl">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold text-gray-900">
                 {selectedDate ? `Tasks for ${selectedDate.toLocaleDateString('en-US', { 

@@ -1,6 +1,6 @@
 'use client';
 
-import { MapPin, Phone, Mail, Store, ArrowRight } from 'lucide-react';
+import { ArrowRight, Mail, MapPin, Phone, Store } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 

@@ -515,8 +515,9 @@ export default function FarmProfilePage() {
 
       {/* Add Farm Modal */}
       {showAddFarmModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md">
+        <div className="fixed inset-0 z-50">
+          <div className="absolute inset-0 bg-black bg-opacity-50" onClick={() => setShowAddFarmModal(false)} />
+          <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-white rounded-lg p-6 w-full max-w-md">
             <h2 className="text-xl font-semibold mb-4">Add New Farm</h2>
             <form onSubmit={handleAddFarm} className="space-y-4">
               <div>
@@ -609,9 +610,10 @@ export default function FarmProfilePage() {
       )}
 
       {/* Edit Farm Modal */}
-      {showEditFarmModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md">
+      {showEditFarmModal && selectedFarm && (
+        <div className="fixed inset-0 z-50">
+          <div className="absolute inset-0 bg-black bg-opacity-50" onClick={() => setShowEditFarmModal(false)} />
+          <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-white rounded-lg p-6 w-full max-w-md">
             <h2 className="text-xl font-semibold mb-4">Edit Farm</h2>
             <form onSubmit={handleEditFarm} className="space-y-4">
               <div>
@@ -704,8 +706,9 @@ export default function FarmProfilePage() {
 
       {/* Add Crop Modal */}
       {showAddCropModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md">
+        <div className="fixed inset-0 z-50">
+          <div className="absolute inset-0 bg-black bg-opacity-50" onClick={() => setShowAddCropModal(false)} />
+          <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-white rounded-lg p-6 w-full max-w-md">
             <h2 className="text-xl font-semibold mb-4">Add New Crop</h2>
             <p className="text-sm text-blue-600 mb-4">✨ AI will automatically predict yield using Gemini API</p>
             <form onSubmit={handleAddCrop} className="space-y-4">
@@ -841,8 +844,9 @@ export default function FarmProfilePage() {
 
       {/* Area Error Modal */}
       {showAreaErrorModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md">
+        <div className="fixed inset-0 z-50">
+          <div className="absolute inset-0 bg-black bg-opacity-50" onClick={() => setShowAreaErrorModal(false)} />
+          <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-white rounded-lg p-6 w-full max-w-md">
             <h2 className="text-xl font-semibold mb-2 text-red-700">Area exceeds available land</h2>
             <p className="text-gray-700 mb-4">{areaErrorMessage}</p>
             <div className="flex gap-2">
@@ -859,8 +863,9 @@ export default function FarmProfilePage() {
 
       {/* Harvest Modal */}
       {showHarvestModal && selectedCrop && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md">
+        <div className="fixed inset-0 z-50">
+          <div className="absolute inset-0 bg-black bg-opacity-50" onClick={() => setShowHarvestModal(false)} />
+          <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-white rounded-lg p-6 w-full max-w-md">
             <h2 className="text-xl font-semibold mb-4">Mark Harvest for {selectedCrop.name} - {selectedCrop.variety}</h2>
             <form
               onSubmit={async (e) => {
@@ -926,4 +931,4 @@ export default function FarmProfilePage() {
 
     </div>
   );
-} 
+}

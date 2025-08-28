@@ -1,15 +1,15 @@
 import {
-  ArrowRight,
-  Calendar,
-  CheckCircle,
-  Globe,
-  Leaf,
-  LineChart,
-  Shield,
-  Star,
-  Store,
-  TrendingUp,
-  Users
+    ArrowRight,
+    Calendar,
+    CheckCircle,
+    Globe,
+    Leaf,
+    LineChart,
+    Shield,
+    Star,
+    Store,
+    TrendingUp,
+    Users
 } from 'lucide-react';
 import Link from 'next/link';
 

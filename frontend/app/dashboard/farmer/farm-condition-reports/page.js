@@ -22,7 +22,7 @@ import {
     TrendingUp,
     X
 } from 'lucide-react';
-import { useEffect, useState, useCallback } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 export default function FarmConditionReportsPage() {
   const [showForm, setShowForm] = useState(false);
@@ -315,8 +315,9 @@ export default function FarmConditionReportsPage() {
 
       {/* Report Detail Modal */}
       {selectedReport && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-lg max-w-3xl w-full max-h-[90vh] overflow-y-auto p-6 relative">
+        <div className="fixed inset-0 z-50 p-4">
+          <div className="absolute inset-0 bg-black bg-opacity-50" onClick={() => setSelectedReport(null)} />
+          <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-white rounded-xl shadow-lg max-w-3xl w-full max-h-[90vh] overflow-y-auto p-6 relative">
             <button
               onClick={() => setSelectedReport(null)}
               className="absolute top-4 right-4 p-2 rounded-full bg-gray-100 hover:bg-gray-200"

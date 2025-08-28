@@ -3,7 +3,15 @@
 import ConfirmDialog from '@/app/components/ConfirmDialog';
 import { useToast } from '@/app/components/ToastProvider';
 import { createTask, deleteTaskById, getCategoryProgressByFarmer, getTaskSummary, getTasksByFarmer, getUpcomingTasks, updateTaskById } from '@/lib/api';
-import { AlertCircle, Calendar, CheckSquare, Clock, Edit, Plus, Trash2, Users } from 'lucide-react';
+import {
+    AlertTriangle,
+    CheckSquare,
+    Clock,
+    Eye,
+    Lightbulb,
+    Plus,
+    Trash2
+} from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 
 export default function TaskManagementPage() {
@@ -251,7 +259,7 @@ export default function TaskManagementPage() {
               <p className="text-sm text-gray-500">Overdue</p>
               <p className="text-2xl font-bold text-red-600">{summary.overdue}</p>
             </div>
-            <AlertCircle className="w-8 h-8 text-red-500" />
+            <AlertTriangle className="w-8 h-8 text-red-500" />
           </div>
         </div>
       </div>
@@ -266,7 +274,7 @@ export default function TaskManagementPage() {
             const now = new Date();
             const isOverdue = task.status !== 'completed' && task.dueDate && new Date(task.dueDate) < now;
             const border = isOverdue ? 'border-red-200 bg-red-50' : task.status === 'completed' ? 'border-green-200 bg-green-50' : 'border-yellow-200 bg-yellow-50';
-            const Icon = isOverdue ? AlertCircle : task.status === 'completed' ? CheckSquare : Clock;
+            const Icon = isOverdue ? AlertTriangle : task.status === 'completed' ? CheckSquare : Clock;
             return (
               <div key={task._id} className={`flex items-center justify-between p-4 border rounded-lg ${border}`}>
                 <div className="flex items-center gap-4">
@@ -288,7 +296,7 @@ export default function TaskManagementPage() {
                       </button>
                     )}
                     <button onClick={() => openEditModal(task)} className="text-xs bg-blue-600 text-white px-2 py-1 rounded flex items-center gap-1">
-                      <Edit className="w-3 h-3" /> Edit
+                      <Eye className="w-3 h-3" /> Edit
                     </button>
                     <button onClick={() => requestDelete(task._id)} className="text-xs bg-red-600 text-white px-2 py-1 rounded flex items-center gap-1">
                       <Trash2 className="w-3 h-3" />
@@ -312,7 +320,7 @@ export default function TaskManagementPage() {
               <div key={team.name + idx} className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
                 <div className="flex items-center gap-3">
                   <div className={`w-8 h-8 ${idx % 2 === 0 ? 'bg-teal-600' : 'bg-blue-600'} rounded-full flex items-center justify-center`}>
-                    <Users className="w-4 h-4 text-white" />
+                    <Lightbulb className="w-4 h-4 text-white" />
                   </div>
                   <div>
                     <p className="font-medium text-gray-900">{team.name}</p>
@@ -336,7 +344,7 @@ export default function TaskManagementPage() {
             {upcoming.length === 0 && <div className="text-sm text-gray-500">No upcoming tasks.</div>}
             {upcoming.map((t) => (
               <div key={t._id} className="flex items-center gap-3 p-3 border border-gray-200 rounded-lg">
-                <Calendar className={`w-5 h-5 ${t.priority === 'critical' ? 'text-red-500' : t.priority === 'high' ? 'text-orange-500' : t.priority === 'medium' ? 'text-blue-500' : 'text-gray-500'}`} />
+                <Clock className={`w-5 h-5 ${t.priority === 'critical' ? 'text-red-500' : t.priority === 'high' ? 'text-orange-500' : t.priority === 'medium' ? 'text-blue-500' : 'text-gray-500'}`} />
                 <div className="flex-1">
                   <p className="font-medium text-gray-900">{t.title}</p>
                   <div className="flex items-center gap-2 text-sm text-gray-600">
@@ -381,8 +389,9 @@ export default function TaskManagementPage() {
       </div>
 
       {showModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-lg">
+        <div className="fixed inset-0 z-50">
+          <div className="absolute inset-0 bg-black bg-opacity-50" onClick={() => setShowModal(false)} />
+          <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-white rounded-lg p-6 w-full max-w-lg">
             <h2 className="text-xl font-semibold mb-4">{isEditing ? 'Edit Task' : 'Add Task'}</h2>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>

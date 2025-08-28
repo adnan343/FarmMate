@@ -4,8 +4,6 @@ import { Calendar, Edit, Mail, MapPin, Save, Shield, User, X } from 'lucide-reac
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 
-
-
 export default function ProfilePage() {
   const [userData, setUserData] = useState({
     name: '',

@@ -1,0 +1,26 @@
+{
+  "name": "FarmMate - The Future of Farming",
+  "short_name": "FarmMate",
+  "description": "AI-powered farming platform with smart crop management and marketplace",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#0d9488",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/favicon.ico",
+      "sizes": "32x32",
+      "type": "image/x-icon"
+    }
+  ],
+  "categories": ["business", "productivity", "agriculture"],
+  "lang": "en-US",
+  "dir": "ltr"
+}

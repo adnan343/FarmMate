@@ -15,7 +15,7 @@ import {
     User,
     XCircle
 } from 'lucide-react';
-import { useEffect, useState, useCallback } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 export default function FarmerOrdersPage() {
   const [orders, setOrders] = useState([]);
@@ -375,8 +375,9 @@ export default function FarmerOrdersPage() {
 
       {/* Order Detail Modal */}
       {showOrderModal && selectedOrder && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 z-50 p-4">
+          <div className="absolute inset-0 bg-black bg-opacity-50" onClick={() => setShowOrderModal(false)} />
+          <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-white rounded-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
             <div className="p-6">
               {/* Header */}
               <div className="flex items-center justify-between mb-6">

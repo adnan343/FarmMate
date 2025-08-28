@@ -1,9 +1,7 @@
-import fs from "fs";
 import axios from "axios";
+import fs from "fs";
+import { API_CONFIG } from "../config/api.js";
 import { Detection } from "../models/detection.js";
-
-// Direct Gemini API key
-const GEMINI_API_KEY = "AIzaSyBnpvLKGdvevusd3OxqJBcRMiYYtov7iWA"; // Replace with your actual key
 
 // 1. Analyze Image
 export const analyzePest = async (req, res) => {
@@ -12,8 +10,12 @@ export const analyzePest = async (req, res) => {
     const imageBuffer = fs.readFileSync(imagePath);
     const base64Image = imageBuffer.toString("base64");
 
+    if (!API_CONFIG.GEMINI_API_KEY) {
+      throw new Error("GEMINI_API_KEY not found in configuration");
+    }
+
     const response = await axios.post(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${GEMINI_API_KEY}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${API_CONFIG.GEMINI_API_KEY}`,
       {
         contents: [
           {
@@ -39,9 +41,18 @@ export const analyzePest = async (req, res) => {
 export const saveDetection = async (req, res) => {
   try {
     const { pest, remedies, treatment } = req.body;
-    const imagePath = req.file ? `/uploads/${req.file.filename}` : null;
+    
+    // Check if file was uploaded
+    if (!req.file) {
+      console.log("No file uploaded for detection");
+      return res.status(400).json({ error: "No image file provided" });
+    }
+
+    const imagePath = `/uploads/${req.file.filename}`;
+    console.log("Saving detection with image path:", imagePath);
 
     const detection = new Detection({
+      user: req.user._id, // Associate with authenticated user
       pest,
       remedies: JSON.parse(remedies || "[]"),
       treatment,
@@ -49,6 +60,7 @@ export const saveDetection = async (req, res) => {
     });
 
     const savedDetection = await detection.save();
+    console.log("Detection saved successfully:", savedDetection._id);
     res.json(savedDetection);
   } catch (err) {
     console.error("Save Detection Error:", err);
@@ -56,10 +68,11 @@ export const saveDetection = async (req, res) => {
   }
 };
 
-// 3. Get All Detections
+// 3. Get User's Detections Only
 export const getDetections = async (req, res) => {
   try {
-    const detections = await Detection.find().sort({ createdAt: -1 });
+    const detections = await Detection.find({ user: req.user._id }).sort({ createdAt: -1 });
+    console.log(`Found ${detections.length} detections for user ${req.user._id}`);
     res.json(detections);
   } catch (err) {
     console.error("Fetch Detections Error:", err);

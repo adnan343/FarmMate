@@ -2,7 +2,7 @@
 
 import { Filter, Heart, Mail, MapPin, Minus, Phone, Plus, Search, ShoppingCart, Star, X } from 'lucide-react';
 import Link from 'next/link';
-import { useEffect, useState, useCallback } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 export default function MarketplacePage() {
   const [products, setProducts] = useState([]);
@@ -411,9 +411,10 @@ export default function MarketplacePage() {
       </div>
 
       {/* Product Detail Modal */}
-      {showModal && selectedProduct && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+                      {showModal && selectedProduct && (
+          <div className="fixed inset-0 z-50 p-4">
+            <div className="absolute inset-0 bg-black bg-opacity-50" onClick={() => setShowModal(false)} />
+            <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-white rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
             <div className="p-6">
               {/* Header */}
               <div className="flex items-center justify-between mb-4">
