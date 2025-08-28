@@ -36,6 +36,7 @@ const allowedOrigins = [
   'https://farmmate-production.vercel.app',
   'https://farmmate-frontend-production.vercel.app',
   // Add your actual frontend deployment URL here
+  "https://farm-mate-indol.vercel.app/"
 ];
 
 app.use(cors({
