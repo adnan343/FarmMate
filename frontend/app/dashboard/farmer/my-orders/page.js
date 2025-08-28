@@ -15,7 +15,7 @@ import {
     User,
     XCircle
 } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 
 export default function FarmerOrdersPage() {
   const [orders, setOrders] = useState([]);
@@ -26,11 +26,7 @@ export default function FarmerOrdersPage() {
   const [showOrderModal, setShowOrderModal] = useState(false);
   const [updatingStatus, setUpdatingStatus] = useState(null);
 
-  useEffect(() => {
-    fetchUserAndOrders();
-  }, [selectedStatus]);
-
-  const fetchUserAndOrders = async () => {
+  const fetchUserAndOrders = useCallback(async () => {
     try {
       const cookies = document.cookie.split(';').reduce((acc, cookie) => {
         const [key, value] = cookie.trim().split('=');
@@ -63,7 +59,11 @@ export default function FarmerOrdersPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [selectedStatus]);
+
+  useEffect(() => {
+    fetchUserAndOrders();
+  }, [selectedStatus, fetchUserAndOrders]);
 
   const updateOrderStatus = async (orderId, newStatus) => {
     try {

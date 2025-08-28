@@ -2,7 +2,7 @@
 
 import { Filter, Heart, Mail, MapPin, Minus, Phone, Plus, Search, ShoppingCart, Star, X } from 'lucide-react';
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 
 export default function MarketplacePage() {
   const [products, setProducts] = useState([]);
@@ -18,13 +18,7 @@ export default function MarketplacePage() {
   const [managingFavorites, setManagingFavorites] = useState(null);
   const [sortBy, setSortBy] = useState('');
 
-  useEffect(() => {
-    fetchProducts();
-    fetchCartCount();
-    fetchFavorites();
-  }, [selectedCategory]);
-
-  const fetchProducts = async () => {
+  const fetchProducts = useCallback(async () => {
     try {
       setLoading(true);
       let url = 'http://localhost:5000/api/products';
@@ -46,9 +40,9 @@ export default function MarketplacePage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [selectedCategory]);
 
-  const fetchCartCount = async () => {
+  const fetchCartCount = useCallback(async () => {
     try {
       const cookies = document.cookie.split(';').reduce((acc, cookie) => {
         const [key, value] = cookie.trim().split('=');
@@ -71,9 +65,9 @@ export default function MarketplacePage() {
     } catch (error) {
       console.error('Error fetching cart count:', error);
     }
-  };
+  }, []);
 
-  const fetchFavorites = async () => {
+  const fetchFavorites = useCallback(async () => {
     try {
       const cookies = document.cookie.split(';').reduce((acc, cookie) => {
         const [key, value] = cookie.trim().split('=');
@@ -96,7 +90,13 @@ export default function MarketplacePage() {
     } catch (error) {
       console.error('Error fetching favorites:', error);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    fetchProducts();
+    fetchCartCount();
+    fetchFavorites();
+  }, [selectedCategory, fetchProducts, fetchCartCount, fetchFavorites]);
 
   const addToCart = async (productId, qty = 1) => {
     try {

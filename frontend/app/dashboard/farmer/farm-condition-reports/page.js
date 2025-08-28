@@ -22,7 +22,7 @@ import {
     TrendingUp,
     X
 } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 
 export default function FarmConditionReportsPage() {
   const [showForm, setShowForm] = useState(false);
@@ -35,12 +35,7 @@ export default function FarmConditionReportsPage() {
   const [confirmDeleteId, setConfirmDeleteId] = useState(null);
   const toast = useToast();
 
-  useEffect(() => {
-    loadReports();
-    loadStats();
-  }, [currentPage]);
-
-  const loadReports = async () => {
+  const loadReports = useCallback(async () => {
     try {
       const data = await getFarmerFarmConditions({ page: currentPage, limit: 10 });
       setReports(data.docs || []);
@@ -50,16 +45,21 @@ export default function FarmConditionReportsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [currentPage]);
 
-  const loadStats = async () => {
+  const loadStats = useCallback(async () => {
     try {
       const data = await getFarmConditionStats();
       setStats(data.stats);
     } catch (error) {
       console.error('Error loading stats:', error);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    loadReports();
+    loadStats();
+  }, [currentPage, loadReports, loadStats]);
 
   const handleReportSuccess = (newReport) => {
     setReports(prev => [newReport, ...prev]);

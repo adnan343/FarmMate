@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { Save, Send, ArrowLeft, Lightbulb, AlertTriangle, CheckCircle } from 'lucide-react';
 import FarmPhotoUpload from './FarmPhotoUpload.js';
@@ -21,6 +21,17 @@ export default function FarmConditionForm({ farmerId, onCancel, onSuccess }) {
   const [photo, setPhoto] = useState(null);
   const [errors, setErrors] = useState({});
 
+  const fetchFarms = useCallback(async () => {
+    try {
+      const farmsData = await getFarmsByFarmer(currentUserId);
+      setFarms(farmsData || []);
+    } catch (error) {
+      console.error('Error fetching farms:', error);
+      // Fallback to empty array if API fails
+      setFarms([]);
+    }
+  }, [currentUserId]);
+
   useEffect(() => {
     getCurrentUser();
   }, []);
@@ -29,7 +40,7 @@ export default function FarmConditionForm({ farmerId, onCancel, onSuccess }) {
     if (currentUserId) {
       fetchFarms();
     }
-  }, [currentUserId]);
+  }, [currentUserId, fetchFarms]);
 
   // Refresh farms when window gains focus (user returns from farm profile page)
   useEffect(() => {
@@ -41,7 +52,7 @@ export default function FarmConditionForm({ farmerId, onCancel, onSuccess }) {
 
     window.addEventListener('focus', handleFocus);
     return () => window.removeEventListener('focus', handleFocus);
-  }, [currentUserId]);
+  }, [currentUserId, fetchFarms]);
 
   const getCurrentUser = () => {
     const cookies = document.cookie.split(';').reduce((acc, cookie) => {
@@ -50,17 +61,6 @@ export default function FarmConditionForm({ farmerId, onCancel, onSuccess }) {
       return acc;
     }, {});
     setCurrentUserId(cookies.userId);
-  };
-
-  const fetchFarms = async () => {
-    try {
-      const farmsData = await getFarmsByFarmer(currentUserId);
-      setFarms(farmsData || []);
-    } catch (error) {
-      console.error('Error fetching farms:', error);
-      // Fallback to empty array if API fails
-      setFarms([]);
-    }
   };
 
   // Function to refresh farms when returning from farm profile page

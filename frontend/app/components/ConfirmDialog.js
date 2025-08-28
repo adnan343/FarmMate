@@ -3,16 +3,18 @@
 import { useEffect } from 'react';
 
 export default function ConfirmDialog({ open, title = 'Are you sure?', description, confirmText = 'Confirm', cancelText = 'Cancel', onConfirm, onCancel }) {
-  if (!open) return null;
-
   // Close on Escape
   useEffect(() => {
+    if (!open) return;
+    
     const onKey = (e) => {
       if (e.key === 'Escape') onCancel?.();
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [onCancel]);
+  }, [open, onCancel]);
+
+  if (!open) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">

@@ -2,7 +2,7 @@
 
 import { ChevronLeft, ChevronRight, X } from 'lucide-react';
 import Link from 'next/link';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, useCallback } from 'react';
 
 export default function PlantingCalendarPage() {
   const [user, setUser] = useState(null);
@@ -155,9 +155,24 @@ export default function PlantingCalendarPage() {
     }
   }, [selectedFarm, crops]);
 
+  const fetchTimeline = useCallback(async (cropId) => {
+    const res = await fetch(`http://localhost:5000/api/crops/${cropId}/timeline`, { credentials: 'include' });
+    const data = await res.json();
+    if (data.success) {
+      console.log('Timeline data:', data.data);
+      // Log the selected crop's planting date for debugging
+      const selectedCrop = crops.find(c => c._id === selectedCropId);
+      if (selectedCrop) {
+        console.log('Selected crop planting date:', selectedCrop.plantingDate);
+        console.log('Selected crop planting date (parsed):', new Date(selectedCrop.plantingDate));
+      }
+      setTimeline(data.data);
+    }
+  }, [crops, selectedCropId]);
+
   useEffect(() => {
     if (selectedCropId) fetchTimeline(selectedCropId);
-  }, [selectedCropId]);
+  }, [selectedCropId, fetchTimeline]);
 
   const fetchFarms = async (farmerId) => {
     try {
@@ -177,23 +192,6 @@ export default function PlantingCalendarPage() {
     const data = await res.json();
     if (data.success) setCrops(data.data);
   };
-
-  const fetchTimeline = async (cropId) => {
-    const res = await fetch(`http://localhost:5000/api/crops/${cropId}/timeline`, { credentials: 'include' });
-    const data = await res.json();
-    if (data.success) {
-      console.log('Timeline data:', data.data);
-      // Log the selected crop's planting date for debugging
-      const selectedCrop = crops.find(c => c._id === selectedCropId);
-      if (selectedCrop) {
-        console.log('Selected crop planting date:', selectedCrop.plantingDate);
-        console.log('Selected crop planting date (parsed):', new Date(selectedCrop.plantingDate));
-      }
-      setTimeline(data.data);
-    }
-  };
-
-
 
   const toggleComplete = async (index) => {
     const current = timeline[index];

@@ -1,7 +1,7 @@
 'use client';
 
 import { AlertCircle, Calendar, Lightbulb, Loader2, MapPin, RefreshCw, TrendingUp, X } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { acceptSuggestionAndCreateCrop, generateCropTimeline, getCropSuggestions, getStoredCropSuggestions, refreshCropSuggestions } from '../../../../lib/api';
 
 export default function CropSuggestionsPage() {
@@ -32,6 +32,48 @@ export default function CropSuggestionsPage() {
   const [timelinePreview, setTimelinePreview] = useState([]);
   const [genLoading, setGenLoading] = useState(false);
 
+  const fetchSuggestions = useCallback(async () => {
+    if (!selectedFarm) return;
+    
+    setLoading(true);
+    setError(null);
+    
+    try {
+      // First try to get stored suggestions
+      const storedResponse = await getStoredCropSuggestions(selectedFarm._id);
+      setSuggestions(storedResponse.data);
+      setFarmInfo(storedResponse.farmInfo);
+      setLoading(false);
+    } catch (error) {
+      // If no stored suggestions, get new ones from API
+      try {
+        const response = await getCropSuggestions(selectedFarm._id);
+        setSuggestions(response.data);
+        setFarmInfo(response.farmInfo);
+      } catch (apiError) {
+        console.error('Error fetching suggestions:', apiError);
+        setError(apiError.message || 'Failed to fetch crop suggestions');
+      } finally {
+        setLoading(false);
+      }
+    }
+  }, [selectedFarm]);
+
+  const fetchCropsForFarm = useCallback(async (farmId) => {
+    try {
+      const res = await fetch(`http://localhost:5000/api/crops/farm/${farmId}`, {
+        credentials: 'include'
+      });
+      const data = await res.json();
+      if (data.success) {
+        setFarmCrops(data.data || []);
+      }
+    } catch (e) {
+      // Non-fatal; we can still proceed without this
+      console.error('Failed to fetch crops for farm', e);
+    }
+  }, []);
+
   useEffect(() => {
     fetchUserAndFarms();
   }, []);
@@ -41,7 +83,7 @@ export default function CropSuggestionsPage() {
       fetchSuggestions();
       fetchCropsForFarm(selectedFarm._id);
     }
-  }, [selectedFarm]);
+  }, [selectedFarm, fetchSuggestions, fetchCropsForFarm]);
 
   const fetchUserAndFarms = async () => {
     try {
@@ -87,48 +129,6 @@ export default function CropSuggestionsPage() {
       console.error('Error fetching user and farms:', error);
       setError('Failed to load user data');
       setLoading(false);
-    }
-  };
-
-  const fetchSuggestions = async () => {
-    if (!selectedFarm) return;
-    
-    setLoading(true);
-    setError(null);
-    
-    try {
-      // First try to get stored suggestions
-      const storedResponse = await getStoredCropSuggestions(selectedFarm._id);
-      setSuggestions(storedResponse.data);
-      setFarmInfo(storedResponse.farmInfo);
-      setLoading(false);
-    } catch (error) {
-      // If no stored suggestions, get new ones from API
-      try {
-        const response = await getCropSuggestions(selectedFarm._id);
-        setSuggestions(response.data);
-        setFarmInfo(response.farmInfo);
-      } catch (apiError) {
-        console.error('Error fetching suggestions:', apiError);
-        setError(apiError.message || 'Failed to fetch crop suggestions');
-      } finally {
-        setLoading(false);
-      }
-    }
-  };
-
-  const fetchCropsForFarm = async (farmId) => {
-    try {
-      const res = await fetch(`http://localhost:5000/api/crops/farm/${farmId}`, {
-        credentials: 'include'
-      });
-      const data = await res.json();
-      if (data.success) {
-        setFarmCrops(data.data || []);
-      }
-    } catch (e) {
-      // Non-fatal; we can still proceed without this
-      console.error('Failed to fetch crops for farm', e);
     }
   };
 

@@ -3,7 +3,7 @@
 import { ArrowLeft, Heart, Mail, MapPin, Minus, Phone, Plus, Search, ShoppingCart, Star, X } from 'lucide-react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 
 export default function FarmerProductsPage() {
   const params = useParams();
@@ -24,14 +24,67 @@ export default function FarmerProductsPage() {
   const [favorites, setFavorites] = useState([]);
   const [user, setUser] = useState(null);
 
-  useEffect(() => {
-    fetchFarmerDetails();
-    fetchProducts();
-    fetchCartCount();
-    fetchUserAndFavorites();
+  const fetchFarmerDetails = useCallback(async () => {
+    try {
+      const response = await fetch(`http://localhost:5000/api/users/${farmerId}`);
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success) {
+          setFarmer(result.data);
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching farmer details:', error);
+    }
+  }, [farmerId]);
+
+  const fetchProducts = useCallback(async () => {
+    try {
+      setLoading(true);
+      const url = selectedCategory === 'all' 
+        ? `http://localhost:5000/api/products/farmer/${farmerId}`
+        : `http://localhost:5000/api/products/farmer/${farmerId}?category=${selectedCategory}`;
+      
+      const response = await fetch(url);
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success) {
+          setProducts(result.data);
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching products:', error);
+    } finally {
+      setLoading(false);
+    }
   }, [farmerId, selectedCategory]);
 
-  const fetchUserAndFavorites = async () => {
+  const fetchCartCount = useCallback(async () => {
+    try {
+      const cookies = document.cookie.split(';').reduce((acc, cookie) => {
+        const [key, value] = cookie.trim().split('=');
+        acc[key] = value;
+        return acc;
+      }, {});
+
+      const userId = cookies.userId;
+      if (!userId) return;
+
+      const response = await fetch(`http://localhost:5000/api/cart/${userId}`, {
+        credentials: 'include'
+      });
+      if (response.ok) {
+        const result = await response.json();
+        if (result.success) {
+          setCartCount(result.data.itemCount);
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching cart count:', error);
+    }
+  }, []);
+
+  const fetchUserAndFavorites = useCallback(async () => {
     try {
       const cookies = document.cookie.split(';').reduce((acc, cookie) => {
         const [key, value] = cookie.trim().split('=');
@@ -57,7 +110,14 @@ export default function FarmerProductsPage() {
     } catch (error) {
       console.error('Error fetching favorites:', error);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    fetchFarmerDetails();
+    fetchProducts();
+    fetchCartCount();
+    fetchUserAndFavorites();
+  }, [farmerId, selectedCategory, fetchFarmerDetails, fetchProducts, fetchCartCount, fetchUserAndFavorites]);
 
   const toggleFavorite = async (productId, e) => {
     e.stopPropagation();
@@ -97,66 +157,6 @@ export default function FarmerProductsPage() {
       }
     } catch (error) {
       console.error('Error toggling favorite:', error);
-    }
-  };
-
-  const fetchFarmerDetails = async () => {
-    try {
-      const response = await fetch(`http://localhost:5000/api/users/${farmerId}`);
-      if (response.ok) {
-        const result = await response.json();
-        if (result.success) {
-          setFarmer(result.data);
-        }
-      }
-    } catch (error) {
-      console.error('Error fetching farmer details:', error);
-    }
-  };
-
-  const fetchProducts = async () => {
-    try {
-      setLoading(true);
-      const url = selectedCategory === 'all' 
-        ? `http://localhost:5000/api/products/farmer/${farmerId}`
-        : `http://localhost:5000/api/products/farmer/${farmerId}?category=${selectedCategory}`;
-      
-      const response = await fetch(url);
-      if (response.ok) {
-        const result = await response.json();
-        if (result.success) {
-          setProducts(result.data);
-        }
-      }
-    } catch (error) {
-      console.error('Error fetching products:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchCartCount = async () => {
-    try {
-      const cookies = document.cookie.split(';').reduce((acc, cookie) => {
-        const [key, value] = cookie.trim().split('=');
-        acc[key] = value;
-        return acc;
-      }, {});
-
-      const userId = cookies.userId;
-      if (!userId) return;
-
-      const response = await fetch(`http://localhost:5000/api/cart/${userId}`, {
-        credentials: 'include'
-      });
-      if (response.ok) {
-        const result = await response.json();
-        if (result.success) {
-          setCartCount(result.data.itemCount);
-        }
-      }
-    } catch (error) {
-      console.error('Error fetching cart count:', error);
     }
   };
 
