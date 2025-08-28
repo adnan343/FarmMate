@@ -1,6 +1,6 @@
 "use client";
-import { Edit, Eye, Filter, Search, Trash2, Users, X } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { Edit, Eye, Filter, Search, Trash2, Users, X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { useEffect, useState, useMemo } from 'react';
 import { deleteUserById, fetchAllUsers, updateUserRole } from '../../../../lib/api';
 
 export default function UserManagementPage() {
@@ -16,6 +16,10 @@ export default function UserManagementPage() {
   const [loading, setLoading] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
+  
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [usersPerPage, setUsersPerPage] = useState(10);
 
   useEffect(() => {
     async function getUsers() {
@@ -40,7 +44,61 @@ export default function UserManagementPage() {
       filtered = filtered.filter(user => user.name.toLowerCase().includes(search.toLowerCase()));
     }
     setFilteredUsers(filtered);
+    setCurrentPage(1); // Reset to first page when filters change
   }, [search, users, roleFilter]);
+
+  // Calculate pagination values
+  const totalPages = Math.ceil(filteredUsers.length / usersPerPage);
+  const startIndex = (currentPage - 1) * usersPerPage;
+  const endIndex = startIndex + usersPerPage;
+  const currentUsers = filteredUsers.slice(startIndex, endIndex);
+
+  // Generate page numbers for pagination
+  const getPageNumbers = () => {
+    const pages = [];
+    const maxVisiblePages = 5;
+    
+    if (totalPages <= maxVisiblePages) {
+      for (let i = 1; i <= totalPages; i++) {
+        pages.push(i);
+      }
+    } else {
+      if (currentPage <= 3) {
+        for (let i = 1; i <= 4; i++) {
+          pages.push(i);
+        }
+        pages.push('...');
+        pages.push(totalPages);
+      } else if (currentPage >= totalPages - 2) {
+        pages.push(1);
+        pages.push('...');
+        for (let i = totalPages - 3; i <= totalPages; i++) {
+          pages.push(i);
+        }
+      } else {
+        pages.push(1);
+        pages.push('...');
+        for (let i = currentPage - 1; i <= currentPage + 1; i++) {
+          pages.push(i);
+        }
+        pages.push('...');
+        pages.push(totalPages);
+      }
+    }
+    
+    return pages;
+  };
+
+  const handlePageChange = (page) => {
+    if (page === '...' || page === currentPage) return;
+    setCurrentPage(page);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handlePageSizeChange = (newPageSize) => {
+    setUsersPerPage(parseInt(newPageSize));
+    setCurrentPage(1); // Reset to first page when changing page size
+  };
 
   const handleViewUser = (user) => {
     setSelectedUser(user);
@@ -117,6 +175,7 @@ export default function UserManagementPage() {
         filtered = filtered.filter(user => user.name.toLowerCase().includes(search.toLowerCase()));
       }
       setFilteredUsers(filtered);
+      setCurrentPage(1); // Reset to first page when refreshing
     } catch (err) {
       setUsers([]);
       setFilteredUsers([]);
@@ -201,7 +260,7 @@ export default function UserManagementPage() {
               <p className="text-sm text-gray-500">Admins</p>
               <p className="text-2xl font-bold text-teal-600">{users.filter(u => u.role === 'admin').length}</p>
             </div>
-            <Users className="w-8 h-8 text-teal-500" />
+            <Users className="w-8 h-8 text-teal-600" />
           </div>
         </div>
       </div>
@@ -233,7 +292,7 @@ export default function UserManagementPage() {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {filteredUsers.map((user, idx) => (
+              {currentUsers.map((user, idx) => (
                 <tr key={user._id || idx}>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">
@@ -291,25 +350,98 @@ export default function UserManagementPage() {
       </div>
 
       {/* Pagination */}
-      <div className="bg-white rounded-xl shadow-sm p-6">
-        <div className="flex items-center justify-between">
-          <div className="text-sm text-gray-700">
-            Showing <span className="font-medium">1</span> to <span className="font-medium">{filteredUsers.length}</span> of{' '}
-            <span className="font-medium">{users.length}</span> results
-          </div>
-          <div className="flex items-center gap-2">
-            <button className="px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">
-              Previous
-            </button>
-            <button className="px-3 py-2 bg-teal-600 text-white rounded-lg">1</button>
-            <button className="px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">2</button>
-            <button className="px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">3</button>
-            <button className="px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50">
-              Next
-            </button>
+      {totalPages > 1 && (
+        <div className="bg-white rounded-xl shadow-sm p-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="text-sm text-gray-700">
+                Showing <span className="font-medium">{startIndex + 1}</span> to <span className="font-medium">{Math.min(endIndex, filteredUsers.length)}</span> of{' '}
+                <span className="font-medium">{filteredUsers.length}</span> results
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-gray-500">Show:</span>
+                <select
+                  value={usersPerPage}
+                  onChange={(e) => handlePageSizeChange(e.target.value)}
+                  className="px-2 py-1 border border-gray-300 rounded text-sm focus:ring-2 focus:ring-teal-500"
+                >
+                  <option value={10}>10</option>
+                  <option value={25}>25</option>
+                  <option value={50}>50</option>
+                  <option value={100}>100</option>
+                </select>
+                <span className="text-sm text-gray-500">per page</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-gray-500">Go to page:</span>
+                <input
+                  type="number"
+                  min="1"
+                  max={totalPages}
+                  value={currentPage}
+                  onChange={(e) => {
+                    const page = parseInt(e.target.value);
+                    if (page >= 1 && page <= totalPages) {
+                      handlePageChange(page);
+                    }
+                  }}
+                  onKeyPress={(e) => {
+                    if (e.key === 'Enter') {
+                      const page = parseInt(e.target.value);
+                      if (page >= 1 && page <= totalPages) {
+                        handlePageChange(page);
+                      }
+                    }
+                  }}
+                  className="w-16 px-2 py-1 border border-gray-300 rounded text-sm focus:ring-2 focus:ring-teal-500 text-center"
+                  placeholder="Page #"
+                />
+                <span className="text-sm text-gray-500">of {totalPages}</span>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <button 
+                className={`px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 flex items-center gap-1 ${
+                  currentPage === 1 ? 'opacity-50 cursor-not-allowed' : ''
+                }`}
+                onClick={() => handlePageChange(currentPage - 1)}
+                disabled={currentPage === 1}
+              >
+                <ChevronLeft className="w-4 h-4" />
+                Previous
+              </button>
+              
+              {getPageNumbers().map((page, index) => (
+                <button
+                  key={index}
+                  className={`px-3 py-2 rounded-lg ${
+                    page === currentPage
+                      ? 'bg-teal-600 text-white'
+                      : page === '...'
+                      ? 'px-2 py-2 text-gray-500 cursor-default'
+                      : 'border border-gray-300 hover:bg-gray-50'
+                  }`}
+                  onClick={() => handlePageChange(page)}
+                  disabled={page === '...'}
+                >
+                  {page}
+                </button>
+              ))}
+              
+              <button 
+                className={`px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 flex items-center gap-1 ${
+                  currentPage === totalPages ? 'opacity-50 cursor-not-allowed' : ''
+                }`}
+                onClick={() => handlePageChange(currentPage + 1)}
+                disabled={currentPage === totalPages}
+              >
+                Next
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* View User Modal */}
       {showViewModal && selectedUser && (
