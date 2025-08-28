@@ -10,8 +10,6 @@ router.get('/', auth, getFarms);
 // Get farms by farmer
 router.get('/farmer/:farmerId', auth, getFarmsByFarmer);
 
-router.get('/farmer/withoutAuth/:farmerId', getFarmsByFarmer);
-
 // Add new farm
 router.post('/', auth, addFarm);
 
