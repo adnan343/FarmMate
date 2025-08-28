@@ -104,13 +104,6 @@ export default function Sidebar({ userRole, userName, userEmail }) {
             children: []
           },
           {
-            id: 'my-products',
-            label: 'My Products',
-            icon: Package,
-            path: '/dashboard/farmer/my-products',
-            children: []
-          },
-          {
             id: 'community',
             label: 'Community Forum',
             icon: Users,
@@ -236,7 +229,7 @@ export default function Sidebar({ userRole, userName, userEmail }) {
     <div className="fixed left-0 top-0 h-full w-64 bg-white border-r border-gray-200 flex flex-col">
       {/* Header - Fixed at top */}
       <div className="flex-shrink-0 p-4 border-b border-gray-200">
-        <Link href="/" className="flex items-center gap-2">
+        <Link href={userRole === 'farmer' ? '/dashboard/farmer' : userRole === 'buyer' ? '/dashboard/buyer' : userRole === 'admin' ? '/dashboard/admin' : '/'} className="flex items-center gap-2">
           <div className="w-8 h-8 bg-teal-600 rounded-lg flex items-center justify-center">
             <FileText className="w-5 h-5 text-white" />
           </div>

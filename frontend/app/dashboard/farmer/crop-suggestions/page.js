@@ -13,6 +13,7 @@ export default function CropSuggestionsPage() {
   const [user, setUser] = useState(null);
   const [farms, setFarms] = useState([]);
   const [selectedFarm, setSelectedFarm] = useState(null);
+  const [farmCrops, setFarmCrops] = useState([]);
   const [accepting, setAccepting] = useState(false);
   const [showAcceptModal, setShowAcceptModal] = useState(false);
   const [showAreaErrorModal, setShowAreaErrorModal] = useState(false);
@@ -38,6 +39,7 @@ export default function CropSuggestionsPage() {
   useEffect(() => {
     if (selectedFarm) {
       fetchSuggestions();
+      fetchCropsForFarm(selectedFarm._id);
     }
   }, [selectedFarm]);
 
@@ -113,6 +115,46 @@ export default function CropSuggestionsPage() {
         setLoading(false);
       }
     }
+  };
+
+  const fetchCropsForFarm = async (farmId) => {
+    try {
+      const res = await fetch(`http://localhost:5000/api/crops/farm/${farmId}`, {
+        credentials: 'include'
+      });
+      const data = await res.json();
+      if (data.success) {
+        setFarmCrops(data.data || []);
+      }
+    } catch (e) {
+      // Non-fatal; we can still proceed without this
+      console.error('Failed to fetch crops for farm', e);
+    }
+  };
+
+  const parseLandSizeToAcres = (landSizeStr) => {
+    if (!landSizeStr || typeof landSizeStr !== 'string') return NaN;
+    const lower = landSizeStr.trim().toLowerCase();
+    const match = lower.match(/\d+(?:\.\d+)?/);
+    const value = match ? Number(match[0]) : NaN;
+    if (isNaN(value)) return NaN;
+    let unit = 'acres';
+    if (/hectare|hectares|\bha\b/.test(lower)) unit = 'hectares';
+    else if (/acre|acres|\bac\b/.test(lower)) unit = 'acres';
+    else if (/square\s?meter|sqm|m2|sq\.?\s?m/.test(lower)) unit = 'sqm';
+    if (unit === 'acres') return value;
+    if (unit === 'hectares') return value * 2.47105;
+    if (unit === 'sqm') return value / 4046.8564224;
+    return value;
+  };
+
+  const getAvailableAcres = () => {
+    const totalAcres = parseLandSizeToAcres(farmInfo?.area || selectedFarm?.landSize || '');
+    if (isNaN(totalAcres)) return null;
+    const activeCrops = (farmCrops || []).filter(c => c.stage !== 'harvested');
+    const usedAcres = activeCrops.reduce((sum, c) => sum + Number(c.area || 0), 0);
+    const remaining = Math.max(0, totalAcres - usedAcres);
+    return remaining;
   };
 
   const handleRefreshSuggestions = async () => {
@@ -259,6 +301,12 @@ export default function CropSuggestionsPage() {
               <p className="text-sm text-gray-600">Land Area</p>
               <p className="font-medium text-gray-900">{farmInfo.area}</p>
             </div>
+            <div>
+              <p className="text-sm text-gray-600">Available Area</p>
+              <p className="font-medium text-gray-900">
+                {getAvailableAcres() === null ? '—' : `${getAvailableAcres().toFixed(2)} acres`}
+              </p>
+            </div>
           </div>
         </div>
       )}
@@ -339,6 +387,9 @@ export default function CropSuggestionsPage() {
                   <div>
                     <label className="text-sm text-gray-600">Area</label>
                     <input type="number" className="w-full border rounded px-3 py-2" value={cropInput.area} onChange={(e)=>setCropInput({...cropInput, area: e.target.value})} />
+                    <p className="text-xs text-gray-500 mt-1">
+                      Available: {getAvailableAcres() === null ? '—' : `${getAvailableAcres().toFixed(2)} acres`}
+                    </p>
                   </div>
                   <div>
                     <label className="text-sm text-gray-600">Unit</label>
@@ -444,50 +495,7 @@ export default function CropSuggestionsPage() {
         </div>
       )}
 
-      {/* Market Analysis */}
-      <div className="bg-white rounded-xl shadow-sm p-6">
-        <h2 className="text-xl font-semibold text-gray-900 mb-4">Market Analysis</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="text-center p-4 bg-green-50 rounded-lg">
-            <p className="text-2xl font-bold text-green-600">$2,500</p>
-            <p className="text-sm text-gray-600">Rice per ton</p>
-            <p className="text-xs text-green-600">+12% from last month</p>
-          </div>
-          <div className="text-center p-4 bg-blue-50 rounded-lg">
-            <p className="text-2xl font-bold text-blue-600">$1,800</p>
-            <p className="text-sm text-gray-600">Wheat per ton</p>
-            <p className="text-xs text-blue-600">+8% from last month</p>
-          </div>
-          <div className="text-center p-4 bg-purple-50 rounded-lg">
-            <p className="text-2xl font-bold text-purple-600">$45</p>
-            <p className="text-sm text-gray-600">Tomatoes per kg</p>
-            <p className="text-xs text-purple-600">+15% from last month</p>
-          </div>
-        </div>
-      </div>
-
-      {/* Seasonal Calendar */}
-      <div className="bg-white rounded-xl shadow-sm p-6">
-        <h2 className="text-xl font-semibold text-gray-900 mb-4">Seasonal Planting Calendar</h2>
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div className="text-center p-4 border border-gray-200 rounded-lg">
-            <h3 className="font-semibold text-gray-900 mb-2">Spring</h3>
-            <p className="text-sm text-gray-600">Rice, Corn, Vegetables</p>
-          </div>
-          <div className="text-center p-4 border border-gray-200 rounded-lg">
-            <h3 className="font-semibold text-gray-900 mb-2">Summer</h3>
-            <p className="text-sm text-gray-600">Cotton, Sugarcane</p>
-          </div>
-          <div className="text-center p-4 border border-gray-200 rounded-lg">
-            <h3 className="font-semibold text-gray-900 mb-2">Autumn</h3>
-            <p className="text-sm text-gray-600">Wheat, Barley</p>
-          </div>
-          <div className="text-center p-4 border border-gray-200 rounded-lg">
-            <h3 className="font-semibold text-gray-900 mb-2">Winter</h3>
-            <p className="text-sm text-gray-600">Mustard, Peas</p>
-          </div>
-        </div>
-      </div>
+      
     </div>
   );
 } 
