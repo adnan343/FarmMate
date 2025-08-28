@@ -7,6 +7,8 @@ const router = express.Router();
 // Get all farms
 router.get('/', auth, getFarms);
 
+router.get('/withoutAuth', getFarms);
+
 // Get farms by farmer
 router.get('/farmer/:farmerId', auth, getFarmsByFarmer);
 
