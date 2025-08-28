@@ -5,6 +5,7 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import express from 'express';
 import { connectDB } from "./config/db.js";
+import pestRoutes from "./routes/pest.routes.js";
 
 import analyticsRoutes from "./routes/analytics.routes.js";
 import cartRoutes from "./routes/cart.routes.js";
@@ -45,6 +46,8 @@ app.use("/api/forum", forumRoutes);
 app.use("/api/qa", qaRoutes);
 app.use("/api/analytics", analyticsRoutes);
 app.use("/api/tasks", taskRoutes);
+app.use("/api", pestRoutes);
+
 
 // Add a simple health check endpoint
 app.get('/api/health', (req, res) => {
