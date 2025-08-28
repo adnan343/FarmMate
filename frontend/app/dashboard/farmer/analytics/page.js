@@ -108,9 +108,9 @@ export default function AnalyticsPage() {
       try {
         setDataLoading(true);
         const [farmsRes, cropsRes, ordersRes] = await Promise.all([
-          fetch(`http://localhost:5000/api/farms/farmer/${uid}`, { credentials: 'include' }),
-          fetch(`http://localhost:5000/api/crops/farmer/${uid}`, { credentials: 'include' }),
-          fetch(`http://localhost:5000/api/orders/farmer/${uid}?status=delivered`, { credentials: 'include' })
+          fetch(`https://farmmate-production.up.railway.app/api/farms/farmer/${uid}`, { credentials: 'include' }),
+          fetch(`https://farmmate-production.up.railway.app/api/crops/farmer/${uid}`, { credentials: 'include' }),
+          fetch(`https://farmmate-production.up.railway.app/api/orders/farmer/${uid}?status=delivered`, { credentials: 'include' })
         ]);
 
         if (!farmsRes.ok) {

@@ -1,9 +1,8 @@
-import mongoose from 'mongoose';
 import dotenv from 'dotenv';
+import mongoose from 'mongoose';
 import { connectDB } from './config/db.js';
-import User from './models/user.model.js';
 import Product from './models/product.model.js';
-import Order from './models/order.model.js';
+import User from './models/user.model.js';
 
 // Load environment variables
 dotenv.config({ path: '../.env' });
@@ -33,7 +32,7 @@ async function testCartAndOrder() {
 
     // Test 1: Add to cart within stock limit
     console.log('\n📦 Test 1: Adding to cart within stock limit...');
-    const addToCartResponse = await fetch(`http://localhost:5000/api/cart/${buyer._id}/add`, {
+    const addToCartResponse = await fetch(`https://farmmate-production.up.railway.app/api/cart/${buyer._id}/add`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -52,7 +51,7 @@ async function testCartAndOrder() {
 
     // Test 2: Try to add more than available stock
     console.log('\n📦 Test 2: Trying to add more than available stock...');
-    const overStockResponse = await fetch(`http://localhost:5000/api/cart/${buyer._id}/add`, {
+    const overStockResponse = await fetch(`https://farmmate-production.up.railway.app/api/cart/${buyer._id}/add`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -70,7 +69,7 @@ async function testCartAndOrder() {
 
     // Test 3: Get cart
     console.log('\n📦 Test 3: Getting cart...');
-    const getCartResponse = await fetch(`http://localhost:5000/api/cart/${buyer._id}`);
+    const getCartResponse = await fetch(`https://farmmate-production.up.railway.app/api/cart/${buyer._id}`);
     if (getCartResponse.ok) {
       const cartData = await getCartResponse.json();
       console.log(`✅ Cart has ${cartData.data.items.length} items`);
@@ -91,7 +90,7 @@ async function testCartAndOrder() {
       notes: 'Test order'
     };
 
-    const createOrderResponse = await fetch(`http://localhost:5000/api/orders/${buyer._id}/checkout`, {
+    const createOrderResponse = await fetch(`https://farmmate-production.up.railway.app/api/orders/${buyer._id}/checkout`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(orderData)
@@ -109,7 +108,7 @@ async function testCartAndOrder() {
       
       // Test 6: Get user orders
       console.log('\n📦 Test 6: Getting user orders...');
-      const getOrdersResponse = await fetch(`http://localhost:5000/api/orders/user/${buyer._id}`);
+      const getOrdersResponse = await fetch(`https://farmmate-production.up.railway.app/api/orders/user/${buyer._id}`);
       if (getOrdersResponse.ok) {
         const ordersData = await getOrdersResponse.json();
         console.log(`✅ User has ${ordersData.data.length} orders`);

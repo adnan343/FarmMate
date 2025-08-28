@@ -1,7 +1,7 @@
 "use client";
 import ConfirmDialog from "@/app/components/ConfirmDialog";
 import { useToast } from "@/app/components/ToastProvider";
-import { Check, CheckCircle, Clock, Edit, MessageCircle, Trash2, X } from "lucide-react";
+import { Check, Edit, Trash2, X } from "lucide-react";
 import { useEffect, useState } from "react";
 
 export default function CommunityForumPage() {
@@ -34,7 +34,7 @@ export default function CommunityForumPage() {
 
   const fetchPosts = async () => {
     setLoading(true);
-    const res = await fetch("http://localhost:5000/api/forum", { credentials: "include" });
+    const res = await fetch("https://farmmate-production.up.railway.app/api/forum", { credentials: "include" });
     const data = await res.json();
     if (data.success) setPosts(data.data);
     setLoading(false);
@@ -47,7 +47,7 @@ export default function CommunityForumPage() {
   const handleCreatePost = async (e) => {
     e.preventDefault();
     setPosting(true);
-    const res = await fetch("http://localhost:5000/api/forum", {
+    const res = await fetch("https://farmmate-production.up.railway.app/api/forum", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       credentials: "include",
@@ -65,7 +65,7 @@ export default function CommunityForumPage() {
 
   const handleReply = async (postId) => {
     setReplying({ ...replying, [postId]: true });
-    const res = await fetch(`http://localhost:5000/api/forum/${postId}/reply`, {
+    const res = await fetch(`https://farmmate-production.up.railway.app/api/forum/${postId}/reply`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       credentials: "include",
@@ -78,7 +78,7 @@ export default function CommunityForumPage() {
   };
 
   const handleEditPost = async (postId, updatedData) => {
-    const res = await fetch(`http://localhost:5000/api/forum/${postId}`, {
+    const res = await fetch(`https://farmmate-production.up.railway.app/api/forum/${postId}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       credentials: "include",
@@ -95,7 +95,7 @@ export default function CommunityForumPage() {
 
   const handleDeletePost = async (postId) => {
     setDeleting({ ...deleting, [postId]: true });
-    const res = await fetch(`http://localhost:5000/api/forum/${postId}`, {
+    const res = await fetch(`https://farmmate-production.up.railway.app/api/forum/${postId}`, {
       method: "DELETE",
       credentials: "include",
     });
@@ -109,7 +109,7 @@ export default function CommunityForumPage() {
   };
 
   const handleEditReply = async (postId, replyId, content) => {
-    const res = await fetch(`http://localhost:5000/api/forum/${postId}/reply/${replyId}`, {
+    const res = await fetch(`https://farmmate-production.up.railway.app/api/forum/${postId}/reply/${replyId}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       credentials: "include",
@@ -125,7 +125,7 @@ export default function CommunityForumPage() {
 
   const handleDeleteReply = async (postId, replyId) => {
     setDeleting({ ...deleting, [replyId]: true });
-    const res = await fetch(`http://localhost:5000/api/forum/${postId}/reply/${replyId}`, {
+    const res = await fetch(`https://farmmate-production.up.railway.app/api/forum/${postId}/reply/${replyId}`, {
       method: "DELETE",
       credentials: "include",
     });
