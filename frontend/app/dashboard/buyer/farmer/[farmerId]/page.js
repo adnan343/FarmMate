@@ -26,7 +26,7 @@ export default function FarmerProductsPage() {
 
   const fetchFarmerDetails = useCallback(async () => {
     try {
-      const response = await fetch(`http://localhost:5000/api/users/${farmerId}`);
+      const response = await fetch(`https://farmmate-production.up.railway.app/api/users/${farmerId}`);
       if (response.ok) {
         const result = await response.json();
         if (result.success) {
@@ -42,8 +42,8 @@ export default function FarmerProductsPage() {
     try {
       setLoading(true);
       const url = selectedCategory === 'all' 
-        ? `http://localhost:5000/api/products/farmer/${farmerId}`
-        : `http://localhost:5000/api/products/farmer/${farmerId}?category=${selectedCategory}`;
+        ? `https://farmmate-production.up.railway.app/api/products/farmer/${farmerId}`
+        : `https://farmmate-production.up.railway.app/api/products/farmer/${farmerId}?category=${selectedCategory}`;
       
       const response = await fetch(url);
       if (response.ok) {
@@ -70,7 +70,7 @@ export default function FarmerProductsPage() {
       const userId = cookies.userId;
       if (!userId) return;
 
-      const response = await fetch(`http://localhost:5000/api/cart/${userId}`, {
+      const response = await fetch(`https://farmmate-production.up.railway.app/api/cart/${userId}`, {
         credentials: 'include'
       });
       if (response.ok) {
@@ -98,7 +98,7 @@ export default function FarmerProductsPage() {
       setUser({ _id: userId });
 
       // Fetch user's favorites
-      const response = await fetch(`http://localhost:5000/api/users/${userId}/favorites`, {
+      const response = await fetch(`https://farmmate-production.up.railway.app/api/users/${userId}/favorites`, {
         credentials: 'include'
       });
       if (response.ok) {
@@ -130,8 +130,8 @@ export default function FarmerProductsPage() {
     try {
       const isFavorite = favorites.includes(productId);
       const url = isFavorite 
-        ? `http://localhost:5000/api/users/${user._id}/favorites/${productId}`
-        : `http://localhost:5000/api/users/${user._id}/favorites`;
+        ? `https://farmmate-production.up.railway.app/api/users/${user._id}/favorites/${productId}`
+        : `https://farmmate-production.up.railway.app/api/users/${user._id}/favorites`;
       
       const method = isFavorite ? 'DELETE' : 'POST';
       const body = isFavorite ? undefined : JSON.stringify({ productId });
@@ -175,7 +175,7 @@ export default function FarmerProductsPage() {
         return;
       }
 
-      const response = await fetch(`http://localhost:5000/api/cart/${userId}/add`, {
+      const response = await fetch(`https://farmmate-production.up.railway.app/api/cart/${userId}/add`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
