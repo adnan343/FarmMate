@@ -168,7 +168,7 @@ export default function CartPage() {
   return (
     <div className="max-w-6xl mx-auto">
       {/* Header */}
-      <div className="mb-8">
+      <div className="mb-6 sm:mb-8">
         <div className="flex items-center gap-4 mb-4">
           <Link 
             href="/dashboard/buyer/marketplace" 
@@ -178,8 +178,8 @@ export default function CartPage() {
             Back to Marketplace
           </Link>
         </div>
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Shopping Cart</h1>
-        <p className="text-gray-600">
+        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">Shopping Cart</h1>
+        <p className="text-sm sm:text-base text-gray-600">
           {cart.itemCount} {cart.itemCount === 1 ? 'item' : 'items'} in your cart
         </p>
       </div>
@@ -197,13 +197,13 @@ export default function CartPage() {
           </Link>
         </div>
       ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-8">
           {/* Cart Items */}
           <div className="lg:col-span-2">
             <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-              <div className="p-6 border-b border-gray-200">
+              <div className="p-4 sm:p-6 border-b border-gray-200">
                 <div className="flex items-center justify-between">
-                  <h2 className="text-lg font-semibold text-gray-900">Cart Items</h2>
+                  <h2 className="text-base sm:text-lg font-semibold text-gray-900">Cart Items</h2>
                   <button
                     onClick={onClickClearCart}
                     className="text-sm text-red-600 hover:text-red-700 transition-colors"
@@ -215,10 +215,10 @@ export default function CartPage() {
               
               <div className="divide-y divide-gray-200">
                 {cart.items.map((item) => (
-                  <div key={item._id} className="p-6">
-                    <div className="flex items-start gap-4">
+                  <div key={item._id} className="p-4 sm:p-6">
+                    <div className="flex items-start gap-3 sm:gap-4">
                       {/* Product Image */}
-                      <div className="w-20 h-20 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                      <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0">
                         {item.image ? (
                           <img 
                             src={item.image} 
@@ -226,16 +226,16 @@ export default function CartPage() {
                             className="w-full h-full object-cover rounded-lg"
                           />
                         ) : (
-                          <div className="w-12 h-12 bg-gray-300 rounded-lg"></div>
+                          <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gray-300 rounded-lg"></div>
                         )}
                       </div>
 
                       {/* Product Details */}
                       <div className="flex-1 min-w-0">
-                        <h3 className="text-lg font-medium text-gray-900 mb-1">{item.name}</h3>
-                        <p className="text-gray-600 text-sm mb-2">Farmer: {item.farmer?.name || 'Unknown'}</p>
-                        <p className="text-lg font-semibold text-teal-600">${item.price.toFixed(2)}</p>
-                        <p className="text-sm text-gray-500">
+                        <h3 className="text-base sm:text-lg font-medium text-gray-900 mb-1">{item.name}</h3>
+                        <p className="text-xs sm:text-sm text-gray-600 mb-2">Farmer: {item.farmer?.name || 'Unknown'}</p>
+                        <p className="text-base sm:text-lg font-semibold text-teal-600">${item.price.toFixed(2)}</p>
+                        <p className="text-xs sm:text-sm text-gray-500">
                           Stock: {item.productId?.stock || 'Unknown'} available
                         </p>
                       </div>
@@ -284,8 +284,8 @@ export default function CartPage() {
 
           {/* Order Summary */}
           <div className="lg:col-span-1">
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 sticky top-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Order Summary</h2>
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6 sticky top-6">
+              <h2 className="text-base sm:text-lg font-semibold text-gray-900 mb-4">Order Summary</h2>
               
               <div className="space-y-3 mb-6">
                 <div className="flex justify-between text-sm">

@@ -227,19 +227,19 @@ export default function PlantingCalendarPage() {
   if (loading) return <div className="flex justify-center items-center h-64">Loading...</div>;
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold text-gray-900">Planting Calendar</h1>
-        <div className="flex gap-3">
+    <div className="space-y-4 sm:space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Planting Calendar</h1>
+        <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
           {farms.length > 0 && (
-            <select className="border rounded px-3 py-2" value={selectedFarm?._id || ''} onChange={(e)=>{
+            <select className="border rounded px-3 py-2 text-sm sm:text-base" value={selectedFarm?._id || ''} onChange={(e)=>{
               const f = farms.find(x=>x._id===e.target.value); setSelectedFarm(f);
             }}>
               {farms.map(f=> <option key={f._id} value={f._id}>{f.name}</option>)}
             </select>
           )}
           {cropsForSelectedFarm.length > 0 && (
-            <select className="border rounded px-3 py-2" value={selectedCropId} onChange={(e)=>setSelectedCropId(e.target.value)}>
+            <select className="border rounded px-3 py-2 text-sm sm:text-base" value={selectedCropId} onChange={(e)=>setSelectedCropId(e.target.value)}>
               {cropsForSelectedFarm.map(c=> (
                 <option key={c._id} value={c._id}>{c.name} - {c.variety}</option>
               ))}
@@ -249,9 +249,9 @@ export default function PlantingCalendarPage() {
       </div>
 
       {selectedFarm && cropsForSelectedFarm.length === 0 && (
-        <div className="bg-white rounded-xl shadow-sm p-8 text-center">
-          <h2 className="text-2xl font-semibold text-gray-900 mb-2">No crops found for this farm</h2>
-          <p className="text-gray-600 mb-6">Add a crop in your Farm Profile to start planning tasks on the calendar.</p>
+        <div className="bg-white rounded-xl shadow-sm p-6 sm:p-8 text-center">
+          <h2 className="text-xl sm:text-2xl font-semibold text-gray-900 mb-2">No crops found for this farm</h2>
+          <p className="text-sm sm:text-base text-gray-600 mb-4 sm:mb-6">Add a crop in your Farm Profile to start planning tasks on the calendar.</p>
           <Link href="/dashboard/farmer/farm-profile" className="inline-block bg-teal-600 text-white px-4 py-2 rounded-lg hover:bg-teal-700 transition-colors">
             Go to Farm Profile
           </Link>
@@ -260,20 +260,20 @@ export default function PlantingCalendarPage() {
 
       {/* Calendar */}
       {cropsForSelectedFarm.length > 0 && (
-      <div className="bg-white rounded-xl shadow-sm p-4 md:p-6">
-        <div className="flex items-center justify-between mb-4">
+      <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
           <div className="flex items-center gap-2">
             <button className="p-2 rounded border" onClick={()=>setViewDate(prev=>addMonths(prev, -1))}><ChevronLeft className="w-4 h-4"/></button>
-            <button className="p-2 rounded border" onClick={()=>setViewDate(new Date(new Date().getFullYear(), new Date().getMonth(), 1))}>Today</button>
+            <button className="p-2 rounded border text-sm" onClick={()=>setViewDate(new Date(new Date().getFullYear(), new Date().getMonth(), 1))}>Today</button>
             <button className="p-2 rounded border" onClick={()=>setViewDate(prev=>addMonths(prev, 1))}><ChevronRight className="w-4 h-4"/></button>
           </div>
-          <h2 className="text-xl font-semibold text-gray-900">{monthName}</h2>
+          <h2 className="text-lg sm:text-xl font-semibold text-gray-900">{monthName}</h2>
           <div className="text-sm text-gray-500">Tasks: {timeline.length}</div>
         </div>
 
         <div className="grid grid-cols-7 text-xs font-medium text-gray-500 mb-2">
           {['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].map(d => (
-            <div key={d} className="px-2 py-1">{d}</div>
+            <div key={d} className="px-1 sm:px-2 py-1">{d}</div>
           ))}
         </div>
 
@@ -282,26 +282,26 @@ export default function PlantingCalendarPage() {
             const dayTasks = timeline.filter(t => occursOn(t, cell.date));
             const isToday = ymd(cell.date) === ymd(new Date());
             return (
-              <div key={idx} className={`min-h-28 bg-white p-2 ${cell.inCurrentMonth ? '' : 'bg-gray-50'}`}>
+              <div key={idx} className={`min-h-20 sm:min-h-28 bg-white p-1 sm:p-2 ${cell.inCurrentMonth ? '' : 'bg-gray-50'}`}>
                 <div className="flex items-center justify-between">
                   <button
-                    className={`text-xs px-2 py-1 rounded ${isToday ? 'bg-teal-600 text-white' : 'text-gray-700'} hover:bg-gray-100 cursor-pointer`}
+                    className={`text-xs px-1 sm:px-2 py-1 rounded ${isToday ? 'bg-teal-600 text-white' : 'text-gray-700'} hover:bg-gray-100 cursor-pointer`}
                     onClick={() => handleDateClick(cell.date)}
                     title="Click to view tasks for this day"
                   >
                     {cell.date.getDate()}
                   </button>
                 </div>
-                <div className="mt-2 space-y-1">
-                  {dayTasks.slice(0, 3).map((t, i) => (
-                    <div key={i} className={`text-[11px] border rounded px-1 py-0.5 ${categoryStyle(t.category)} ${t.completed ? 'opacity-60 line-through' : ''}`}
+                <div className="mt-1 sm:mt-2 space-y-0.5 sm:space-y-1">
+                  {dayTasks.slice(0, 2).map((t, i) => (
+                    <div key={i} className={`text-[10px] sm:text-[11px] border rounded px-1 py-0.5 ${categoryStyle(t.category)} ${t.completed ? 'opacity-60 line-through' : ''}`}
                       title={`${t.title}\n${t.description || ''}`}
                     >
                       <span className="truncate">{t.title}</span>
                     </div>
                   ))}
-                  {dayTasks.length > 3 && (
-                    <div className="text-[11px] text-gray-500">+{dayTasks.length - 3} more</div>
+                  {dayTasks.length > 2 && (
+                    <div className="text-[10px] sm:text-[11px] text-gray-500">+{dayTasks.length - 2} more</div>
                   )}
                 </div>
               </div>
@@ -315,9 +315,9 @@ export default function PlantingCalendarPage() {
       {showTasks && selectedDate && (
         <div className="fixed inset-0 z-50 p-4">
           <div className="absolute inset-0 bg-black bg-opacity-50" onClick={() => setShowTasks(false)} />
-          <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-white rounded-xl w-full max-w-lg p-6 shadow-2xl">
+          <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-white rounded-xl w-full max-w-lg p-4 sm:p-6 shadow-2xl">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-900">
+              <h3 className="text-base sm:text-lg font-semibold text-gray-900">
                 {selectedDate ? `Tasks for ${selectedDate.toLocaleDateString('en-US', { 
                   weekday: 'long', 
                   year: 'numeric', 
@@ -329,7 +329,7 @@ export default function PlantingCalendarPage() {
                 onClick={closeTasksView} 
                 className="p-2 hover:bg-gray-100 rounded text-gray-500 hover:text-gray-700"
               >
-                <X className="w-5 h-5"/>
+                <X className="w-4 h-4 sm:w-5 sm:h-5"/>
               </button>
             </div>
             
@@ -337,13 +337,13 @@ export default function PlantingCalendarPage() {
               {selectedDate && timeline.filter(t => occursOn(t, selectedDate)).length > 0 ? (
                 timeline.filter(t => occursOn(t, selectedDate)).map((task, index) => (
                   <div key={index} className={`border rounded-lg p-3 ${categoryStyle(task.category)}`}>
-                    <h4 className="font-medium mb-2 text-gray-900">
+                    <h4 className="font-medium mb-2 text-gray-900 text-sm sm:text-base">
                       {task.title}
                     </h4>
                     {task.description ? (
-                      <p className="text-sm text-gray-600">{task.description}</p>
+                      <p className="text-xs sm:text-sm text-gray-600">{task.description}</p>
                     ) : (
-                      <p className="text-sm text-gray-500 italic">No description available</p>
+                      <p className="text-xs sm:text-sm text-gray-500 italic">No description available</p>
                     )}
                   </div>
                 ))

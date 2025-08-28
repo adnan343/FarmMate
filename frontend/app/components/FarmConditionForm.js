@@ -1,10 +1,10 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
-import { Save, Send, ArrowLeft, Lightbulb, AlertTriangle, CheckCircle } from 'lucide-react';
-import FarmPhotoUpload from './FarmPhotoUpload.js';
 import { createFarmCondition, getFarmsByFarmer } from '@/lib/api';
+import { AlertTriangle, ArrowLeft, CheckCircle, Lightbulb, Send } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { useCallback, useEffect, useState } from 'react';
+import FarmPhotoUpload from './FarmPhotoUpload.js';
 
 export default function FarmConditionForm({ farmerId, onCancel, onSuccess }) {
   const router = useRouter();
@@ -171,29 +171,29 @@ export default function FarmConditionForm({ farmerId, onCancel, onSuccess }) {
   };
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
-      <div className="flex items-center justify-between mb-6">
+    <div className="max-w-4xl mx-auto space-y-4 sm:space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4 sm:mb-6">
         <button 
           onClick={onCancel} 
-          className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors"
+          className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors self-start"
         >
           <ArrowLeft className="w-5 h-5" /> Back to Reports
         </button>
-        <h1 className="text-3xl font-bold text-gray-900">Create Farm Condition Report</h1>
+        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Create Farm Condition Report</h1>
       </div>
 
       {/* Farm Selection */}
-      <div className="bg-white rounded-xl shadow-sm p-6">
-        <h2 className="text-xl font-semibold text-gray-900 mb-4">Farm Selection</h2>
+      <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6">
+        <h2 className="text-lg sm:text-xl font-semibold text-gray-900 mb-4">Farm Selection</h2>
         {farms.length === 0 ? (
-          <div className="text-center py-8">
-            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <div className="text-center py-6 sm:py-8">
+            <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg className="w-6 h-6 sm:w-8 sm:h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
               </svg>
             </div>
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No Farms Available</h3>
-            <p className="text-gray-500 mb-4">You need to add a farm before creating condition reports.</p>
+            <h3 className="text-base sm:text-lg font-medium text-gray-900 mb-2">No Farms Available</h3>
+            <p className="text-sm sm:text-base text-gray-500 mb-4">You need to add a farm before creating condition reports.</p>
             <button
               type="button"
               onClick={handleAddFarmClick}
@@ -240,15 +240,15 @@ export default function FarmConditionForm({ farmerId, onCancel, onSuccess }) {
       </div>
 
       {/* Photo Upload */}
-      <div className="bg-white rounded-xl shadow-sm p-6">
+      <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6">
         <FarmPhotoUpload photo={photo} onPhotoChange={setPhoto} />
         {errors.photo && <p className="mt-1 text-sm text-red-600">{errors.photo}</p>}
       </div>
 
       {/* Condition Details */}
-      <div className="bg-white rounded-xl shadow-sm p-6">
-        <h2 className="text-xl font-semibold text-gray-900 mb-4">Condition Details</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6">
+        <h2 className="text-lg sm:text-xl font-semibold text-gray-900 mb-4">Condition Details</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           <div>
             <label htmlFor="weatherType" className="block text-sm font-medium text-gray-700 mb-2">
               Weather Type <span className="text-red-500">*</span>
@@ -295,7 +295,7 @@ export default function FarmConditionForm({ farmerId, onCancel, onSuccess }) {
             {errors.soilType && <p className="mt-1 text-sm text-red-600">{errors.soilType}</p>}
           </div>
 
-          <div>
+          <div className="sm:col-span-2 lg:col-span-1">
             <label htmlFor="plantStatus" className="block text-sm font-medium text-gray-700 mb-2">
               Plant Status <span className="text-red-500">*</span>
             </label>
@@ -344,8 +344,8 @@ export default function FarmConditionForm({ farmerId, onCancel, onSuccess }) {
 
       {/* AI Suggestions Preview */}
       {formData.weatherType && formData.soilType && formData.plantStatus && (
-        <div className="bg-white rounded-xl shadow-sm p-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">AI Suggestions Preview</h2>
+        <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6">
+          <h2 className="text-lg sm:text-xl font-semibold text-gray-900 mb-4">AI Suggestions Preview</h2>
           <div className="bg-gradient-to-r from-teal-50 to-green-50 rounded-lg p-4 border border-teal-200">
             <div className="flex items-center gap-2 mb-3">
               <Lightbulb className="w-5 h-5 text-teal-600" />
@@ -366,12 +366,12 @@ export default function FarmConditionForm({ farmerId, onCancel, onSuccess }) {
       )}
 
       {/* Action Buttons */}
-      <div className="flex justify-end gap-3">
+      <div className="flex flex-col sm:flex-row justify-end gap-3">
         <button
           type="button"
           onClick={onCancel}
           disabled={loading}
-          className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full sm:w-auto px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
           Cancel
         </button>
@@ -379,7 +379,7 @@ export default function FarmConditionForm({ farmerId, onCancel, onSuccess }) {
           type="button"
           onClick={handleSubmit}
           disabled={loading}
-          className="flex items-center gap-2 px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <Send className="w-4 h-4" />
           {loading ? 'Submitting...' : 'Submit Report'}

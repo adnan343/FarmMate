@@ -17,19 +17,32 @@ import {
     ShoppingCart,
     Store,
     User,
-    Users
+    Users,
+    X
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
-export default function Sidebar({ userRole, userName, userEmail }) {
+export default function Sidebar({ userRole, userName, userEmail, onClose }) {
   const [expandedSections, setExpandedSections] = useState({
     'my-farm': true,
     'planning': true,
     'profile': false
   });
+  const [isMobile, setIsMobile] = useState(false);
   const pathname = usePathname();
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   const toggleSection = (section) => {
     setExpandedSections(prev => ({
@@ -39,6 +52,12 @@ export default function Sidebar({ userRole, userName, userEmail }) {
   };
 
   const isActive = (path) => pathname === path;
+
+  const handleLinkClick = () => {
+    if (isMobile && onClose) {
+      onClose();
+    }
+  };
 
   // Role-based navigation items
   const getNavigationItems = () => {
@@ -226,15 +245,27 @@ export default function Sidebar({ userRole, userName, userEmail }) {
   };
 
   return (
-    <div className="fixed left-0 top-0 h-full w-64 bg-white border-r border-gray-200 flex flex-col">
+    <div className={`${isMobile ? 'w-80' : 'w-64'} h-full bg-white border-r border-gray-200 flex flex-col`}>
       {/* Header - Fixed at top */}
-      <div className="flex-shrink-0 p-4 border-b border-gray-200">
-        <Link href={userRole === 'farmer' ? '/dashboard/farmer' : userRole === 'buyer' ? '/dashboard/buyer' : userRole === 'admin' ? '/dashboard/admin' : '/'} className="flex items-center gap-2">
+      <div className="flex-shrink-0 p-4 border-b border-gray-200 flex items-center justify-between">
+        <Link 
+          href={userRole === 'farmer' ? '/dashboard/farmer' : userRole === 'buyer' ? '/dashboard/buyer' : userRole === 'admin' ? '/dashboard/admin' : '/'} 
+          className="flex items-center gap-2"
+          onClick={handleLinkClick}
+        >
           <div className="w-8 h-8 bg-teal-600 rounded-lg flex items-center justify-center">
             <FileText className="w-5 h-5 text-white" />
           </div>
           <span className="text-xl font-bold text-gray-900">FarmMate</span>
         </Link>
+        {isMobile && onClose && (
+          <button
+            onClick={onClose}
+            className="p-2 rounded-lg hover:bg-gray-100 md:hidden"
+          >
+            <X className="w-5 h-5 text-gray-600" />
+          </button>
+        )}
       </div>
 
       {/* Scrollable Navigation */}
@@ -274,6 +305,7 @@ export default function Sidebar({ userRole, userName, userEmail }) {
                               ? 'bg-teal-50 text-teal-700'
                               : 'text-gray-600 hover:bg-gray-50'
                           }`}
+                          onClick={handleLinkClick}
                         >
                           {child.label}
                         </Link>
@@ -293,6 +325,7 @@ export default function Sidebar({ userRole, userName, userEmail }) {
                       ? 'bg-teal-600 text-white'
                       : 'text-gray-700 hover:bg-gray-50'
                   }`}
+                  onClick={handleLinkClick}
                 >
                   <Icon className="w-4 h-4" />
                   <span className="text-base font-medium">{item.label}</span>
@@ -319,7 +352,7 @@ export default function Sidebar({ userRole, userName, userEmail }) {
               <p className="text-xs text-gray-500 capitalize">{getRoleDisplayName(userRole)}</p>
             </div>
           </div>
-          <Link href="/logout" className="p-1.5 rounded-lg hover:bg-gray-50">
+          <Link href="/logout" className="p-1.5 rounded-lg hover:bg-gray-50" onClick={handleLinkClick}>
             <LogOut className="w-3.5 h-3.5 text-gray-500" />
           </Link>
         </div>

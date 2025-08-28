@@ -1,7 +1,7 @@
 'use client';
 
+import { Image as ImageIcon, Upload, X } from 'lucide-react';
 import { useRef, useState } from 'react';
-import { Upload, X, Image as ImageIcon } from 'lucide-react';
 
 export default function FarmPhotoUpload({ photo, onPhotoChange }) {
   const fileInputRef = useRef(null);
@@ -59,14 +59,14 @@ export default function FarmPhotoUpload({ photo, onPhotoChange }) {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-gray-800">Farm Photo</h3>
+        <h3 className="text-base sm:text-lg font-semibold text-gray-800">Farm Photo</h3>
         {photo && (
           <button
             type="button"
             onClick={removePhoto}
             className="text-red-600 hover:text-red-800 transition-colors"
           >
-            <X className="w-5 h-5" />
+            <X className="w-4 h-4 sm:w-5 sm:h-5" />
           </button>
         )}
       </div>
@@ -78,7 +78,7 @@ export default function FarmPhotoUpload({ photo, onPhotoChange }) {
             type="button"
             onClick={() => fileInputRef.current?.click()}
             disabled={uploading}
-            className="flex items-center gap-2 px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base"
           >
             <Upload className="w-4 h-4" />
             {uploading ? 'Uploading...' : 'Upload Photo'}
@@ -100,23 +100,23 @@ export default function FarmPhotoUpload({ photo, onPhotoChange }) {
           <img 
             src={photo.url} 
             alt="Farm condition" 
-            className="w-full h-64 object-cover" 
+            className="w-full h-48 sm:h-64 object-cover" 
           />
-          <div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-60 text-white p-4">
+          <div className="absolute bottom-0 left-0 right-0 bg-black bg-opacity-60 text-white p-3 sm:p-4">
             <input
               type="text"
               value={photo.caption}
               onChange={(e) => updateCaption(e.target.value)}
               placeholder="Add a caption (optional)"
-              className="w-full bg-transparent border-none text-white placeholder-white/70 focus:outline-none focus:ring-0"
+              className="w-full bg-transparent border-none text-white placeholder-white/70 focus:outline-none focus:ring-0 text-sm sm:text-base"
             />
           </div>
         </div>
       ) : (
-        <div className="text-center py-8 border border-dashed border-gray-300 rounded-lg">
-          <ImageIcon className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-          <p className="text-gray-600 mb-2">No photo uploaded yet</p>
-          <p className="text-sm text-gray-500">Upload a photo to document farm conditions</p>
+        <div className="text-center py-6 sm:py-8 border border-dashed border-gray-300 rounded-lg">
+          <ImageIcon className="w-8 h-8 sm:w-12 sm:h-12 text-gray-400 mx-auto mb-3 sm:mb-4" />
+          <p className="text-sm sm:text-base text-gray-600 mb-2">No photo uploaded yet</p>
+          <p className="text-xs sm:text-sm text-gray-500">Upload a photo to document farm conditions</p>
         </div>
       )}
     </div>

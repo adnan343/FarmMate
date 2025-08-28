@@ -1,7 +1,7 @@
 'use client';
 
+import { Cloud, CloudRain, CloudSun, Droplets, Sun, Wind } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { Droplets, ThermometerSun, Wind, CloudSun, CloudRain, Cloud, Sun } from 'lucide-react';
 
 function weatherCodeToIconAndText(code) {
 	// Simplified mapping for common conditions
@@ -76,13 +76,13 @@ export default function WeatherWidget() {
 	}, [coords]);
 
 	return (
-		<div className="rounded-2xl p-5 bg-gradient-to-r from-teal-500 via-emerald-500 to-green-500 text-white shadow-lg">
+		<div className="rounded-2xl p-4 sm:p-5 bg-gradient-to-r from-teal-500 via-emerald-500 to-green-500 text-white shadow-lg">
 			{status !== 'ready' && (
 				<div className="text-white/90">
 					{status === 'locating' && <p>Determining your location…</p>}
 					{status === 'loading' && <p>Updating…</p>}
-					{status === 'denied' && <p>{error}</p>}
-					{status === 'error' && <p>{error}</p>}
+					{status === 'denied' && <p className="text-sm">{error}</p>}
+					{status === 'error' && <p className="text-sm">{error}</p>}
 				</div>
 			)}
 
@@ -91,14 +91,14 @@ export default function WeatherWidget() {
 					{/* Header row: location and current conditions */}
 					<div className="flex items-start justify-between">
 						<div>
-							<p className="text-sm text-white/80">
+							<p className="text-xs sm:text-sm text-white/80">
 								{[weather.location?.name, weather.location?.admin1]
 									.filter(Boolean)
 									.join(', ') || 'Your location'}
 							</p>
-							<div className="flex items-end gap-2 leading-none">
-								<p className="text-5xl font-bold">{Math.round(weather.current?.temperature ?? 0)}</p>
-								<p className="text-2xl opacity-80">{weather.units?.temperature_2m || '°C'}</p>
+							<div className="flex items-end gap-1 sm:gap-2 leading-none">
+								<p className="text-3xl sm:text-4xl md:text-5xl font-bold">{Math.round(weather.current?.temperature ?? 0)}</p>
+								<p className="text-lg sm:text-xl md:text-2xl opacity-80">{weather.units?.temperature_2m || '°C'}</p>
 							</div>
 						</div>
 						<div className="text-right">
@@ -106,8 +106,8 @@ export default function WeatherWidget() {
 								const { icon: Icon, text } = weatherCodeToIconAndText(weather.current?.weatherCode);
 								return (
 									<div className="flex flex-col items-end">
-										<Icon className="w-8 h-8 mb-1" />
-										<p className="text-sm">{text}</p>
+										<Icon className="w-6 h-6 sm:w-8 sm:h-8 mb-1" />
+										<p className="text-xs sm:text-sm">{text}</p>
 										<p className="text-xs text-white/80">
 											{Math.round(weather.daily?.high ?? 0)} / {Math.round(weather.daily?.low ?? 0)} {weather.units?.high}
 										</p>
@@ -118,26 +118,26 @@ export default function WeatherWidget() {
 					</div>
 
 					{/* Secondary metrics */}
-					<div className="flex gap-6 text-white/90">
-						<div className="flex items-center gap-2">
-							<Droplets className="w-5 h-5" />
-							<span>{weather.current?.humidity}{weather.units?.relative_humidity_2m || '%'}</span>
+					<div className="flex gap-4 sm:gap-6 text-white/90">
+						<div className="flex items-center gap-1 sm:gap-2">
+							<Droplets className="w-4 h-4 sm:w-5 sm:h-5" />
+							<span className="text-sm sm:text-base">{weather.current?.humidity}{weather.units?.relative_humidity_2m || '%'}</span>
 						</div>
-						<div className="flex items-center gap-2">
-							<Wind className="w-5 h-5" />
-							<span>{weather.current?.windSpeed}{weather.units?.wind_speed_10m || 'm/s'}</span>
+						<div className="flex items-center gap-1 sm:gap-2">
+							<Wind className="w-4 h-4 sm:w-5 sm:h-5" />
+							<span className="text-sm sm:text-base">{weather.current?.windSpeed}{weather.units?.wind_speed_10m || 'm/s'}</span>
 						</div>
 					</div>
 
 					{/* Hourly strip */}
-					<div className="grid grid-cols-6 gap-3 pt-2">
-						{weather.hourly?.map((h, idx) => {
+					<div className="grid grid-cols-4 sm:grid-cols-6 gap-2 sm:gap-3 pt-2">
+						{weather.hourly?.slice(0, 6).map((h, idx) => {
 							const { icon: Icon } = weatherCodeToIconAndText(h.weatherCode);
 							return (
-								<div key={idx} className="bg-white/15 rounded-xl p-3 text-center">
-									<p className="text-xs text-white/90 mb-2">{formatHour(h.time)}</p>
-									<Icon className="w-6 h-6 mx-auto mb-2" />
-									<p className="text-sm font-semibold">{Math.round(h.temperature ?? 0)}{weather.units?.temperature_2m || '°C'}</p>
+								<div key={idx} className="bg-white/15 rounded-xl p-2 sm:p-3 text-center">
+									<p className="text-xs text-white/90 mb-1 sm:mb-2">{formatHour(h.time)}</p>
+									<Icon className="w-4 h-4 sm:w-6 sm:h-6 mx-auto mb-1 sm:mb-2" />
+									<p className="text-xs sm:text-sm font-semibold">{Math.round(h.temperature ?? 0)}{weather.units?.temperature_2m || '°C'}</p>
 								</div>
 							);
 						})}

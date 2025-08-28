@@ -231,17 +231,17 @@ export default function CropSuggestionsPage() {
 
   if (error) {
     return (
-      <div className="space-y-6">
+      <div className="space-y-4 sm:space-y-6">
         <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-bold text-gray-900">Crop Suggestions</h1>
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Crop Suggestions</h1>
         </div>
         
-        <div className="bg-red-50 border border-red-200 rounded-xl p-6">
+        <div className="bg-red-50 border border-red-200 rounded-xl p-4 sm:p-6">
           <div className="flex items-center gap-3">
-            <AlertCircle className="w-6 h-6 text-red-600" />
+            <AlertCircle className="w-5 h-5 sm:w-6 sm:h-6 text-red-600" />
             <div>
-              <h3 className="text-lg font-semibold text-red-800">Error</h3>
-              <p className="text-red-700">{error}</p>
+              <h3 className="text-base sm:text-lg font-semibold text-red-800">Error</h3>
+              <p className="text-sm sm:text-base text-red-700">{error}</p>
             </div>
           </div>
         </div>
@@ -250,10 +250,10 @@ export default function CropSuggestionsPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold text-gray-900">Crop Suggestions</h1>
-        <div className="flex items-center gap-4">
+    <div className="space-y-4 sm:space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Crop Suggestions</h1>
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4">
           {farms.length > 1 && (
             <select
               value={selectedFarm?._id || ''}
@@ -261,7 +261,7 @@ export default function CropSuggestionsPage() {
                 const farm = farms.find(f => f._id === e.target.value);
                 setSelectedFarm(farm);
               }}
-              className="border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-teal-500"
+              className="border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-teal-500 text-sm sm:text-base"
             >
               {farms.map(farm => (
                 <option key={farm._id} value={farm._id}>
@@ -273,7 +273,7 @@ export default function CropSuggestionsPage() {
           <button 
             onClick={handleRefreshSuggestions}
             disabled={refreshing}
-            className="bg-teal-600 text-white px-4 py-2 rounded-lg hover:bg-teal-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+            className="bg-teal-600 text-white px-4 py-2 rounded-lg hover:bg-teal-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-sm sm:text-base"
           >
             {refreshing ? (
               <Loader2 className="w-4 h-4 animate-spin" />
@@ -287,23 +287,23 @@ export default function CropSuggestionsPage() {
 
       {/* Farm Info */}
       {farmInfo && (
-        <div className="bg-blue-50 border border-blue-200 rounded-xl p-6">
+        <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 sm:p-6">
           <div className="flex items-center gap-3 mb-4">
-            <MapPin className="w-6 h-6 text-blue-600" />
-            <h2 className="text-xl font-semibold text-gray-900">Farm Information</h2>
+            <MapPin className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600" />
+            <h2 className="text-lg sm:text-xl font-semibold text-gray-900">Farm Information</h2>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <p className="text-sm text-gray-600">Location</p>
-              <p className="font-medium text-gray-900">{farmInfo.location}</p>
+              <p className="font-medium text-gray-900 text-sm sm:text-base">{farmInfo.location}</p>
             </div>
             <div>
               <p className="text-sm text-gray-600">Land Area</p>
-              <p className="font-medium text-gray-900">{farmInfo.area}</p>
+              <p className="font-medium text-gray-900 text-sm sm:text-base">{farmInfo.area}</p>
             </div>
             <div>
               <p className="text-sm text-gray-600">Available Area</p>
-              <p className="font-medium text-gray-900">
+              <p className="font-medium text-gray-900 text-sm sm:text-base">
                 {getAvailableAcres() === null ? '—' : `${getAvailableAcres().toFixed(2)} acres`}
               </p>
             </div>
@@ -312,23 +312,23 @@ export default function CropSuggestionsPage() {
       )}
 
       {/* AI Recommendations */}
-      <div className="bg-gradient-to-r from-teal-50 to-blue-50 rounded-xl p-6">
+      <div className="bg-gradient-to-r from-teal-50 to-blue-50 rounded-xl p-4 sm:p-6">
         <div className="flex items-center gap-3 mb-4">
-          <Lightbulb className="w-6 h-6 text-teal-600" />
-          <h2 className="text-xl font-semibold text-gray-900">AI Recommendations</h2>
+          <Lightbulb className="w-5 h-5 sm:w-6 sm:h-6 text-teal-600" />
+          <h2 className="text-lg sm:text-xl font-semibold text-gray-900">AI Recommendations</h2>
         </div>
-        <p className="text-gray-600 mb-4">
+        <p className="text-sm sm:text-base text-gray-600 mb-4">
           Based on your farm&apos;s location, soil conditions, and weather patterns, here are our top recommendations for this season.
         </p>
       </div>
 
       {/* Recommended Crops */}
       {suggestions.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
           {suggestions.map((suggestion, index) => (
-            <div key={index} className="bg-white rounded-xl shadow-sm p-6 border-l-4 border-green-500">
+            <div key={index} className="bg-white rounded-xl shadow-sm p-4 sm:p-6 border-l-4 border-green-500">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-gray-900">{suggestion.cropName}</h3>
+                <h3 className="text-base sm:text-lg font-semibold text-gray-900">{suggestion.cropName}</h3>
                 <span className="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full">
                   Recommended
                 </span>
@@ -336,19 +336,19 @@ export default function CropSuggestionsPage() {
               <div className="space-y-3">
                 <div className="flex items-center gap-2">
                   <TrendingUp className="w-4 h-4 text-green-500" />
-                  <span className="text-sm text-gray-600">Expected yield: {suggestion.expectedYield}</span>
+                  <span className="text-xs sm:text-sm text-gray-600">Expected yield: {suggestion.expectedYield}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <Calendar className="w-4 h-4 text-blue-500" />
-                  <span className="text-sm text-gray-600">Planting window: {suggestion.plantingWindow}</span>
+                  <span className="text-xs sm:text-sm text-gray-600">Planting window: {suggestion.plantingWindow}</span>
                 </div>
-                <div className="text-sm text-gray-600 mt-3">
+                <div className="text-xs sm:text-sm text-gray-600 mt-3">
                   <strong>Why this crop:</strong> {suggestion.reason}
                 </div>
               </div>
               <button 
                 onClick={() => handleAcceptSuggestion(suggestion)}
-                className="w-full mt-4 bg-green-600 text-white py-2 rounded-lg hover:bg-green-700 transition-colors"
+                className="w-full mt-4 bg-green-600 text-white py-2 rounded-lg hover:bg-green-700 transition-colors text-sm sm:text-base"
               >
                 Accept Suggestion
               </button>
@@ -356,12 +356,12 @@ export default function CropSuggestionsPage() {
           ))}
         </div>
       ) : (
-        <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-6">
+        <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4 sm:p-6">
           <div className="flex items-center gap-3">
-            <AlertCircle className="w-6 h-6 text-yellow-600" />
+            <AlertCircle className="w-5 h-5 sm:w-6 sm:h-6 text-yellow-600" />
             <div>
-              <h3 className="text-lg font-semibold text-yellow-800">No Suggestions Available</h3>
-              <p className="text-yellow-700">Click &quot;Get New Suggestions&quot; to generate crop recommendations for your farm.</p>
+              <h3 className="text-base sm:text-lg font-semibold text-yellow-800">No Suggestions Available</h3>
+              <p className="text-sm sm:text-base text-yellow-700">Click &quot;Get New Suggestions&quot; to generate crop recommendations for your farm.</p>
             </div>
           </div>
         </div>
@@ -370,43 +370,43 @@ export default function CropSuggestionsPage() {
                       {showAcceptModal && selectedSuggestion && (
           <div className="fixed inset-0 z-50">
             <div className="absolute inset-0 bg-black/50" onClick={() => setShowAcceptModal(false)} />
-            <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-white rounded-xl w-full max-w-3xl p-6">
+            <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-white rounded-xl w-full max-w-3xl p-4 sm:p-6">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-xl font-semibold">Accept Suggestion: {selectedSuggestion?.cropName}</h3>
+              <h3 className="text-lg sm:text-xl font-semibold">Accept Suggestion: {selectedSuggestion?.cropName}</h3>
               <button className="p-2" onClick={() => setShowAcceptModal(false)}>
-                <X className="w-5 h-5" />
+                <X className="w-4 h-4 sm:w-5 sm:h-5" />
               </button>
             </div>
             <p className="text-sm text-blue-600 mb-4">✨ AI will automatically predict yield using Gemini API</p>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
               <div className="space-y-3">
                 <div>
                   <label className="text-sm text-gray-600">Variety</label>
-                  <input className="w-full border rounded px-3 py-2" value={cropInput.variety} onChange={(e)=>setCropInput({...cropInput, variety: e.target.value})} />
+                  <input className="w-full border rounded px-3 py-2 text-sm sm:text-base" value={cropInput.variety} onChange={(e)=>setCropInput({...cropInput, variety: e.target.value})} />
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="text-sm text-gray-600">Area</label>
-                    <input type="number" className="w-full border rounded px-3 py-2" value={cropInput.area} onChange={(e)=>setCropInput({...cropInput, area: e.target.value})} />
+                    <input type="number" className="w-full border rounded px-3 py-2 text-sm sm:text-base" value={cropInput.area} onChange={(e)=>setCropInput({...cropInput, area: e.target.value})} />
                     <p className="text-xs text-gray-500 mt-1">
                       Available: {getAvailableAcres() === null ? '—' : `${getAvailableAcres().toFixed(2)} acres`}
                     </p>
                   </div>
                   <div>
                     <label className="text-sm text-gray-600">Unit</label>
-                    <input className="w-full border rounded px-3 py-2 bg-gray-100 text-gray-700" value="acres" readOnly />
+                    <input className="w-full border rounded px-3 py-2 bg-gray-100 text-gray-700 text-sm sm:text-base" value="acres" readOnly />
                   </div>
                 </div>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <label className="text-sm text-gray-600">Planting Date</label>
-                    <input type="date" className="w-full border rounded px-3 py-2" value={cropInput.plantingDate} onChange={(e)=>setCropInput({...cropInput, plantingDate: e.target.value})} />
+                    <input type="date" className="w-full border rounded px-3 py-2 text-sm sm:text-base" value={cropInput.plantingDate} onChange={(e)=>setCropInput({...cropInput, plantingDate: e.target.value})} />
                   </div>
                   <div>
                     <label className="text-sm text-gray-600">Expected Harvest</label>
                     <input
                       type="date"
-                      className="w-full border rounded px-3 py-2"
+                      className="w-full border rounded px-3 py-2 text-sm sm:text-base"
                       value={cropInput.expectedHarvestDate}
                       min={cropInput.plantingDate || undefined}
                       onChange={(e)=>{
@@ -419,14 +419,14 @@ export default function CropSuggestionsPage() {
                     />
                   </div>
                 </div>
-                <div className="grid grid-cols-2 gap-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <label className="text-sm text-gray-600">Estimated Yield</label>
-                    <input type="number" className="w-full border rounded px-3 py-2" value={cropInput.estimatedYield} onChange={(e)=>setCropInput({...cropInput, estimatedYield: e.target.value})} />
+                    <input type="number" className="w-full border rounded px-3 py-2 text-sm sm:text-base" value={cropInput.estimatedYield} onChange={(e)=>setCropInput({...cropInput, estimatedYield: e.target.value})} />
                   </div>
                   <div>
                     <label className="text-sm text-gray-600">Yield Unit</label>
-                    <select className="w-full border rounded px-3 py-2" value={cropInput.yieldUnit} onChange={(e)=>setCropInput({...cropInput, yieldUnit: e.target.value})}>
+                    <select className="w-full border rounded px-3 py-2 text-sm sm:text-base" value={cropInput.yieldUnit} onChange={(e)=>setCropInput({...cropInput, yieldUnit: e.target.value})}>
                       <option value="kg">kg</option>
                       <option value="lb">lb</option>
                       <option value="tons">tons</option>
@@ -436,34 +436,34 @@ export default function CropSuggestionsPage() {
                 </div>
                 <div>
                   <label className="text-sm text-gray-600">Notes</label>
-                  <textarea className="w-full border rounded px-3 py-2" rows={3} value={cropInput.notes} onChange={(e)=>setCropInput({...cropInput, notes: e.target.value})} />
+                  <textarea className="w-full border rounded px-3 py-2 text-sm sm:text-base" rows={3} value={cropInput.notes} onChange={(e)=>setCropInput({...cropInput, notes: e.target.value})} />
                 </div>
                 <div className="flex gap-2">
-                  <button onClick={handleGenerateTimeline} disabled={genLoading} className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+                  <button onClick={handleGenerateTimeline} disabled={genLoading} className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 text-sm sm:text-base">
                     {genLoading ? 'Generating...' : 'Generate Timeline'}
                   </button>
                 </div>
               </div>
               <div>
-                <h4 className="font-medium mb-2">Timeline Preview</h4>
+                <h4 className="font-medium mb-2 text-sm sm:text-base">Timeline Preview</h4>
                 <div className="max-h-80 overflow-auto space-y-2">
                   {timelinePreview.length === 0 && (
-                    <p className="text-sm text-gray-500">No timeline generated yet.</p>
+                    <p className="text-xs sm:text-sm text-gray-500">No timeline generated yet.</p>
                   )}
                   {timelinePreview.map((t, i) => (
                     <div key={i} className="border rounded p-2">
-                      <p className="font-medium">{t.title}</p>
+                      <p className="font-medium text-sm sm:text-base">{t.title}</p>
                       <p className="text-xs text-gray-500">{t.category}</p>
-                      <p className="text-sm">{t.description}</p>
+                      <p className="text-xs sm:text-sm">{t.description}</p>
                       <p className="text-xs text-gray-500">{[t.startDate, t.endDate].filter(Boolean).join(' → ') || t.dueDate || ''}</p>
                     </div>
                   ))}
                 </div>
               </div>
             </div>
-            <div className="flex justify-end gap-2 mt-4">
-              <button className="px-4 py-2 rounded border" onClick={()=>setShowAcceptModal(false)}>Cancel</button>
-              <button onClick={handleConfirmAccept} disabled={accepting} className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 flex items-center gap-2">
+            <div className="flex flex-col sm:flex-row justify-end gap-2 mt-4">
+              <button className="px-4 py-2 rounded border text-sm sm:text-base" onClick={()=>setShowAcceptModal(false)}>Cancel</button>
+              <button onClick={handleConfirmAccept} disabled={accepting} className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 flex items-center justify-center gap-2 text-sm sm:text-base">
                 {accepting ? (
                   <>
                     <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
@@ -482,13 +482,13 @@ export default function CropSuggestionsPage() {
                       {showAreaErrorModal && (
           <div className="fixed inset-0 z-50">
             <div className="absolute inset-0 bg-black/50" onClick={() => setShowAreaErrorModal(false)} />
-            <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-white rounded-xl w-full max-w-md p-6">
-            <h2 className="text-xl font-semibold mb-2 text-red-700">Area exceeds available land</h2>
-            <p className="text-gray-700 mb-4">{areaErrorMessage}</p>
+            <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-white rounded-xl w-full max-w-md p-4 sm:p-6">
+            <h2 className="text-lg sm:text-xl font-semibold mb-2 text-red-700">Area exceeds available land</h2>
+            <p className="text-sm sm:text-base text-gray-700 mb-4">{areaErrorMessage}</p>
             <div className="flex gap-2">
               <button
                 onClick={() => setShowAreaErrorModal(false)}
-                className="flex-1 bg-teal-600 text-white py-2 rounded-lg hover:bg-teal-700"
+                className="flex-1 bg-teal-600 text-white py-2 rounded-lg hover:bg-teal-700 text-sm sm:text-base"
               >
                 OK
               </button>

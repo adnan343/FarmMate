@@ -1,7 +1,6 @@
-import Sidebar from '@/app/components/Sidebar';
-import { ToastProvider } from '@/app/components/ToastProvider';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
+import DashboardLayoutClient from './DashboardLayoutClient';
 
 export default async function DashboardLayout({ children }) {
   const cookieStore = await cookies();
@@ -24,15 +23,8 @@ export default async function DashboardLayout({ children }) {
   };
 
   return (
-    <ToastProvider>
-      <div className="flex h-screen bg-gray-50">
-        <Sidebar userRole={userData.role} userName={userData.name} userEmail={userData.email} />
-        <div className="flex-1 ml-64 overflow-auto">
-          <main className="p-6">
-            {children}
-          </main>
-        </div>
-      </div>
-    </ToastProvider>
+    <DashboardLayoutClient userData={userData}>
+      {children}
+    </DashboardLayoutClient>
   );
 }
