@@ -104,7 +104,7 @@ export default function FarmProfilePage() {
 
   const fetchFarms = async (farmerId) => {
     try {
-      const response = await fetch(`http://localhost:5000/api/farms/farmer/${farmerId}`, {
+      const response = await fetch(`https://farmmate-production.up.railway.app/api/farms/farmer/${farmerId}`, {
         credentials: 'include' // This will send cookies with the request
       });
       const data = await response.json();
@@ -123,7 +123,7 @@ export default function FarmProfilePage() {
 
   const fetchCrops = async (farmerId) => {
     try {
-      const response = await fetch(`http://localhost:5000/api/crops/farmer/${farmerId}`, {
+      const response = await fetch(`https://farmmate-production.up.railway.app/api/crops/farmer/${farmerId}`, {
         credentials: 'include' // This will send cookies with the request
       });
       const data = await response.json();
@@ -138,7 +138,7 @@ export default function FarmProfilePage() {
   const handleAddFarm = async (e) => {
     e.preventDefault();
     try {
-      const response = await fetch('http://localhost:5000/api/farms', {
+      const response = await fetch('https://farmmate-production.up.railway.app/api/farms', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -171,7 +171,7 @@ export default function FarmProfilePage() {
   const handleEditFarm = async (e) => {
     e.preventDefault();
     try {
-      const response = await fetch(`http://localhost:5000/api/farms/${selectedFarm._id}`, {
+      const response = await fetch(`https://farmmate-production.up.railway.app/api/farms/${selectedFarm._id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json'
@@ -194,7 +194,7 @@ export default function FarmProfilePage() {
     if (!confirm('Are you sure you want to delete this farm?')) return;
     
     try {
-      const response = await fetch(`http://localhost:5000/api/farms/${farmId}`, {
+      const response = await fetch(`https://farmmate-production.up.railway.app/api/farms/${farmId}`, {
         method: 'DELETE',
         credentials: 'include'
       });
@@ -214,7 +214,7 @@ export default function FarmProfilePage() {
     e.preventDefault();
     setAddingCrop(true);
     try {
-      const response = await fetch('http://localhost:5000/api/crops', {
+      const response = await fetch('https://farmmate-production.up.railway.app/api/crops', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -268,7 +268,7 @@ export default function FarmProfilePage() {
         return;
       }
 
-      const response = await fetch(`http://localhost:5000/api/crops/${cropId}/stage`, {
+      const response = await fetch(`https://farmmate-production.up.railway.app/api/crops/${cropId}/stage`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json'
@@ -288,7 +288,7 @@ export default function FarmProfilePage() {
   const handleGenerateTimelineForCrop = async (cropId) => {
     setGeneratingTimeline(prev => new Set(prev).add(cropId));
     try {
-      const res = await fetch(`http://localhost:5000/api/crops/${cropId}/timeline/generate`, {
+      const res = await fetch(`https://farmmate-production.up.railway.app/api/crops/${cropId}/timeline/generate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
@@ -871,7 +871,7 @@ export default function FarmProfilePage() {
               onSubmit={async (e) => {
                 e.preventDefault();
                 try {
-                  const response = await fetch(`http://localhost:5000/api/crops/${selectedCrop._id}/stage`, {
+                  const response = await fetch(`https://farmmate-production.up.railway.app/api/crops/${selectedCrop._id}/stage`, {
                     method: 'PATCH',
                     headers: { 'Content-Type': 'application/json' },
                     credentials: 'include',

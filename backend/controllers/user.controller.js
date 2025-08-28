@@ -69,7 +69,52 @@ export const createUser = async (req, res) => {
 
         const newUser = new User(userData); // Create a new user with hashed password
         await newUser.save(); // Save the user to the database
-        res.status(201).json({ success: true, msg: "User created successfully" });
+
+        // 🍪 SET COOKIES AFTER SUCCESSFUL REGISTRATION
+        // Set the userId in a cookie that can be accessed by client-side JavaScript
+        res.cookie('userId', newUser._id, {
+            httpOnly: false, // Allow client-side JavaScript to access the cookie
+            maxAge: 24 * 60 * 60 * 1000, // Cookie expires in 24 hours
+            secure: false, // Set to true in production with HTTPS
+            sameSite: 'lax', // Allow cross-site requests
+            path: '/'
+        });
+
+        // Set additional user info cookies
+        res.cookie('userName', newUser.name, {
+            httpOnly: false,
+            maxAge: 24 * 60 * 60 * 1000,
+            secure: false,
+            sameSite: 'lax',
+            path: '/'
+        });
+
+        res.cookie('userEmail', newUser.email, {
+            httpOnly: false,
+            maxAge: 24 * 60 * 60 * 1000,
+            secure: false,
+            sameSite: 'lax',
+            path: '/'
+        });
+
+        res.cookie('role', newUser.role, {
+            httpOnly: false,
+            maxAge: 24 * 60 * 60 * 1000,
+            secure: false,
+            sameSite: 'lax',
+            path: '/'
+        });
+
+        res.status(201).json({ 
+            success: true, 
+            msg: "User created successfully",
+            data: {
+                userId: newUser._id,
+                email: newUser.email,
+                name: newUser.name,
+                role: newUser.role,
+            }
+        });
     } catch (err) {
         console.error("Error in creating user:", err);
         res.status(500).json({ success: false, msg: "SERVER ERROR" });
@@ -170,13 +215,39 @@ export const loginUser = async (req, res) => {
             return res.status(401).json({ success: false, msg: "Invalid password" });
         }
 
-        // 🍪 ADD THIS PART TO SET THE COOKIE
-        // Set the userId in an httpOnly cookie
+        // 🍪 SET COOKIES FOR CLIENT-SIDE ACCESS
+        // Set the userId in a cookie that can be accessed by client-side JavaScript
         res.cookie('userId', user._id, {
-            httpOnly: true, // Prevents client-side JavaScript from accessing the cookie
-            maxAge: 3600000, // Cookie expires in 1 hour (in milliseconds)
-            // secure: true, // Use this in production with HTTPS
-            // sameSite: 'strict'
+            httpOnly: false, // Allow client-side JavaScript to access the cookie
+            maxAge: 24 * 60 * 60 * 1000, // Cookie expires in 24 hours
+            secure: false, // Set to true in production with HTTPS
+            sameSite: 'lax', // Allow cross-site requests
+            path: '/'
+        });
+
+        // Set additional user info cookies
+        res.cookie('userName', user.name, {
+            httpOnly: false,
+            maxAge: 24 * 60 * 60 * 1000,
+            secure: false,
+            sameSite: 'lax',
+            path: '/'
+        });
+
+        res.cookie('userEmail', user.email, {
+            httpOnly: false,
+            maxAge: 24 * 60 * 60 * 1000,
+            secure: false,
+            sameSite: 'lax',
+            path: '/'
+        });
+
+        res.cookie('role', user.role, {
+            httpOnly: false,
+            maxAge: 24 * 60 * 60 * 1000,
+            secure: false,
+            sameSite: 'lax',
+            path: '/'
         });
 
         // If login is successful, respond back with user data

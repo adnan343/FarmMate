@@ -41,7 +41,7 @@ export default function ProfilePage() {
 
         if (userId) {
           // Fetch user data from API
-          const response = await fetch(`http://localhost:5000/api/users/${userId}`);
+          const response = await fetch(`https://farmmate-production.up.railway.app/api/users/${userId}`);
           if (response.ok) {
             const result = await response.json();
             if (result.success) {
@@ -120,7 +120,7 @@ export default function ProfilePage() {
       return;
     }
 
-    const res = await fetch(`http://localhost:5000/api/users/${userId}/change-password`, {
+    const res = await fetch(`https://farmmate-production.up.railway.app/api/users/${userId}/change-password`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
@@ -160,7 +160,7 @@ export default function ProfilePage() {
       }
 
       // Make API call to update user data
-      const response = await fetch(`http://localhost:5000/api/users/${userId}`, {
+      const response = await fetch(`https://farmmate-production.up.railway.app/api/users/${userId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -228,7 +228,7 @@ export default function ProfilePage() {
     }
 
     try {
-      const response = await fetch(`http://localhost:5000/api/users/${userId}`, {
+      const response = await fetch(`https://farmmate-production.up.railway.app/api/users/${userId}`, {
         method: 'DELETE',
       });
 

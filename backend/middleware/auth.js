@@ -9,7 +9,8 @@ const auth = async (req, res, next) => {
       return acc;
     }, {}) || {};
 
-    const userId = cookies.userId;
+    const userId = cookies.userId || req.cookies?.userId;
+    
     if (!userId) {
       return res.status(401).json({ success: false, msg: 'No user ID, authorization denied' });
     }
