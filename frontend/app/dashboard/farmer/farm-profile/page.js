@@ -2,6 +2,7 @@
 
 import { Calendar, Edit, MapPin, Plus, Trash2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { getFarmsByFarmer, getAllFarms, createFarm, updateFarm, deleteFarm, getCropsByFarmer, createCrop, updateCrop, deleteCrop, updateCropStage, generateTimelineForCrop } from '@/lib/api';
 
 export default function FarmProfilePage() {
   const [farms, setFarms] = useState([]);
@@ -104,10 +105,7 @@ export default function FarmProfilePage() {
 
   const fetchFarms = async (farmerId) => {
     try {
-      const response = await fetch(`https://farmmate-production.up.railway.app/api/farms/farmer/${farmerId}`, {
-        credentials: 'include' // This will send cookies with the request
-      });
-      const data = await response.json();
+      const data = await getFarmsByFarmer(farmerId);
       if (data.success) {
         setFarms(data.data);
         if (data.data.length > 0) {
@@ -123,10 +121,7 @@ export default function FarmProfilePage() {
 
   const fetchCrops = async (farmerId) => {
     try {
-      const response = await fetch(`https://farmmate-production.up.railway.app/api/crops/farmer/${farmerId}`, {
-        credentials: 'include' // This will send cookies with the request
-      });
-      const data = await response.json();
+      const data = await getCropsByFarmer(farmerId);
       if (data.success) {
         setCrops(data.data);
       }
@@ -138,18 +133,10 @@ export default function FarmProfilePage() {
   const handleAddFarm = async (e) => {
     e.preventDefault();
     try {
-      const response = await fetch('https://farmmate-production.up.railway.app/api/farms', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        credentials: 'include',
-        body: JSON.stringify({
-          ...farmForm,
-          farmer: user._id
-        })
+      const data = await createFarm({
+        ...farmForm,
+        farmer: user._id
       });
-      const data = await response.json();
       if (data.success) {
         setFarms([...farms, data.farm]);
         setShowAddFarmModal(false);
@@ -171,15 +158,7 @@ export default function FarmProfilePage() {
   const handleEditFarm = async (e) => {
     e.preventDefault();
     try {
-      const response = await fetch(`https://farmmate-production.up.railway.app/api/farms/${selectedFarm._id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        credentials: 'include',
-        body: JSON.stringify(farmForm)
-      });
-      const data = await response.json();
+      const data = await updateFarm(selectedFarm._id, farmForm);
       if (data.success) {
         setFarms(farms.map(farm => farm._id === selectedFarm._id ? data.data : farm));
         setSelectedFarm(data.data);
@@ -194,11 +173,7 @@ export default function FarmProfilePage() {
     if (!confirm('Are you sure you want to delete this farm?')) return;
     
     try {
-      const response = await fetch(`https://farmmate-production.up.railway.app/api/farms/${farmId}`, {
-        method: 'DELETE',
-        credentials: 'include'
-      });
-      const data = await response.json();
+      const data = await deleteFarm(farmId);
       if (data.success) {
         setFarms(farms.filter(farm => farm._id !== farmId));
         if (selectedFarm && selectedFarm._id === farmId) {
@@ -214,21 +189,13 @@ export default function FarmProfilePage() {
     e.preventDefault();
     setAddingCrop(true);
     try {
-      const response = await fetch('https://farmmate-production.up.railway.app/api/crops', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        credentials: 'include',
-        body: JSON.stringify({
-          ...cropForm,
-          farm: selectedFarm._id,
-          farmer: user._id,
-          area: parseFloat(cropForm.area),
-          estimatedYield: cropForm.estimatedYield ? parseFloat(cropForm.estimatedYield) : undefined
-        })
+      const data = await createCrop({
+        ...cropForm,
+        farm: selectedFarm._id,
+        farmer: user._id,
+        area: parseFloat(cropForm.area),
+        estimatedYield: cropForm.estimatedYield ? parseFloat(cropForm.estimatedYield) : undefined
       });
-      const data = await response.json();
       if (data.success) {
         setCrops([...crops, data.data]);
         setShowAddCropModal(false);
@@ -268,15 +235,7 @@ export default function FarmProfilePage() {
         return;
       }
 
-      const response = await fetch(`https://farmmate-production.up.railway.app/api/crops/${cropId}/stage`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        credentials: 'include',
-        body: JSON.stringify({ stage })
-      });
-      const data = await response.json();
+      const data = await updateCropStage(cropId, stage);
       if (data.success) {
         setCrops(crops.map(crop => crop._id === cropId ? data.data : crop));
       }
@@ -288,12 +247,7 @@ export default function FarmProfilePage() {
   const handleGenerateTimelineForCrop = async (cropId) => {
     setGeneratingTimeline(prev => new Set(prev).add(cropId));
     try {
-      const res = await fetch(`https://farmmate-production.up.railway.app/api/crops/${cropId}/timeline/generate`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-      });
-      const data = await res.json();
+      const data = await generateTimelineForCrop(cropId);
       if (data.success) {
         alert('Timeline generated for this crop. Check Planting Calendar to manage tasks.');
       } else {

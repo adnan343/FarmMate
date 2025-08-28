@@ -26,7 +26,7 @@ dotenv.config();
 
 const app = express();
 app.use(cors({
-    origin: 'http://localhost:3000', // frontend URL
+    origin: ['http://localhost:3000', 'http://localhost:3001', 'https://farmmate-frontend.vercel.app', 'https://farmmate-git-main-farmmate.vercel.app'], // frontend URLs
     credentials: true               // allow cookies if needed
 }));
 

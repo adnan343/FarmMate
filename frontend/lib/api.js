@@ -340,6 +340,99 @@ export async function getProductById(productId) {
   }
 }
 
+export async function updateProduct(productId, productData) {
+  try {
+    const res = await fetch(`${PRODUCT_API_BASE}/${productId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify(productData),
+    });
+
+    const responseData = await res.json();
+
+    if (!res.ok) {
+      throw new Error(responseData.msg || 'Failed to update product');
+    }
+
+    return responseData;
+  } catch (error) {
+    if (error.name === 'TypeError' && error.message.includes('fetch')) {
+      throw new Error(getErrorMessage());
+    }
+    throw error;
+  }
+}
+
+export async function deleteProduct(productId) {
+  try {
+    const res = await fetch(`${PRODUCT_API_BASE}/${productId}`, {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+    });
+
+    const responseData = await res.json();
+
+    if (!res.ok) {
+      throw new Error(responseData.msg || 'Failed to delete product');
+    }
+
+    return responseData;
+  } catch (error) {
+    if (error.name === 'TypeError' && error.message.includes('fetch')) {
+      throw new Error(getErrorMessage());
+    }
+    throw error;
+  }
+}
+
+export async function toggleProductAvailability(productId) {
+  try {
+    const res = await fetch(`${PRODUCT_API_BASE}/${productId}/availability`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+    });
+
+    const responseData = await res.json();
+
+    if (!res.ok) {
+      throw new Error(responseData.msg || 'Failed to toggle product availability');
+    }
+
+    return responseData;
+  } catch (error) {
+    if (error.name === 'TypeError' && error.message.includes('fetch')) {
+      throw new Error(getErrorMessage());
+    }
+    throw error;
+  }
+}
+
+export async function getFarmerOwnProducts(farmerId) {
+  try {
+    const res = await fetch(`${PRODUCT_API_BASE}/farmer/${farmerId}/own`, {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+    });
+
+    const responseData = await res.json();
+
+    if (!res.ok) {
+      throw new Error(responseData.msg || 'Failed to fetch farmer products');
+    }
+
+    return responseData;
+  } catch (error) {
+    if (error.name === 'TypeError' && error.message.includes('fetch')) {
+      throw new Error(getErrorMessage());
+    }
+    throw error;
+  }
+}
+
 // Client-side logout function
 export function logout() {
   // Clear all user-related cookies by setting them to expire in the past
@@ -852,6 +945,148 @@ export async function deleteFarm(farmId) {
       throw new Error(responseData.msg || 'Failed to delete farm');
     }
     
+    return responseData;
+  } catch (error) {
+    if (error.name === 'TypeError' && error.message.includes('fetch')) {
+      throw new Error(getErrorMessage());
+    }
+    throw error;
+  }
+}
+
+// Crop API functions
+export async function getCropsByFarmer(farmerId) {
+  try {
+    const res = await fetch(`${CROP_API_BASE}/farmer/${farmerId}`, {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+    });
+
+    const responseData = await res.json();
+
+    if (!res.ok) {
+      throw new Error(responseData.message || 'Failed to fetch crops');
+    }
+
+    return responseData;
+  } catch (error) {
+    if (error.name === 'TypeError' && error.message.includes('fetch')) {
+      throw new Error(getErrorMessage());
+    }
+    throw error;
+  }
+}
+
+export async function createCrop(cropData) {
+  try {
+    const res = await fetch(`${CROP_API_BASE}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify(cropData),
+    });
+
+    const responseData = await res.json();
+
+    if (!res.ok) {
+      throw new Error(responseData.message || 'Failed to create crop');
+    }
+
+    return responseData;
+  } catch (error) {
+    if (error.name === 'TypeError' && error.message.includes('fetch')) {
+      throw new Error(getErrorMessage());
+    }
+    throw error;
+  }
+}
+
+export async function updateCrop(cropId, cropData) {
+  try {
+    const res = await fetch(`${CROP_API_BASE}/${cropId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify(cropData),
+    });
+
+    const responseData = await res.json();
+
+    if (!res.ok) {
+      throw new Error(responseData.message || 'Failed to update crop');
+    }
+
+    return responseData;
+  } catch (error) {
+    if (error.name === 'TypeError' && error.message.includes('fetch')) {
+      throw new Error(getErrorMessage());
+    }
+    throw error;
+  }
+}
+
+export async function deleteCrop(cropId) {
+  try {
+    const res = await fetch(`${CROP_API_BASE}/${cropId}`, {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+    });
+
+    const responseData = await res.json();
+
+    if (!res.ok) {
+      throw new Error(responseData.message || 'Failed to delete crop');
+    }
+
+    return responseData;
+  } catch (error) {
+    if (error.name === 'TypeError' && error.message.includes('fetch')) {
+      throw new Error(getErrorMessage());
+    }
+    throw error;
+  }
+}
+
+export async function updateCropStage(cropId, stage) {
+  try {
+    const res = await fetch(`${CROP_API_BASE}/${cropId}/stage`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ stage }),
+    });
+
+    const responseData = await res.json();
+
+    if (!res.ok) {
+      throw new Error(responseData.message || 'Failed to update crop stage');
+    }
+
+    return responseData;
+  } catch (error) {
+    if (error.name === 'TypeError' && error.message.includes('fetch')) {
+      throw new Error(getErrorMessage());
+    }
+    throw error;
+  }
+}
+
+export async function generateTimelineForCrop(cropId) {
+  try {
+    const res = await fetch(`${CROP_API_BASE}/${cropId}/timeline/generate`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+    });
+
+    const responseData = await res.json();
+
+    if (!res.ok) {
+      throw new Error(responseData.message || 'Failed to generate timeline for crop');
+    }
+
     return responseData;
   } catch (error) {
     if (error.name === 'TypeError' && error.message.includes('fetch')) {

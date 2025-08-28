@@ -4,6 +4,7 @@ import ConfirmDialog from '@/app/components/ConfirmDialog';
 import { useToast } from '@/app/components/ToastProvider';
 import { DollarSign, Edit, Eye, EyeOff, Package, Trash2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { getFarmerOwnProducts, updateProduct, deleteProduct, toggleProductAvailability } from '@/lib/api';
 
 export default function MyProductsPage() {
   const [products, setProducts] = useState([]);
@@ -52,15 +53,13 @@ export default function MyProductsPage() {
 
   const fetchProducts = async (farmerId) => {
     try {
-      const response = await fetch(`https://farmmate-production.up.railway.app/api/products/farmer/${farmerId}/own`, {
-        credentials: 'include'
-      });
-      const data = await response.json();
+      const data = await getFarmerOwnProducts(farmerId);
       if (data.success) {
         setProducts(data.data);
       }
     } catch (error) {
       console.error('Error fetching products:', error);
+      toast.error('Failed to fetch products');
     } finally {
       setLoading(false);
     }
@@ -82,19 +81,11 @@ export default function MyProductsPage() {
   const handleUpdateProduct = async (e) => {
     e.preventDefault();
     try {
-      const response = await fetch(`https://farmmate-production.up.railway.app/api/products/${selectedProduct._id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        credentials: 'include',
-        body: JSON.stringify({
-          ...editForm,
-          price: parseFloat(editForm.price),
-          stock: parseInt(editForm.stock)
-        })
+      const data = await updateProduct(selectedProduct._id, {
+        ...editForm,
+        price: parseFloat(editForm.price),
+        stock: parseInt(editForm.stock)
       });
-      const data = await response.json();
       if (data.success) {
         setProducts(products.map(p => p._id === selectedProduct._id ? data.data : p));
         setShowEditModal(false);
@@ -111,15 +102,7 @@ export default function MyProductsPage() {
 
   const handleToggleAvailability = async (productId, currentStatus) => {
     try {
-      const response = await fetch(`https://farmmate-production.up.railway.app/api/products/${productId}/availability`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        credentials: 'include',
-        body: JSON.stringify({ isAvailable: !currentStatus })
-      });
-      const data = await response.json();
+      const data = await toggleProductAvailability(productId);
       if (data.success) {
         setProducts(products.map(p => p._id === productId ? data.data : p));
         toast.success(data.msg || 'Status updated');
@@ -134,11 +117,7 @@ export default function MyProductsPage() {
 
   const handleDeleteProduct = async (productId) => {
     try {
-      const response = await fetch(`https://farmmate-production.up.railway.app/api/products/${productId}`, {
-        method: 'DELETE',
-        credentials: 'include'
-      });
-      const data = await response.json();
+      const data = await deleteProduct(productId);
       if (data.success) {
         setProducts(products.filter(p => p._id !== productId));
         toast.success('Product deleted');
