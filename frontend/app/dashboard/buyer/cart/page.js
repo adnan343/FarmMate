@@ -39,7 +39,7 @@ export default function CartPage() {
         return;
       }
 
-      const response = await fetch(`https://farmmate-production.up.railway.app/api/cart/${userId}`, {
+      const response = await fetch(`http://localhost:5000/api/cart/${userId}`, {
         credentials: 'include'
       });
       if (response.ok) {
@@ -68,7 +68,7 @@ export default function CartPage() {
 
       const userId = cookies.userId;
       
-      const response = await fetch(`https://farmmate-production.up.railway.app/api/cart/${userId}/items/${itemId}`, {
+      const response = await fetch(`http://localhost:5000/api/cart/${userId}/items/${itemId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -104,7 +104,7 @@ export default function CartPage() {
 
       const userId = cookies.userId;
       
-      const response = await fetch(`https://farmmate-production.up.railway.app/api/cart/${userId}/items/${itemId}`, {
+      const response = await fetch(`http://localhost:5000/api/cart/${userId}/items/${itemId}`, {
         method: 'DELETE',
         credentials: 'include'
       });
@@ -130,7 +130,7 @@ export default function CartPage() {
 
       const userId = cookies.userId;
       
-      const response = await fetch(`https://farmmate-production.up.railway.app/api/cart/${userId}/clear`, {
+      const response = await fetch(`http://localhost:5000/api/cart/${userId}/clear`, {
         method: 'DELETE',
         credentials: 'include'
       });

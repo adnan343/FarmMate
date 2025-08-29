@@ -156,7 +156,7 @@ export default function PlantingCalendarPage() {
   }, [selectedFarm, crops]);
 
   const fetchTimeline = useCallback(async (cropId) => {
-    const res = await fetch(`https://farmmate-production.up.railway.app/api/crops/${cropId}/timeline`, { credentials: 'include' });
+    const res = await fetch(`http://localhost:5000/api/crops/${cropId}/timeline`, { credentials: 'include' });
     const data = await res.json();
     if (data.success) {
       console.log('Timeline data:', data.data);
@@ -176,7 +176,7 @@ export default function PlantingCalendarPage() {
 
   const fetchFarms = async (farmerId) => {
     try {
-      const res = await fetch(`https://farmmate-production.up.railway.app/api/farms/farmer/${farmerId}`, { credentials: 'include' });
+      const res = await fetch(`http://localhost:5000/api/farms/farmer/${farmerId}`, { credentials: 'include' });
       const data = await res.json();
       if (data.success) {
         setFarms(data.data);
@@ -188,14 +188,14 @@ export default function PlantingCalendarPage() {
   };
 
   const fetchCrops = async (farmerId) => {
-    const res = await fetch(`https://farmmate-production.up.railway.app/api/crops/farmer/${farmerId}`, { credentials: 'include' });
+    const res = await fetch(`http://localhost:5000/api/crops/farmer/${farmerId}`, { credentials: 'include' });
     const data = await res.json();
     if (data.success) setCrops(data.data);
   };
 
   const toggleComplete = async (index) => {
     const current = timeline[index];
-    const res = await fetch(`https://farmmate-production.up.railway.app/api/crops/${selectedCropId}/timeline/${index}`, {
+    const res = await fetch(`http://localhost:5000/api/crops/${selectedCropId}/timeline/${index}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
@@ -206,7 +206,7 @@ export default function PlantingCalendarPage() {
   };
 
   const deleteItem = async (index) => {
-    const res = await fetch(`https://farmmate-production.up.railway.app/api/crops/${selectedCropId}/timeline/${index}`, {
+    const res = await fetch(`http://localhost:5000/api/crops/${selectedCropId}/timeline/${index}`, {
       method: 'DELETE',
       credentials: 'include'
     });

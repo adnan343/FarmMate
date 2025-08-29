@@ -34,7 +34,7 @@ export default function MyOrdersPage() {
         return;
       }
 
-      const response = await fetch(`https://farmmate-production.up.railway.app/api/orders/user/${userId}`, {
+      const response = await fetch(`http://localhost:5000/api/orders/user/${userId}`, {
         credentials: 'include'
       });
       if (response.ok) {

@@ -41,8 +41,8 @@ export default function FarmerOrdersPage() {
 
       // Fetch farmer's orders
       const url = selectedStatus === 'all' 
-        ? `https://farmmate-production.up.railway.app/api/orders/farmer/${userId}`
-        : `https://farmmate-production.up.railway.app/api/orders/farmer/${userId}?status=${selectedStatus}`;
+        ? `http://localhost:5000/api/orders/farmer/${userId}`
+        : `http://localhost:5000/api/orders/farmer/${userId}?status=${selectedStatus}`;
 
       const response = await fetch(url, {
         credentials: 'include'
@@ -68,7 +68,7 @@ export default function FarmerOrdersPage() {
   const updateOrderStatus = async (orderId, newStatus) => {
     try {
       setUpdatingStatus(orderId);
-      const response = await fetch(`https://farmmate-production.up.railway.app/api/orders/${orderId}/status`, {
+      const response = await fetch(`http://localhost:5000/api/orders/${orderId}/status`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json'

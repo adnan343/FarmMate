@@ -18,7 +18,7 @@ export default function PestDetectionPage() {
   useEffect(() => {
     const fetchHistory = async () => {
       try {
-        const res = await fetch("https://farmmate-production.up.railway.app/api/detections", {
+        const res = await fetch("http://localhost:5000/api/detections", {
           credentials: 'include'
         });
         if (!res.ok) {
@@ -80,7 +80,7 @@ export default function PestDetectionPage() {
 
     try {
       // Step 1: AI Analysis
-      const response = await fetch("https://farmmate-production.up.railway.app/api/pest-analyze", {
+      const response = await fetch("http://localhost:5000/api/pest-analyze", {
         method: "POST",
         body: formDataAI,
       });
@@ -111,7 +111,7 @@ export default function PestDetectionPage() {
       formDataDB.append("remedies", JSON.stringify(newAnalysis.remedies));
       formDataDB.append("treatment", newAnalysis.treatment);
 
-      const saveRes = await fetch("https://farmmate-production.up.railway.app/api/detections", {
+      const saveRes = await fetch("http://localhost:5000/api/detections", {
         method: "POST",
         body: formDataDB,
         credentials: 'include'
@@ -393,7 +393,7 @@ export default function PestDetectionPage() {
               {selectedDetection.image && (
                 <div className="mb-4">
                   <img
-                    src={`https://farmmate-production.up.railway.app${selectedDetection.image}`}
+                    src={`http://localhost:5000${selectedDetection.image}`}
                     alt={selectedDetection.name}
                     className="w-full h-64 object-cover rounded-lg border border-gray-200"
                   />

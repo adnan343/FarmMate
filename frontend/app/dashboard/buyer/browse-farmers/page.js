@@ -16,7 +16,7 @@ export default function BrowseFarmersPage() {
   const fetchFarmers = async () => {
     try {
       setLoading(true);
-      const response = await fetch('https://farmmate-production.up.railway.app/api/users/farmers/all');
+      const response = await fetch('http://localhost:5000/api/users/farmers/all');
       if (response.ok) {
         const result = await response.json();
         if (result.success) {

@@ -25,35 +25,9 @@ import userRoute from "./routes/user.route.js";
 dotenv.config();
 
 const app = express();
-
-// CORS configuration to allow multiple origins
-const allowedOrigins = [
-  'http://localhost:3000',
-  'http://localhost:3001',
-  'https://farmmate-frontend.vercel.app',
-  'https://farmmate-git-main-yourusername.vercel.app',
-  'https://farmmate.vercel.app',
-  'https://farmmate-production.vercel.app',
-  'https://farmmate-frontend-production.vercel.app',
-  // Add your actual frontend deployment URL here
-];
-
 app.use(cors({
-    origin: function (origin, callback) {
-        // Allow requests with no origin (like mobile apps or curl requests)
-        if (!origin) return callback(null, true);
-        
-        if (allowedOrigins.indexOf(origin) !== -1) {
-            callback(null, true);
-        } else {
-            // Log the blocked origin for debugging
-            console.log('Blocked origin:', origin);
-            callback(null, true); // Temporarily allow all origins for debugging
-        }
-    },
-    credentials: true, // Allow cookies
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin']
+    origin: 'http://localhost:3000', // frontend URL
+    credentials: true               // allow cookies if needed
 }));
 
 const PORT = process.env.PORT || 5000;
