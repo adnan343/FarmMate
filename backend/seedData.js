@@ -25,8 +25,8 @@ const dummyFarmers = [
   },
   {
     name: 'Sarah Johnson',
-    email: 'sarah.johnson@farm.com',
-    password: 'password123',
+    email: 'sarah@gmail.com',
+    password: '12345678',
     role: 'farmer',
     phone: '+1-555-0102',
     location: 'Madison, WI',
@@ -298,11 +298,17 @@ async function seedData() {
     }
     
     // Create farms
+    // NOTE: farmSchema requires `farmer`, so we must assign a farmer to each farm.
     const createdFarms = [];
     for (let i = 0; i < dummyFarms.length; i++) {
       const farmData = dummyFarms[i];
-      const farm = new Farm(farmData);
-      
+
+      const farmerIndex = i % createdFarmers.length; // distribute farms across farmers
+      const farm = new Farm({
+        ...farmData,
+        farmer: createdFarmers[farmerIndex]._id,
+      });
+
       const savedFarm = await farm.save();
       createdFarms.push(savedFarm);
       console.log(`Created farm: ${farmData.name}`);
@@ -322,7 +328,11 @@ async function seedData() {
       const product = new Product({
         ...productData,
         farmer: createdFarmers[farmerIndex]._id,
-        farm: createdFarms[farmerIndex]._id
+        farm: createdFarms[farmerIndex]._id,
+        // Seed products as marketplace-published so the UI marketplace can show them immediately
+        isInMarketplace: true,
+        status: 'in_marketplace',
+        isAvailable: true
       });
       
       await product.save();
@@ -345,7 +355,9 @@ async function seedData() {
     console.log('Created test buyer account: buyer@test.com / password123');
 
     // Create an admin account
-    const adminPassword = await bcrypt.hash('123456', 10);
+    // Admin login credentials requested by the project/team.
+    const adminPasswordPlain = '12345678';
+    const adminPassword = await bcrypt.hash(adminPasswordPlain, 10);
     const adminUser = new User({
       name: 'Admin User',
       email: 'admin@gmail.com',
@@ -356,7 +368,7 @@ async function seedData() {
       bio: 'Administrator account'
     });
     await adminUser.save();
-    console.log('Created admin account: admin@gmail.com / 123456');
+    console.log(`Created admin account: admin@gmail.com / ${adminPasswordPlain}`);
     
     console.log('Data seeding completed successfully!');
     console.log('\nTest Accounts:');

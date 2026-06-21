@@ -134,6 +134,12 @@ const ProductSchema = new mongoose.Schema({
     timestamps: true
 });
 
+// Performance indexes
+ProductSchema.index({ farmer: 1, status: 1 });
+ProductSchema.index({ isInMarketplace: 1, isAvailable: 1 });
+ProductSchema.index({ farmer: 1, isInMarketplace: 1 });
+ProductSchema.index({ category: 1, isAvailable: 1 });
+
 const Product = mongoose.model('Product', ProductSchema);
 
 export default Product; 

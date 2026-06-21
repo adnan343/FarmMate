@@ -11,7 +11,7 @@ export const askQuestion = async (req, res) => {
     await qa.save();
     res.status(201).json({ success: true, data: qa });
   } catch (err) {
-    res.status(500).json({ success: false, msg: 'Error asking question', error: err.message });
+    res.status(500).json({ success: false, msg: 'Internal Server Error' });
   }
 };
 
@@ -26,7 +26,7 @@ export const getFarmerQuestions = async (req, res) => {
       .sort({ createdAt: -1 });
     res.json({ success: true, data: questions });
   } catch (err) {
-    res.status(500).json({ success: false, msg: 'Error fetching questions', error: err.message });
+    res.status(500).json({ success: false, msg: 'Internal Server Error' });
   }
 };
 
@@ -42,7 +42,7 @@ export const getAllQuestions = async (req, res) => {
       .sort({ createdAt: -1 });
     res.json({ success: true, data: questions });
   } catch (err) {
-    res.status(500).json({ success: false, msg: 'Error fetching questions', error: err.message });
+    res.status(500).json({ success: false, msg: 'Internal Server Error' });
   }
 };
 
@@ -64,7 +64,7 @@ export const answerQuestion = async (req, res) => {
     await qa.save();
     res.json({ success: true, data: qa });
   } catch (err) {
-    res.status(500).json({ success: false, msg: 'Error answering question', error: err.message });
+    res.status(500).json({ success: false, msg: 'Internal Server Error' });
   }
 };
 
@@ -83,7 +83,7 @@ export const editQuestion = async (req, res) => {
     await qa.save();
     res.json({ success: true, data: qa });
   } catch (err) {
-    res.status(500).json({ success: false, msg: 'Error editing question', error: err.message });
+    res.status(500).json({ success: false, msg: 'Internal Server Error' });
   }
 };
 
@@ -102,7 +102,7 @@ export const deleteQuestion = async (req, res) => {
     await QA.findByIdAndDelete(req.params.id);
     res.json({ success: true, msg: 'Question deleted successfully' });
   } catch (err) {
-    res.status(500).json({ success: false, msg: 'Error deleting question', error: err.message });
+    res.status(500).json({ success: false, msg: 'Internal Server Error' });
   }
 };
 
@@ -121,7 +121,7 @@ export const editAnswer = async (req, res) => {
     await qa.save();
     res.json({ success: true, data: qa });
   } catch (err) {
-    res.status(500).json({ success: false, msg: 'Error editing answer', error: err.message });
+    res.status(500).json({ success: false, msg: 'Internal Server Error' });
   }
 };
 
@@ -142,7 +142,7 @@ export const deleteAnswer = async (req, res) => {
     await qa.save();
     res.json({ success: true, msg: 'Answer deleted successfully', data: qa });
   } catch (err) {
-    res.status(500).json({ success: false, msg: 'Error deleting answer', error: err.message });
+    res.status(500).json({ success: false, msg: 'Internal Server Error' });
   }
 };
 
@@ -157,6 +157,6 @@ export const getQuestion = async (req, res) => {
     }
     res.json({ success: true, data: qa });
   } catch (err) {
-    res.status(500).json({ success: false, msg: 'Error fetching question', error: err.message });
+    res.status(500).json({ success: false, msg: 'Internal Server Error' });
   }
 }; 

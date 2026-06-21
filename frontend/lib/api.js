@@ -1,5 +1,24 @@
 import { getApiUrl, getErrorMessage } from './apiConfig';
 
+// Request deduplication cache — prevents duplicate concurrent API calls
+const pendingRequests = new Map();
+
+async function dedupedFetch(url, options = {}) {
+  const cacheKey = `${options.method || 'GET'}:${url}:${JSON.stringify(options.body || '')}`;
+  
+  // Return in-flight promise if one exists for the same request
+  if (pendingRequests.has(cacheKey)) {
+    return pendingRequests.get(cacheKey);
+  }
+  
+  const promise = fetch(url, options).finally(() => {
+    pendingRequests.delete(cacheKey);
+  });
+  
+  pendingRequests.set(cacheKey, promise);
+  return promise;
+}
+
 const API_BASE = getApiUrl('/users');
 const FARM_API_BASE = getApiUrl('/farms');
 const PRODUCT_API_BASE = getApiUrl('/products');
@@ -7,18 +26,64 @@ const CROP_API_BASE = getApiUrl('/crops');
 const ANALYTICS_API_BASE = getApiUrl('/analytics');
 const TASKS_API_BASE = getApiUrl('/tasks');
 
+const parseJsonResponse = async (res) => {
+  const contentType = res.headers.get?.('content-type') || '';
+  if (contentType.includes('application/json')) {
+    try {
+      return await res.json();
+    } catch (error) {
+      return null;
+    }
+  }
+
+  const text = await res.text();
+  if (!text) return null;
+
+  try {
+    return JSON.parse(text);
+  } catch {
+    return { message: text };
+  }
+};
+
+const getResponseError = async (res, body, defaultMessage) => {
+  // If backend returned JSON
+  if (body) {
+    if (typeof body === 'string') return body;
+    if (body.msg || body.message) return body.msg || body.message;
+    if (body.error) return body.error;
+  }
+
+  // If backend returned HTML/text, try to extract a useful snippet
+  try {
+    const text = await res.text();
+    if (text) {
+      // Keep it short for UI
+      const trimmed = text.replace(/\s+/g, ' ').trim();
+      return trimmed.slice(0, 300);
+    }
+  } catch {
+    // ignore
+  }
+
+  return defaultMessage || `${res.status} ${res.statusText}`;
+};
+
+
 export async function registerUser(data) {
   try {
-    const res = await fetch(`${API_BASE}/register`, {
+    const res = await dedupedFetch(`${API_BASE}/register`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
       body: JSON.stringify(data),
     });
     
-    const responseData = await res.json();
+    const responseData = await parseJsonResponse(res);
     
     if (!res.ok) {
-      throw new Error(responseData.msg || 'Registration failed');
+      const detail = await getResponseError(res, responseData, 'Registration failed');
+      throw new Error(`Registration failed (${res.status} ${res.statusText}): ${detail}`);
     }
     
     return responseData;
@@ -32,17 +97,21 @@ export async function registerUser(data) {
 
 export async function loginUser(data) {
   try {
-    const res = await fetch(`${API_BASE}/login`, {
+    const res = await dedupedFetch(`${API_BASE}/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
       body: JSON.stringify(data),
     });
 
-    const responseData = await res.json();
+    const responseData = await parseJsonResponse(res);
 
     if (!res.ok) {
-      throw new Error(responseData.msg || 'Login failed');
+      // Prefer backend response body so login UI can show the real error (e.g., invalid password, user not found)
+      throw new Error(await getResponseError(res, responseData, 'Login failed'));
+
     }
+
 
     return responseData;
   } catch (error) {
@@ -55,12 +124,19 @@ export async function loginUser(data) {
 
 export async function getUserById(id) {
   try {
-    const res = await fetch(`${API_BASE}/${id}`, {
+    const res = await dedupedFetch(`${API_BASE}/${id}`, {
       method: 'GET',
       headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
     });
-    if (!res.ok) throw new Error('User not found');
-    return res.json();
+
+    const responseData = await parseJsonResponse(res);
+
+    if (!res.ok) {
+      throw new Error(await getResponseError(res, responseData, 'User not found')); 
+    }
+
+    return responseData;
   } catch (error) {
     if (error.name === 'TypeError' && error.message.includes('fetch')) {
       throw new Error(getErrorMessage());
@@ -72,10 +148,12 @@ export async function getUserById(id) {
 // Fetch all users
 export async function fetchAllUsers() {
   try {
-    const res = await fetch(`${API_BASE}`);
+    const res = await dedupedFetch(`${API_BASE}`, {
+      credentials: 'include'
+    });
     if (!res.ok) throw new Error('Failed to fetch users');
-    const data = await res.json();
-    return data.data;
+    const data = await parseJsonResponse(res);
+    return data?.data;
   } catch (error) {
     if (error.name === 'TypeError' && error.message.includes('fetch')) {
       throw new Error(getErrorMessage());
@@ -87,15 +165,16 @@ export async function fetchAllUsers() {
 // Farm API functions
 export async function getFarmByOwner(ownerId) {
   try {
-    const res = await fetch(`${FARM_API_BASE}/owner/${ownerId}`, {
+    const res = await dedupedFetch(`${FARM_API_BASE}/owner/${ownerId}`, {
       method: 'GET',
       headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
     });
 
-    const responseData = await res.json();
+    const responseData = await parseJsonResponse(res);
 
     if (!res.ok) {
-      throw new Error(responseData.message || 'Failed to fetch farm data');
+      throw new Error(responseData?.message || 'Failed to fetch farm data');
     }
 
     return responseData;
@@ -109,15 +188,16 @@ export async function getFarmByOwner(ownerId) {
 
 export async function getFarmById(farmId) {
   try {
-    const res = await fetch(`${FARM_API_BASE}/${farmId}`, {
+    const res = await dedupedFetch(`${FARM_API_BASE}/${farmId}`, {
       method: 'GET',
       headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
     });
 
-    const responseData = await res.json();
+    const responseData = await parseJsonResponse(res);
 
     if (!res.ok) {
-      throw new Error(responseData.message || 'Failed to fetch farm data');
+      throw new Error(responseData?.message || 'Failed to fetch farm data');
     }
 
     return responseData;
@@ -132,16 +212,17 @@ export async function getFarmById(farmId) {
 // Update user role (admin function)
 export async function updateUserRole(userId, newRole) {
   try {
-    const res = await fetch(`${API_BASE}/${userId}`, {
+    const res = await dedupedFetch(`${API_BASE}/${userId}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
       body: JSON.stringify({ role: newRole }),
     });
 
-    const responseData = await res.json();
+    const responseData = await parseJsonResponse(res);
 
     if (!res.ok) {
-      throw new Error(responseData.msg || 'Failed to update user role');
+      throw new Error(responseData?.msg || 'Failed to update user role');
     }
 
     return responseData;
@@ -158,15 +239,16 @@ export async function updateUserRole(userId, newRole) {
 // Delete user (admin function)
 export async function deleteUserById(userId) {
   try {
-    const res = await fetch(`${API_BASE}/${userId}`, {
+    const res = await dedupedFetch(`${API_BASE}/${userId}`, {
       method: 'DELETE',
       headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
     });
 
-    const responseData = await res.json();
+    const responseData = await parseJsonResponse(res);
 
     if (!res.ok) {
-      throw new Error(responseData.msg || 'Failed to delete user');
+      throw new Error(responseData?.msg || 'Failed to delete user');
     }
 
     return responseData;
@@ -186,15 +268,16 @@ export async function getMarketplaceProducts(filters = {}) {
       if (value) queryParams.append(key, value);
     });
 
-    const res = await fetch(`${PRODUCT_API_BASE}/marketplace?${queryParams}`, {
+    const res = await dedupedFetch(`${PRODUCT_API_BASE}/marketplace?${queryParams}`, {
       method: 'GET',
       headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
     });
 
-    const responseData = await res.json();
+    const responseData = await parseJsonResponse(res);
 
     if (!res.ok) {
-      throw new Error(responseData.msg || 'Failed to fetch marketplace products');
+      throw new Error(responseData?.msg || 'Failed to fetch marketplace products');
     }
 
     return responseData;
@@ -208,15 +291,16 @@ export async function getMarketplaceProducts(filters = {}) {
 
 export async function getHarvestedProductsByFarmer(farmerId) {
   try {
-    const res = await fetch(`${PRODUCT_API_BASE}/farmer/${farmerId}/harvested`, {
+    const res = await dedupedFetch(`${PRODUCT_API_BASE}/farmer/${farmerId}/harvested`, {
       method: 'GET',
       headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
     });
 
-    const responseData = await res.json();
+    const responseData = await parseJsonResponse(res);
 
     if (!res.ok) {
-      throw new Error(responseData.msg || 'Failed to fetch harvested products');
+      throw new Error(responseData?.msg || 'Failed to fetch harvested products');
     }
 
     return responseData;
@@ -230,15 +314,16 @@ export async function getHarvestedProductsByFarmer(farmerId) {
 
 export async function getMarketplaceProductsByFarmer(farmerId) {
   try {
-    const res = await fetch(`${PRODUCT_API_BASE}/farmer/${farmerId}/marketplace`, {
+    const res = await dedupedFetch(`${PRODUCT_API_BASE}/farmer/${farmerId}/marketplace`, {
       method: 'GET',
       headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
     });
 
-    const responseData = await res.json();
+    const responseData = await parseJsonResponse(res);
 
     if (!res.ok) {
-      throw new Error(responseData.msg || 'Failed to fetch marketplace products');
+      throw new Error(responseData?.msg || 'Failed to fetch marketplace products');
     }
 
     return responseData;
@@ -252,16 +337,17 @@ export async function getMarketplaceProductsByFarmer(farmerId) {
 
 export async function createHarvestedProduct(productData) {
   try {
-    const res = await fetch(`${PRODUCT_API_BASE}/harvested`, {
+    const res = await dedupedFetch(`${PRODUCT_API_BASE}/harvested`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
       body: JSON.stringify(productData),
     });
 
-    const responseData = await res.json();
+    const responseData = await parseJsonResponse(res);
 
     if (!res.ok) {
-      throw new Error(responseData.msg || 'Failed to create harvested product');
+      throw new Error(responseData?.msg || 'Failed to create harvested product');
     }
 
     return responseData;
@@ -275,16 +361,17 @@ export async function createHarvestedProduct(productData) {
 
 export async function addToMarketplace(productId, marketplaceData) {
   try {
-    const res = await fetch(`${PRODUCT_API_BASE}/${productId}/marketplace`, {
+    const res = await dedupedFetch(`${PRODUCT_API_BASE}/${productId}/marketplace`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
       body: JSON.stringify(marketplaceData),
     });
 
-    const responseData = await res.json();
+    const responseData = await parseJsonResponse(res);
 
     if (!res.ok) {
-      throw new Error(responseData.msg || 'Failed to add product to marketplace');
+      throw new Error(responseData?.msg || 'Failed to add product to marketplace');
     }
 
     return responseData;
@@ -298,15 +385,16 @@ export async function addToMarketplace(productId, marketplaceData) {
 
 export async function removeFromMarketplace(productId) {
   try {
-    const res = await fetch(`${PRODUCT_API_BASE}/${productId}/remove-marketplace`, {
+    const res = await dedupedFetch(`${PRODUCT_API_BASE}/${productId}/remove-marketplace`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
     });
 
-    const responseData = await res.json();
+    const responseData = await parseJsonResponse(res);
 
     if (!res.ok) {
-      throw new Error(responseData.msg || 'Failed to remove product from marketplace');
+      throw new Error(responseData?.msg || 'Failed to remove product from marketplace');
     }
 
     return responseData;
@@ -320,15 +408,16 @@ export async function removeFromMarketplace(productId) {
 
 export async function getProductById(productId) {
   try {
-    const res = await fetch(`${PRODUCT_API_BASE}/${productId}`, {
+    const res = await dedupedFetch(`${PRODUCT_API_BASE}/${productId}`, {
       method: 'GET',
       headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
     });
 
-    const responseData = await res.json();
+    const responseData = await parseJsonResponse(res);
 
     if (!res.ok) {
-      throw new Error(responseData.msg || 'Failed to fetch product');
+      throw new Error(responseData?.msg || 'Failed to fetch product');
     }
 
     return responseData;
@@ -341,7 +430,17 @@ export async function getProductById(productId) {
 }
 
 // Client-side logout function
-export function logout() {
+export async function logout() {
+  try {
+    await dedupedFetch(`${API_BASE}/logout`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+    });
+  } catch (error) {
+    console.error('Server-side logout failed:', error);
+  }
+
   // Clear all user-related cookies by setting them to expire in the past
   document.cookie = 'userId=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
   document.cookie = 'role=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
@@ -358,16 +457,16 @@ export function logout() {
 // Crop API functions
 export async function getCropSuggestions(farmId) {
   try {
-    const res = await fetch(`${CROP_API_BASE}/suggest/${farmId}`, {
+    const res = await dedupedFetch(`${CROP_API_BASE}/suggest/${farmId}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
     });
 
-    const responseData = await res.json();
+    const responseData = await parseJsonResponse(res);
 
     if (!res.ok) {
-      throw new Error(responseData.message || 'Failed to get crop suggestions');
+      throw new Error(responseData?.message || 'Failed to get crop suggestions');
     }
 
     return responseData;
@@ -381,16 +480,16 @@ export async function getCropSuggestions(farmId) {
 
 export async function getStoredCropSuggestions(farmId) {
   try {
-    const res = await fetch(`${CROP_API_BASE}/suggestions/${farmId}`, {
+    const res = await dedupedFetch(`${CROP_API_BASE}/suggestions/${farmId}`, {
       method: 'GET',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
     });
 
-    const responseData = await res.json();
+    const responseData = await parseJsonResponse(res);
 
     if (!res.ok) {
-      throw new Error(responseData.message || 'Failed to get stored crop suggestions');
+      throw new Error(responseData?.message || 'Failed to get stored crop suggestions');
     }
 
     return responseData;
@@ -404,16 +503,16 @@ export async function getStoredCropSuggestions(farmId) {
 
 export async function refreshCropSuggestions(farmId) {
   try {
-    const res = await fetch(`${CROP_API_BASE}/suggestions/${farmId}/refresh`, {
+    const res = await dedupedFetch(`${CROP_API_BASE}/suggestions/${farmId}/refresh`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
     });
 
-    const responseData = await res.json();
+    const responseData = await parseJsonResponse(res);
 
     if (!res.ok) {
-      throw new Error(responseData.message || 'Failed to refresh crop suggestions');
+      throw new Error(responseData?.message || 'Failed to refresh crop suggestions');
     }
 
     return responseData;
@@ -428,14 +527,14 @@ export async function refreshCropSuggestions(farmId) {
 // Analytics API
 export async function getYieldAnalytics(farmerId) {
   try {
-    const res = await fetch(`${ANALYTICS_API_BASE}/yield/${farmerId}`, {
+    const res = await dedupedFetch(`${ANALYTICS_API_BASE}/yield/${farmerId}`, {
       method: 'GET',
       headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
     });
-    const responseData = await res.json();
+    const responseData = await parseJsonResponse(res);
     if (!res.ok) {
-      throw new Error(responseData.message || 'Failed to fetch yield analytics');
+      throw new Error(responseData?.message || 'Failed to fetch yield analytics');
     }
     return responseData;
   } catch (error) {
@@ -448,83 +547,83 @@ export async function getYieldAnalytics(farmerId) {
 
 // Timeline and suggestion acceptance APIs
 export async function generateCropTimeline(farmId, payload) {
-  const res = await fetch(`${CROP_API_BASE}/timeline/${farmId}/generate`, {
+  const res = await dedupedFetch(`${CROP_API_BASE}/timeline/${farmId}/generate`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     credentials: 'include',
     body: JSON.stringify(payload),
   });
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.message || 'Failed to generate timeline');
+  const data = await parseJsonResponse(res);
+  if (!res.ok) throw new Error(data?.message || 'Failed to generate timeline');
   return data;
 }
 
 export async function acceptSuggestionAndCreateCrop(farmId, payload) {
-  const res = await fetch(`${CROP_API_BASE}/suggestions/${farmId}/accept`, {
+  const res = await dedupedFetch(`${CROP_API_BASE}/suggestions/${farmId}/accept`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     credentials: 'include',
     body: JSON.stringify(payload),
   });
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.message || 'Failed to create crop');
+  const data = await parseJsonResponse(res);
+  if (!res.ok) throw new Error(data?.message || 'Failed to create crop');
   return data;
 }
 
 export async function getCropTimeline(cropId) {
-  const res = await fetch(`${CROP_API_BASE}/${cropId}/timeline`, {
+  const res = await dedupedFetch(`${CROP_API_BASE}/${cropId}/timeline`, {
     method: 'GET',
     headers: { 'Content-Type': 'application/json' },
     credentials: 'include',
   });
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.message || 'Failed to fetch timeline');
+  const data = await parseJsonResponse(res);
+  if (!res.ok) throw new Error(data?.message || 'Failed to fetch timeline');
   return data;
 }
 
 export async function addTimelineItem(cropId, item) {
-  const res = await fetch(`${CROP_API_BASE}/${cropId}/timeline`, {
+  const res = await dedupedFetch(`${CROP_API_BASE}/${cropId}/timeline`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     credentials: 'include',
     body: JSON.stringify(item),
   });
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.message || 'Failed to add timeline item');
+  const data = await parseJsonResponse(res);
+  if (!res.ok) throw new Error(data?.message || 'Failed to add timeline item');
   return data;
 }
 
 export async function updateTimelineItem(cropId, index, updates) {
-  const res = await fetch(`${CROP_API_BASE}/${cropId}/timeline/${index}`, {
+  const res = await dedupedFetch(`${CROP_API_BASE}/${cropId}/timeline/${index}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     credentials: 'include',
     body: JSON.stringify(updates),
   });
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.message || 'Failed to update timeline item');
+  const data = await parseJsonResponse(res);
+  if (!res.ok) throw new Error(data?.message || 'Failed to update timeline item');
   return data;
 }
 
 export async function deleteTimelineItem(cropId, index) {
-  const res = await fetch(`${CROP_API_BASE}/${cropId}/timeline/${index}`, {
+  const res = await dedupedFetch(`${CROP_API_BASE}/${cropId}/timeline/${index}`, {
     method: 'DELETE',
     headers: { 'Content-Type': 'application/json' },
     credentials: 'include',
   });
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.message || 'Failed to delete timeline item');
+  const data = await parseJsonResponse(res);
+  if (!res.ok) throw new Error(data?.message || 'Failed to delete timeline item');
   return data;
 }
 
 export async function generateTimelineForCrop(cropId) {
-  const res = await fetch(`${CROP_API_BASE}/${cropId}/timeline/generate`, {
+  const res = await dedupedFetch(`${CROP_API_BASE}/${cropId}/timeline/generate`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     credentials: 'include',
   });
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.message || 'Failed to generate timeline for crop');
+  const data = await parseJsonResponse(res);
+  if (!res.ok) throw new Error(data?.message || 'Failed to generate timeline for crop');
   return data;
 }
 
@@ -542,82 +641,105 @@ export function clearAuthCookies() {
 
 // Task API functions
 export async function createTask(task) {
-  const res = await fetch(`${TASKS_API_BASE}`, {
+  const res = await dedupedFetch(`${TASKS_API_BASE}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     credentials: 'include',
     body: JSON.stringify(task),
   });
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.message || 'Failed to create task');
-  return data.data;
+  const data = await parseJsonResponse(res);
+  if (!res.ok) throw new Error(data?.message || 'Failed to create task');
+  return data?.data;
 }
 
 export async function getTasksByFarmer(farmerId) {
-  const res = await fetch(`${TASKS_API_BASE}/farmer/${farmerId}`, {
+  const res = await dedupedFetch(`${TASKS_API_BASE}/farmer/${farmerId}`, {
     method: 'GET',
     headers: { 'Content-Type': 'application/json' },
     credentials: 'include',
   });
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.message || 'Failed to fetch tasks');
-  return data.data;
+  const data = await parseJsonResponse(res);
+  if (!res.ok) throw new Error(data?.message || 'Failed to fetch tasks');
+  return data?.data;
 }
 
 export async function getTaskSummary(farmerId) {
-  const res = await fetch(`${TASKS_API_BASE}/summary/${farmerId}`, {
+  const res = await dedupedFetch(`${TASKS_API_BASE}/summary/${farmerId}`, {
     method: 'GET',
     headers: { 'Content-Type': 'application/json' },
     credentials: 'include',
   });
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.message || 'Failed to fetch task summary');
-  return data.data;
+  const data = await parseJsonResponse(res);
+  if (!res.ok) throw new Error(data?.message || 'Failed to fetch task summary');
+  return data?.data;
 }
 
 export async function getUpcomingTasks(farmerId) {
-  const res = await fetch(`${TASKS_API_BASE}/upcoming/${farmerId}`, {
+  const res = await dedupedFetch(`${TASKS_API_BASE}/upcoming/${farmerId}`, {
     method: 'GET',
     headers: { 'Content-Type': 'application/json' },
     credentials: 'include',
   });
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.message || 'Failed to fetch upcoming tasks');
-  return data.data;
+  const data = await parseJsonResponse(res);
+  if (!res.ok) throw new Error(data?.message || 'Failed to fetch upcoming tasks');
+  return data?.data;
 }
 
 export async function getCategoryProgressByFarmer(farmerId) {
-  const res = await fetch(`${TASKS_API_BASE}/categories/${farmerId}`, {
+  const res = await dedupedFetch(`${TASKS_API_BASE}/categories/${farmerId}`, {
     method: 'GET',
     headers: { 'Content-Type': 'application/json' },
     credentials: 'include',
   });
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.message || 'Failed to fetch category progress');
-  return data.data;
+  const data = await parseJsonResponse(res);
+  if (!res.ok) throw new Error(data?.message || 'Failed to fetch category progress');
+  return data?.data;
 }
 
 export async function updateTaskById(id, updates) {
-  const res = await fetch(`${TASKS_API_BASE}/${id}`, {
+  const res = await dedupedFetch(`${TASKS_API_BASE}/${id}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     credentials: 'include',
     body: JSON.stringify(updates),
   });
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.message || 'Failed to update task');
-  return data.data;
+  const data = await parseJsonResponse(res);
+  if (!res.ok) throw new Error(data?.message || 'Failed to update task');
+  return data?.data;
 }
 
 export async function deleteTaskById(id) {
-  const res = await fetch(`${TASKS_API_BASE}/${id}`, {
+  const res = await dedupedFetch(`${TASKS_API_BASE}/${id}`, {
     method: 'DELETE',
     headers: { 'Content-Type': 'application/json' },
     credentials: 'include',
   });
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.message || 'Failed to delete task');
+  const data = await parseJsonResponse(res);
+  if (!res.ok) throw new Error(data?.message || 'Failed to delete task');
   return data;
+}
+
+// AI-Prioritized Task API functions
+export async function getAIPrioritizedTasks(farmerId) {
+  const res = await dedupedFetch(`${TASKS_API_BASE}/ai-prioritized/${farmerId}`, {
+    method: 'GET',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+  });
+  const data = await parseJsonResponse(res);
+  if (!res.ok) throw new Error(data?.message || 'Failed to fetch AI-prioritized tasks');
+  return data?.data;
+}
+
+export async function getGroupedTasks(farmerId) {
+  const res = await dedupedFetch(`${TASKS_API_BASE}/grouped/${farmerId}`, {
+    method: 'GET',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+  });
+  const data = await parseJsonResponse(res);
+  if (!res.ok) throw new Error(data?.message || 'Failed to fetch grouped tasks');
+  return data?.data;
 }
 
 // Farm Condition API functions
@@ -632,17 +754,17 @@ function getAuthHeaders() {
 
 export async function createFarmCondition(reportData) {
   try {
-    const res = await fetch(FARM_CONDITION_API, {
+    const res = await dedupedFetch(FARM_CONDITION_API, {
       method: 'POST',
       headers: getAuthHeaders(),
       credentials: 'include',
       body: JSON.stringify(reportData),
     });
     
-    const responseData = await res.json();
+    const responseData = await parseJsonResponse(res);
     
     if (!res.ok) {
-      throw new Error(responseData.msg || 'Failed to create farm condition report');
+      throw new Error(responseData?.msg || 'Failed to create farm condition report');
     }
     
     return responseData;
@@ -657,13 +779,13 @@ export async function createFarmCondition(reportData) {
 export async function getFarmerFarmConditions(params = {}) {
   try {
     const queryParams = new URLSearchParams(params);
-    const res = await fetch(`${FARM_CONDITION_API}?${queryParams}`, {
+    const res = await dedupedFetch(`${FARM_CONDITION_API}?${queryParams}`, {
       headers: getAuthHeaders(),
       credentials: 'include',
     });
     if (!res.ok) throw new Error('Failed to fetch farm conditions');
-    const data = await res.json();
-    return data.data;
+    const data = await parseJsonResponse(res);
+    return data?.data;
   } catch (error) {
     if (error.name === 'TypeError' && error.message.includes('fetch')) {
       throw new Error(getErrorMessage());
@@ -674,13 +796,13 @@ export async function getFarmerFarmConditions(params = {}) {
 
 export async function getFarmCondition(reportId) {
   try {
-    const res = await fetch(`${FARM_CONDITION_API}/${reportId}`, {
+    const res = await dedupedFetch(`${FARM_CONDITION_API}/${reportId}`, {
       headers: getAuthHeaders(),
       credentials: 'include',
     });
     if (!res.ok) throw new Error('Failed to fetch farm condition');
-    const data = await res.json();
-    return data.data;
+    const data = await parseJsonResponse(res);
+    return data?.data;
   } catch (error) {
     if (error.name === 'TypeError' && error.message.includes('fetch')) {
       throw new Error(getErrorMessage());
@@ -691,17 +813,17 @@ export async function getFarmCondition(reportId) {
 
 export async function updateFarmConditionStatus(reportId, status) {
   try {
-    const res = await fetch(`${FARM_CONDITION_API}/${reportId}/status`, {
+    const res = await dedupedFetch(`${FARM_CONDITION_API}/${reportId}/status`, {
       method: 'PATCH',
       headers: getAuthHeaders(),
       credentials: 'include',
       body: JSON.stringify({ status }),
     });
     
-    const responseData = await res.json();
+    const responseData = await parseJsonResponse(res);
     
     if (!res.ok) {
-      throw new Error(responseData.msg || 'Failed to update farm condition status');
+      throw new Error(responseData?.msg || 'Failed to update farm condition status');
     }
     
     return responseData;
@@ -715,16 +837,16 @@ export async function updateFarmConditionStatus(reportId, status) {
 
 export async function deleteFarmCondition(reportId) {
   try {
-    const res = await fetch(`${FARM_CONDITION_API}/${reportId}`, {
+    const res = await dedupedFetch(`${FARM_CONDITION_API}/${reportId}`, {
       method: 'DELETE',
       headers: getAuthHeaders(),
       credentials: 'include',
     });
     
-    const responseData = await res.json();
+    const responseData = await parseJsonResponse(res);
     
     if (!res.ok) {
-      throw new Error(responseData.msg || 'Failed to delete farm condition');
+      throw new Error(responseData?.msg || 'Failed to delete farm condition');
     }
     
     return responseData;
@@ -738,13 +860,13 @@ export async function deleteFarmCondition(reportId) {
 
 export async function getFarmConditionStats() {
   try {
-    const res = await fetch(`${FARM_CONDITION_API}/stats`, {
+    const res = await dedupedFetch(`${FARM_CONDITION_API}/stats`, {
       headers: getAuthHeaders(),
       credentials: 'include',
     });
     if (!res.ok) throw new Error('Failed to fetch farm condition stats');
-    const data = await res.json();
-    return data.data;
+    const data = await parseJsonResponse(res);
+    return data?.data;
   } catch (error) {
     if (error.name === 'TypeError' && error.message.includes('fetch')) {
       throw new Error(getErrorMessage());
@@ -758,13 +880,13 @@ const FARM_API = getApiUrl('/farms');
 
 export async function getFarmsByFarmer(farmerId) {
   try {
-    const res = await fetch(`${FARM_API}/farmer/${farmerId}`, {
+    const res = await dedupedFetch(`${FARM_API}/farmer/${farmerId}`, {
       headers: getAuthHeaders(),
       credentials: 'include',
     });
     if (!res.ok) throw new Error('Failed to fetch farms');
-    const data = await res.json();
-    return data.data;
+    const data = await parseJsonResponse(res);
+    return data?.data;
   } catch (error) {
     if (error.name === 'TypeError' && error.message.includes('fetch')) {
       throw new Error(getErrorMessage());
@@ -775,13 +897,13 @@ export async function getFarmsByFarmer(farmerId) {
 
 export async function getAllFarms() {
   try {
-    const res = await fetch(FARM_API, {
+    const res = await dedupedFetch(FARM_API, {
       headers: getAuthHeaders(),
       credentials: 'include',
     });
     if (!res.ok) throw new Error('Failed to fetch farms');
-    const data = await res.json();
-    return data.data;
+    const data = await parseJsonResponse(res);
+    return data?.data;
   } catch (error) {
     if (error.name === 'TypeError' && error.message.includes('fetch')) {
       throw new Error(getErrorMessage());
@@ -792,17 +914,17 @@ export async function getAllFarms() {
 
 export async function createFarm(farmData) {
   try {
-    const res = await fetch(FARM_API, {
+    const res = await dedupedFetch(FARM_API, {
       method: 'POST',
       headers: getAuthHeaders(),
       credentials: 'include',
       body: JSON.stringify(farmData),
     });
     
-    const responseData = await res.json();
+    const responseData = await parseJsonResponse(res);
     
     if (!res.ok) {
-      throw new Error(responseData.msg || 'Failed to create farm');
+      throw new Error(responseData?.msg || 'Failed to create farm');
     }
     
     return responseData;
@@ -816,17 +938,17 @@ export async function createFarm(farmData) {
 
 export async function updateFarm(farmId, farmData) {
   try {
-    const res = await fetch(`${FARM_API}/${farmId}`, {
+    const res = await dedupedFetch(`${FARM_API}/${farmId}`, {
       method: 'PUT',
       headers: getAuthHeaders(),
       credentials: 'include',
       body: JSON.stringify(farmData),
     });
     
-    const responseData = await res.json();
+    const responseData = await parseJsonResponse(res);
     
     if (!res.ok) {
-      throw new Error(responseData.msg || 'Failed to update farm');
+      throw new Error(responseData?.msg || 'Failed to update farm');
     }
     
     return responseData;
@@ -840,16 +962,16 @@ export async function updateFarm(farmId, farmData) {
 
 export async function deleteFarm(farmId) {
   try {
-    const res = await fetch(`${FARM_API}/${farmId}`, {
+    const res = await dedupedFetch(`${FARM_API}/${farmId}`, {
       method: 'DELETE',
       headers: getAuthHeaders(),
       credentials: 'include',
     });
     
-    const responseData = await res.json();
+    const responseData = await parseJsonResponse(res);
     
     if (!res.ok) {
-      throw new Error(responseData.msg || 'Failed to delete farm');
+      throw new Error(responseData?.msg || 'Failed to delete farm');
     }
     
     return responseData;
@@ -861,5 +983,57 @@ export async function deleteFarm(farmId) {
   }
 }
 
+// Admin Analytics API
+export async function getAdminAnalytics() {
+  try {
+    const res = await dedupedFetch(getApiUrl('/analytics/admin'), {
+      headers: getAuthHeaders(),
+      credentials: 'include',
+    });
+    const data = await parseJsonResponse(res);
+    if (!res.ok) throw new Error(data?.message || 'Failed to fetch admin analytics');
+    return data;
+  } catch (error) {
+    if (error.name === 'TypeError' && error.message.includes('fetch')) {
+      throw new Error(getErrorMessage());
+    }
+    throw error;
+  }
+}
 
+// Admin Audit Logs API
+export async function getAuditLogs(params = {}) {
+  try {
+    const queryParams = new URLSearchParams(params);
+    const res = await dedupedFetch(getApiUrl(`/audit-logs?${queryParams}`), {
+      headers: getAuthHeaders(),
+      credentials: 'include',
+    });
+    const data = await parseJsonResponse(res);
+    if (!res.ok) throw new Error(data?.msg || 'Failed to fetch audit logs');
+    return data;
+  } catch (error) {
+    if (error.name === 'TypeError' && error.message.includes('fetch')) {
+      throw new Error(getErrorMessage());
+    }
+    throw error;
+  }
+}
 
+// Admin Orders API
+export async function getAllOrdersAdmin() {
+  try {
+    const res = await dedupedFetch(getApiUrl('/orders'), {
+      headers: getAuthHeaders(),
+      credentials: 'include',
+    });
+    const data = await parseJsonResponse(res);
+    if (!res.ok) throw new Error(data?.msg || 'Failed to fetch orders');
+    return data;
+  } catch (error) {
+    if (error.name === 'TypeError' && error.message.includes('fetch')) {
+      throw new Error(getErrorMessage());
+    }
+    throw error;
+  }
+}

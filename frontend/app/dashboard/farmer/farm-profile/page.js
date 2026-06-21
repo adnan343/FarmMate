@@ -314,15 +314,15 @@ export default function FarmProfilePage() {
 
   const getStageColor = (stage) => {
     const colors = {
-      planning: 'bg-gray-100 text-gray-800',
-      planting: 'bg-blue-100 text-blue-800',
-      growing: 'bg-green-100 text-green-800',
+      planning: 'bg-white/[0.04] text-gray-800',
+      planting: 'bg-sky-500/10 text-sky-300',
+      growing: 'bg-emerald-500/10 text-emerald-300',
       flowering: 'bg-purple-100 text-purple-800',
-      fruiting: 'bg-orange-100 text-orange-800',
-      harvest: 'bg-yellow-100 text-yellow-800',
-      harvested: 'bg-red-100 text-red-800'
+      fruiting: 'bg-orange-500/10 text-orange-300',
+      harvest: 'bg-amber-500/10 text-amber-300',
+      harvested: 'bg-red-500/50/10 text-red-300'
     };
-    return colors[stage] || 'bg-gray-100 text-gray-800';
+    return colors[stage] || 'bg-white/[0.04] text-gray-800';
   };
 
   if (loading) {
@@ -332,11 +332,11 @@ export default function FarmProfilePage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold text-gray-900">Farm Profile</h1>
+        <h1 className="text-3xl font-bold text-white">Farm Profile</h1>
         <div className="flex gap-2">
           <button 
             onClick={() => setShowAddFarmModal(true)}
-            className="bg-teal-600 text-white px-4 py-2 rounded-lg hover:bg-teal-700 transition-colors flex items-center gap-2"
+            className="bg-gradient-to-r from-emerald-600 to-emerald-500 text-white px-4 py-2 rounded-lg hover:brightness-110 transition-colors flex items-center gap-2"
           >
             <Plus className="w-4 h-4" />
             Add Farm
@@ -346,24 +346,24 @@ export default function FarmProfilePage() {
 
       {/* Farm Selection */}
       {farms.length > 0 && (
-        <div className="bg-white rounded-xl shadow-sm p-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">Select Farm</h2>
+        <div className="bg-surface-800/80 rounded-2xl shadow-sm border border-white/[0.06] p-6">
+          <h2 className="text-xl font-semibold text-white mb-4">Select Farm</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {farms.map((farm) => (
               <div 
                 key={farm._id}
                 className={`p-4 border rounded-lg cursor-pointer transition-colors ${
                   selectedFarm?._id === farm._id 
-                    ? 'border-teal-500 bg-teal-50' 
-                    : 'border-gray-200 hover:border-teal-300'
+                    ? 'border-teal-500 bg-teal-500/10' 
+                    : 'border-white/[0.06] hover:border-teal-300'
                 }`}
                 onClick={() => setSelectedFarm(farm)}
               >
                 <div className="flex justify-between items-start">
                   <div>
-                    <h3 className="font-semibold text-gray-900">{farm.name}</h3>
-                    <p className="text-sm text-gray-500">{farm.location}</p>
-                    <p className="text-sm text-gray-500">{farm.landSize}</p>
+                    <h3 className="font-semibold text-white">{farm.name}</h3>
+                    <p className="text-sm text-surface-500">{farm.location}</p>
+                    <p className="text-sm text-surface-500">{farm.landSize}</p>
                   </div>
                   <div className="flex gap-1">
                     <button
@@ -381,7 +381,7 @@ export default function FarmProfilePage() {
                         });
                         setShowEditFarmModal(true);
                       }}
-                      className="p-1 text-gray-500 hover:text-teal-600"
+                      className="p-1 text-surface-500 hover:text-teal-400"
                     >
                       <Edit className="w-4 h-4" />
                     </button>
@@ -390,7 +390,7 @@ export default function FarmProfilePage() {
                         e.stopPropagation();
                         handleDeleteFarm(farm._id);
                       }}
-                      className="p-1 text-gray-500 hover:text-red-600"
+                      className="p-1 text-surface-500 hover:text-red-400"
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
@@ -405,63 +405,63 @@ export default function FarmProfilePage() {
       {selectedFarm && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Farm Information */}
-          <div className="bg-white rounded-xl shadow-sm p-6">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">Farm Information</h2>
+          <div className="bg-surface-800/80 rounded-2xl shadow-sm border border-white/[0.06] p-6">
+            <h2 className="text-xl font-semibold text-white mb-4">Farm Information</h2>
             <div className="space-y-4">
               <div className="flex items-center gap-3">
-                <MapPin className="w-5 h-5 text-gray-500" />
+                <MapPin className="w-5 h-5 text-surface-500" />
                 <div>
-                  <p className="text-sm text-gray-500">Location</p>
-                  <p className="text-gray-900">{selectedFarm.location}</p>
+                  <p className="text-sm text-surface-500">Location</p>
+                  <p className="text-white">{selectedFarm.location}</p>
                 </div>
               </div>
               <div className="flex items-center gap-3">
-                <Calendar className="w-5 h-5 text-gray-500" />
+                <Calendar className="w-5 h-5 text-surface-500" />
                 <div>
-                  <p className="text-sm text-gray-500">Established</p>
-                  <p className="text-gray-900">{selectedFarm.establishedYear || 'N/A'}</p>
+                  <p className="text-sm text-surface-500">Established</p>
+                  <p className="text-white">{selectedFarm.establishedYear || 'N/A'}</p>
                 </div>
               </div>
               <div>
-                <p className="text-sm text-gray-500 mb-1">Farm Size</p>
-                <p className="text-gray-900">{selectedFarm.landSize}</p>
+                <p className="text-sm text-surface-500 mb-1">Farm Size</p>
+                <p className="text-white">{selectedFarm.landSize}</p>
               </div>
               <div>
-                <p className="text-sm text-gray-500 mb-1">Available Area</p>
-                <p className="text-gray-900">{getAvailableAcresForSelectedFarm() === null ? '—' : `${getAvailableAcresForSelectedFarm().toFixed(2)} acres`}</p>
+                <p className="text-sm text-surface-500 mb-1">Available Area</p>
+                <p className="text-white">{getAvailableAcresForSelectedFarm() === null ? '—' : `${getAvailableAcresForSelectedFarm().toFixed(2)} acres`}</p>
               </div>
               <div>
-                <p className="text-sm text-gray-500 mb-1">Soil Type</p>
-                <p className="text-gray-900">{selectedFarm.soilType}</p>
+                <p className="text-sm text-surface-500 mb-1">Soil Type</p>
+                <p className="text-white">{selectedFarm.soilType}</p>
               </div>
               {selectedFarm.description && (
                 <div>
-                  <p className="text-sm text-gray-500 mb-1">Description</p>
-                  <p className="text-gray-900">{selectedFarm.description}</p>
+                  <p className="text-sm text-surface-500 mb-1">Description</p>
+                  <p className="text-white">{selectedFarm.description}</p>
                 </div>
               )}
             </div>
           </div>
 
           {/* Current Crops */}
-          <div className="bg-white rounded-xl shadow-sm p-6">
+          <div className="bg-surface-800/80 rounded-2xl shadow-sm border border-white/[0.06] p-6">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-semibold text-gray-900">Current Crops</h2>
+              <h2 className="text-xl font-semibold text-white">Current Crops</h2>
               <button
                 onClick={() => setShowAddCropModal(true)}
-                className="bg-teal-600 text-white px-3 py-1 rounded-lg hover:bg-teal-700 transition-colors text-sm flex items-center gap-1"
+                className="bg-gradient-to-r from-emerald-600 to-emerald-500 text-white px-3 py-1 rounded-lg hover:brightness-110 transition-colors text-sm flex items-center gap-1"
               >
                 <Plus className="w-3 h-3" />
                 Add Crop
               </button>
             </div>
             <div className="space-y-3">
-              {crops.filter(crop => crop.farm._id === selectedFarm._id).map((crop) => (
-                <div key={crop._id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+              {crops.filter(crop => crop.farm?._id === selectedFarm._id).map((crop) => (
+                <div key={crop._id} className="flex items-center justify-between p-3 bg-white/[0.02] rounded-lg">
                   <div className="flex-1">
-                    <p className="font-medium text-gray-900">{crop.name} - {crop.variety}</p>
-                    <p className="text-sm text-gray-500">{crop.area} {crop.unit}</p>
-                    <p className="text-xs text-gray-400">
+                    <p className="font-medium text-white">{crop.name} - {crop.variety}</p>
+                    <p className="text-sm text-surface-500">{crop.area} {crop.unit}</p>
+                    <p className="text-xs text-surface-500">
                       Planted: {new Date(crop.plantingDate).toLocaleDateString()}
                     </p>
                   </div>
@@ -472,7 +472,7 @@ export default function FarmProfilePage() {
                     <button
                       onClick={() => handleGenerateTimelineForCrop(crop._id)}
                       disabled={generatingTimeline.has(crop._id)}
-                      className="text-xs px-2 py-1 rounded border hover:bg-white bg-white disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
+                      className="text-xs px-2 py-1 rounded border border-white/[0.06] hover:bg-white/[0.06] bg-white/[0.04] disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
                       title="Generate timeline for this crop"
                     >
                       {generatingTimeline.has(crop._id) ? (
@@ -485,7 +485,7 @@ export default function FarmProfilePage() {
                       )}
                     </button>
                                          {crop.stage === 'harvested' && (
-                       <span className="text-xs text-green-600 font-medium">
+                       <span className="text-xs text-emerald-400 font-medium">
                          Product created!
                        </span>
                      )}
@@ -505,8 +505,8 @@ export default function FarmProfilePage() {
                   </div>
                 </div>
               ))}
-              {crops.filter(crop => crop.farm._id === selectedFarm._id).length === 0 && (
-                <p className="text-gray-500 text-center py-4">No crops added yet</p>
+              {crops.filter(crop => crop.farm?._id === selectedFarm._id).length === 0 && (
+                <p className="text-surface-500 text-center py-4">No crops added yet</p>
               )}
             </div>
           </div>
@@ -516,12 +516,12 @@ export default function FarmProfilePage() {
       {/* Add Farm Modal */}
       {showAddFarmModal && (
         <div className="fixed inset-0 z-50">
-          <div className="absolute inset-0 bg-black bg-opacity-50" onClick={() => setShowAddFarmModal(false)} />
-          <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-white rounded-lg p-6 w-full max-w-md">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowAddFarmModal(false)} />
+          <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-surface-800/80 rounded-2xl border border-white/[0.06] p-6 w-full max-w-md">
             <h2 className="text-xl font-semibold mb-4">Add New Farm</h2>
             <form onSubmit={handleAddFarm} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Farm Name</label>
+                <label className="block text-sm font-medium text-surface-300 mb-1">Farm Name</label>
                 <input
                   type="text"
                   value={farmForm.name}
@@ -531,7 +531,7 @@ export default function FarmProfilePage() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Location</label>
+                <label className="block text-sm font-medium text-surface-300 mb-1">Location</label>
                 <input
                   type="text"
                   value={farmForm.location}
@@ -541,7 +541,7 @@ export default function FarmProfilePage() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Land Size</label>
+                <label className="block text-sm font-medium text-surface-300 mb-1">Land Size</label>
                 <input
                   type="text"
                   value={farmForm.landSize}
@@ -552,7 +552,7 @@ export default function FarmProfilePage() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Soil Type</label>
+                <label className="block text-sm font-medium text-surface-300 mb-1">Soil Type</label>
                 <input
                   type="text"
                   value={farmForm.soilType}
@@ -562,7 +562,7 @@ export default function FarmProfilePage() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Map View URL</label>
+                <label className="block text-sm font-medium text-surface-300 mb-1">Map View URL</label>
                 <input
                   type="url"
                   value={farmForm.mapView}
@@ -572,7 +572,7 @@ export default function FarmProfilePage() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                <label className="block text-sm font-medium text-surface-300 mb-1">Description</label>
                 <textarea
                   value={farmForm.description}
                   onChange={(e) => setFarmForm({...farmForm, description: e.target.value})}
@@ -581,7 +581,7 @@ export default function FarmProfilePage() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Established Year</label>
+                <label className="block text-sm font-medium text-surface-300 mb-1">Established Year</label>
                 <input
                   type="number"
                   value={farmForm.establishedYear}
@@ -592,14 +592,14 @@ export default function FarmProfilePage() {
               <div className="flex gap-2">
                 <button
                   type="submit"
-                  className="flex-1 bg-teal-600 text-white py-2 rounded-lg hover:bg-teal-700"
+                  className="flex-1 bg-gradient-to-r from-emerald-600 to-emerald-500 text-white py-2 rounded-lg hover:brightness-110"
                 >
                   Add Farm
                 </button>
                 <button
                   type="button"
                   onClick={() => setShowAddFarmModal(false)}
-                  className="flex-1 bg-gray-300 text-gray-700 py-2 rounded-lg hover:bg-gray-400"
+                  className="flex-1 bg-gray-300 text-surface-300 py-2 rounded-lg hover:bg-gray-400"
                 >
                   Cancel
                 </button>
@@ -612,12 +612,12 @@ export default function FarmProfilePage() {
       {/* Edit Farm Modal */}
       {showEditFarmModal && selectedFarm && (
         <div className="fixed inset-0 z-50">
-          <div className="absolute inset-0 bg-black bg-opacity-50" onClick={() => setShowEditFarmModal(false)} />
-          <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-white rounded-lg p-6 w-full max-w-md">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowEditFarmModal(false)} />
+          <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-surface-800/80 rounded-2xl border border-white/[0.06] p-6 w-full max-w-md">
             <h2 className="text-xl font-semibold mb-4">Edit Farm</h2>
             <form onSubmit={handleEditFarm} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Farm Name</label>
+                <label className="block text-sm font-medium text-surface-300 mb-1">Farm Name</label>
                 <input
                   type="text"
                   value={farmForm.name}
@@ -627,7 +627,7 @@ export default function FarmProfilePage() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Location</label>
+                <label className="block text-sm font-medium text-surface-300 mb-1">Location</label>
                 <input
                   type="text"
                   value={farmForm.location}
@@ -637,7 +637,7 @@ export default function FarmProfilePage() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Land Size</label>
+                <label className="block text-sm font-medium text-surface-300 mb-1">Land Size</label>
                 <input
                   type="text"
                   value={farmForm.landSize}
@@ -647,7 +647,7 @@ export default function FarmProfilePage() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Soil Type</label>
+                <label className="block text-sm font-medium text-surface-300 mb-1">Soil Type</label>
                 <input
                   type="text"
                   value={farmForm.soilType}
@@ -657,7 +657,7 @@ export default function FarmProfilePage() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Map View URL</label>
+                <label className="block text-sm font-medium text-surface-300 mb-1">Map View URL</label>
                 <input
                   type="url"
                   value={farmForm.mapView}
@@ -667,7 +667,7 @@ export default function FarmProfilePage() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                <label className="block text-sm font-medium text-surface-300 mb-1">Description</label>
                 <textarea
                   value={farmForm.description}
                   onChange={(e) => setFarmForm({...farmForm, description: e.target.value})}
@@ -676,7 +676,7 @@ export default function FarmProfilePage() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Established Year</label>
+                <label className="block text-sm font-medium text-surface-300 mb-1">Established Year</label>
                 <input
                   type="number"
                   value={farmForm.establishedYear}
@@ -687,14 +687,14 @@ export default function FarmProfilePage() {
               <div className="flex gap-2">
                 <button
                   type="submit"
-                  className="flex-1 bg-teal-600 text-white py-2 rounded-lg hover:bg-teal-700"
+                  className="flex-1 bg-gradient-to-r from-emerald-600 to-emerald-500 text-white py-2 rounded-lg hover:brightness-110"
                 >
                   Update Farm
                 </button>
                 <button
                   type="button"
                   onClick={() => setShowEditFarmModal(false)}
-                  className="flex-1 bg-gray-300 text-gray-700 py-2 rounded-lg hover:bg-gray-400"
+                  className="flex-1 bg-gray-300 text-surface-300 py-2 rounded-lg hover:bg-gray-400"
                 >
                   Cancel
                 </button>
@@ -707,13 +707,13 @@ export default function FarmProfilePage() {
       {/* Add Crop Modal */}
       {showAddCropModal && (
         <div className="fixed inset-0 z-50">
-          <div className="absolute inset-0 bg-black bg-opacity-50" onClick={() => setShowAddCropModal(false)} />
-          <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-white rounded-lg p-6 w-full max-w-md">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowAddCropModal(false)} />
+          <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-surface-800/80 rounded-2xl border border-white/[0.06] p-6 w-full max-w-md">
             <h2 className="text-xl font-semibold mb-4">Add New Crop</h2>
-            <p className="text-sm text-blue-600 mb-4">✨ AI will automatically predict yield using Gemini API</p>
+            <p className="text-sm text-sky-400 mb-4">✨ AI will automatically predict yield using Gemini API</p>
             <form onSubmit={handleAddCrop} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Crop Name</label>
+                <label className="block text-sm font-medium text-surface-300 mb-1">Crop Name</label>
                 <input
                   type="text"
                   value={cropForm.name}
@@ -723,7 +723,7 @@ export default function FarmProfilePage() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Variety</label>
+                <label className="block text-sm font-medium text-surface-300 mb-1">Variety</label>
                 <input
                   type="text"
                   value={cropForm.variety}
@@ -734,7 +734,7 @@ export default function FarmProfilePage() {
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Area</label>
+                  <label className="block text-sm font-medium text-surface-300 mb-1">Area</label>
                   <input
                     type="number"
                     value={cropForm.area}
@@ -742,18 +742,18 @@ export default function FarmProfilePage() {
                     className="w-full border rounded-lg px-3 py-2"
                     required
                   />
-                  <p className="text-xs text-gray-500 mt-1">
+                  <p className="text-xs text-surface-500 mt-1">
                     Available: {getAvailableAcresForSelectedFarm() === null ? '—' : `${getAvailableAcresForSelectedFarm().toFixed(2)} acres`}
                   </p>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Unit</label>
-                  <input type="text" value="acres" readOnly className="w-full border rounded-lg px-3 py-2 bg-gray-100 text-gray-700" />
+                  <label className="block text-sm font-medium text-surface-300 mb-1">Unit</label>
+                  <input type="text" value="acres" readOnly className="w-full border rounded-lg px-3 py-2 bg-white/[0.04] text-surface-300" />
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Planting Date</label>
+                  <label className="block text-sm font-medium text-surface-300 mb-1">Planting Date</label>
                   <input
                     type="date"
                     value={cropForm.plantingDate}
@@ -763,7 +763,7 @@ export default function FarmProfilePage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Expected Harvest Date</label>
+                  <label className="block text-sm font-medium text-surface-300 mb-1">Expected Harvest Date</label>
                   <input
                     type="date"
                     value={cropForm.expectedHarvestDate}
@@ -782,7 +782,7 @@ export default function FarmProfilePage() {
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Expected Yield</label>
+                  <label className="block text-sm font-medium text-surface-300 mb-1">Expected Yield</label>
                   <input
                     type="number"
                     value={cropForm.estimatedYield}
@@ -791,7 +791,7 @@ export default function FarmProfilePage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Yield Unit</label>
+                  <label className="block text-sm font-medium text-surface-300 mb-1">Yield Unit</label>
                   <select
                     value={cropForm.yieldUnit}
                     onChange={(e) => setCropForm({...cropForm, yieldUnit: e.target.value})}
@@ -805,7 +805,7 @@ export default function FarmProfilePage() {
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Notes</label>
+                <label className="block text-sm font-medium text-surface-300 mb-1">Notes</label>
                 <textarea
                   value={cropForm.notes}
                   onChange={(e) => setCropForm({...cropForm, notes: e.target.value})}
@@ -817,7 +817,7 @@ export default function FarmProfilePage() {
                 <button
                   type="submit"
                   disabled={addingCrop}
-                  className="flex-1 bg-teal-600 text-white py-2 rounded-lg hover:bg-teal-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  className="flex-1 bg-gradient-to-r from-emerald-600 to-emerald-500 text-white py-2 rounded-lg hover:brightness-110 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
                   {addingCrop ? (
                     <>
@@ -832,7 +832,7 @@ export default function FarmProfilePage() {
                   type="button"
                   onClick={() => setShowAddCropModal(false)}
                   disabled={addingCrop}
-                  className="flex-1 bg-gray-300 text-gray-700 py-2 rounded-lg hover:bg-gray-400 disabled:opacity-50"
+                  className="flex-1 bg-gray-300 text-surface-300 py-2 rounded-lg hover:bg-gray-400 disabled:opacity-50"
                 >
                   Cancel
                 </button>
@@ -845,14 +845,14 @@ export default function FarmProfilePage() {
       {/* Area Error Modal */}
       {showAreaErrorModal && (
         <div className="fixed inset-0 z-50">
-          <div className="absolute inset-0 bg-black bg-opacity-50" onClick={() => setShowAreaErrorModal(false)} />
-          <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-white rounded-lg p-6 w-full max-w-md">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowAreaErrorModal(false)} />
+          <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-surface-800/80 rounded-2xl border border-white/[0.06] p-6 w-full max-w-md">
             <h2 className="text-xl font-semibold mb-2 text-red-700">Area exceeds available land</h2>
-            <p className="text-gray-700 mb-4">{areaErrorMessage}</p>
+            <p className="text-surface-300 mb-4">{areaErrorMessage}</p>
             <div className="flex gap-2">
               <button
                 onClick={() => setShowAreaErrorModal(false)}
-                className="flex-1 bg-teal-600 text-white py-2 rounded-lg hover:bg-teal-700"
+                className="flex-1 bg-gradient-to-r from-emerald-600 to-emerald-500 text-white py-2 rounded-lg hover:brightness-110"
               >
                 OK
               </button>
@@ -864,8 +864,8 @@ export default function FarmProfilePage() {
       {/* Harvest Modal */}
       {showHarvestModal && selectedCrop && (
         <div className="fixed inset-0 z-50">
-          <div className="absolute inset-0 bg-black bg-opacity-50" onClick={() => setShowHarvestModal(false)} />
-          <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-white rounded-lg p-6 w-full max-w-md">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowHarvestModal(false)} />
+          <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-surface-800/80 rounded-2xl border border-white/[0.06] p-6 w-full max-w-md">
             <h2 className="text-xl font-semibold mb-4">Mark Harvest for {selectedCrop.name} - {selectedCrop.variety}</h2>
             <form
               onSubmit={async (e) => {
@@ -893,7 +893,7 @@ export default function FarmProfilePage() {
               className="space-y-4"
             >
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Actual Yield</label>
+                <label className="block text-sm font-medium text-surface-300 mb-1">Actual Yield</label>
                 <input
                   type="number"
                   min="0"
@@ -904,10 +904,10 @@ export default function FarmProfilePage() {
                   className="w-full border rounded-lg px-3 py-2"
                   required
                 />
-                <p className="text-xs text-gray-500 mt-1">Unit: {selectedCrop.yieldUnit}</p>
+                <p className="text-xs text-surface-500 mt-1">Unit: {selectedCrop.yieldUnit}</p>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Total Cost</label>
+                <label className="block text-sm font-medium text-surface-300 mb-1">Total Cost</label>
                 <input
                   type="number"
                   min="0"
@@ -918,11 +918,11 @@ export default function FarmProfilePage() {
                   className="w-full border rounded-lg px-3 py-2"
                   required
                 />
-                <p className="text-xs text-gray-500 mt-1">Includes seeds, inputs, labor, etc.</p>
+                <p className="text-xs text-surface-500 mt-1">Includes seeds, inputs, labor, etc.</p>
               </div>
               <div className="flex gap-2">
-                <button type="submit" className="flex-1 bg-teal-600 text-white py-2 rounded-lg hover:bg-teal-700">Confirm Harvest</button>
-                <button type="button" onClick={() => { setShowHarvestModal(false); setSelectedCrop(null); }} className="flex-1 bg-gray-300 text-gray-700 py-2 rounded-lg hover:bg-gray-400">Cancel</button>
+                <button type="submit" className="flex-1 bg-gradient-to-r from-emerald-600 to-emerald-500 text-white py-2 rounded-lg hover:brightness-110">Confirm Harvest</button>
+                <button type="button" onClick={() => { setShowHarvestModal(false); setSelectedCrop(null); }} className="flex-1 bg-gray-300 text-surface-300 py-2 rounded-lg hover:bg-gray-400">Cancel</button>
               </div>
             </form>
           </div>

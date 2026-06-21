@@ -1,5 +1,6 @@
 'use client';
 
+import { getApiUrl } from '@/lib/apiConfig';
 import { ArrowLeft, CheckCircle, CreditCard, Lock, Truck } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -57,7 +58,7 @@ export default function CheckoutPage() {
         return;
       }
 
-      const response = await fetch(`http://localhost:5000/api/cart/${userId}`, {
+      const response = await fetch(getApiUrl(`/cart/${userId}`), {
         credentials: 'include'
       });
       if (response.ok) {
@@ -66,7 +67,7 @@ export default function CheckoutPage() {
           setCart(result.data);
           
           // Pre-fill shipping info with user data
-          const userResponse = await fetch(`http://localhost:5000/api/users/${userId}`, {
+          const userResponse = await fetch(getApiUrl(`/users/${userId}`), {
             credentials: 'include'
           });
           if (userResponse.ok) {
@@ -151,7 +152,7 @@ export default function CheckoutPage() {
         notes: `Order placed by ${shippingInfo.firstName} ${shippingInfo.lastName}`
       };
 
-      const response = await fetch(`http://localhost:5000/api/orders/${userId}/checkout`, {
+      const response = await fetch(getApiUrl(`/orders/${userId}/checkout`), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -192,23 +193,23 @@ export default function CheckoutPage() {
   if (orderComplete) {
     return (
       <div className="max-w-2xl mx-auto text-center py-12">
-        <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Order Confirmed!</h1>
-        <p className="text-gray-600 mb-6">Thank you for your purchase. Your order has been successfully placed.</p>
+        <CheckCircle className="w-16 h-16 text-emerald-400 mx-auto mb-4" />
+        <h1 className="text-3xl font-bold text-white mb-2">Order Confirmed!</h1>
+        <p className="text-surface-400 mb-6">Thank you for your purchase. Your order has been successfully placed.</p>
         
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Order Details</h2>
+        <div className="bg-surface-800/80 rounded-2xl shadow-sm border border-white/[0.06] p-6 mb-6">
+          <h2 className="text-lg font-semibold text-white mb-4">Order Details</h2>
           <div className="space-y-2 text-sm">
             <div className="flex justify-between">
-              <span className="text-gray-600">Order ID:</span>
+              <span className="text-surface-400">Order ID:</span>
               <span className="font-medium">{orderId}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-gray-600">Total Amount:</span>
+              <span className="text-surface-400">Total Amount:</span>
               <span className="font-medium">${(cart.total * 1.08).toFixed(2)}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-gray-600">Items:</span>
+              <span className="text-surface-400">Items:</span>
               <span className="font-medium">{cart.itemCount}</span>
             </div>
           </div>
@@ -217,14 +218,14 @@ export default function CheckoutPage() {
         <div className="space-y-3">
           <Link
             href="/dashboard/buyer/marketplace"
-            className="inline-flex items-center gap-2 px-6 py-3 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors"
+            className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-emerald-600 to-emerald-500 text-white rounded-lg hover:brightness-110 transition-colors"
           >
             Continue Shopping
           </Link>
           <div>
             <Link
               href="/dashboard/buyer"
-              className="text-sm text-teal-600 hover:text-teal-700 transition-colors"
+              className="text-sm text-teal-400 hover:text-teal-700 transition-colors"
             >
               Back to Dashboard
             </Link>
@@ -241,105 +242,105 @@ export default function CheckoutPage() {
         <div className="flex items-center gap-4 mb-4">
           <Link 
             href="/dashboard/buyer/cart" 
-            className="flex items-center gap-2 text-gray-600 hover:text-teal-600 transition-colors"
+            className="flex items-center gap-2 text-surface-400 hover:text-teal-400 transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
             Back to Cart
           </Link>
         </div>
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Checkout</h1>
-        <p className="text-gray-600">Complete your purchase</p>
+        <h1 className="text-3xl font-bold text-white mb-2">Checkout</h1>
+        <p className="text-surface-400">Complete your purchase</p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Checkout Form */}
         <div className="lg:col-span-2 space-y-8">
           {/* Shipping Information */}
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+          <div className="bg-surface-800/80 rounded-2xl shadow-sm border border-white/[0.06] p-6">
             <div className="flex items-center gap-2 mb-6">
-              <Truck className="w-5 h-5 text-teal-600" />
-              <h2 className="text-lg font-semibold text-gray-900">Shipping Information</h2>
+              <Truck className="w-5 h-5 text-teal-400" />
+              <h2 className="text-lg font-semibold text-white">Shipping Information</h2>
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">First Name</label>
+                <label className="block text-sm font-medium text-surface-300 mb-1">First Name</label>
                 <input
                   type="text"
                   value={shippingInfo.firstName}
                   onChange={(e) => handleShippingChange('firstName', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+                  className="w-full px-3 py-2 border border-white/10 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Last Name</label>
+                <label className="block text-sm font-medium text-surface-300 mb-1">Last Name</label>
                 <input
                   type="text"
                   value={shippingInfo.lastName}
                   onChange={(e) => handleShippingChange('lastName', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+                  className="w-full px-3 py-2 border border-white/10 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                <label className="block text-sm font-medium text-surface-300 mb-1">Email</label>
                 <input
                   type="email"
                   value={shippingInfo.email}
                   onChange={(e) => handleShippingChange('email', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+                  className="w-full px-3 py-2 border border-white/10 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
+                <label className="block text-sm font-medium text-surface-300 mb-1">Phone</label>
                 <input
                   type="tel"
                   value={shippingInfo.phone}
                   onChange={(e) => handleShippingChange('phone', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+                  className="w-full px-3 py-2 border border-white/10 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
                 />
               </div>
               <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-1">Address</label>
+                <label className="block text-sm font-medium text-surface-300 mb-1">Address</label>
                 <input
                   type="text"
                   value={shippingInfo.address}
                   onChange={(e) => handleShippingChange('address', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+                  className="w-full px-3 py-2 border border-white/10 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">City</label>
+                <label className="block text-sm font-medium text-surface-300 mb-1">City</label>
                 <input
                   type="text"
                   value={shippingInfo.city}
                   onChange={(e) => handleShippingChange('city', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+                  className="w-full px-3 py-2 border border-white/10 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">State</label>
+                <label className="block text-sm font-medium text-surface-300 mb-1">State</label>
                 <input
                   type="text"
                   value={shippingInfo.state}
                   onChange={(e) => handleShippingChange('state', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+                  className="w-full px-3 py-2 border border-white/10 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">ZIP Code</label>
+                <label className="block text-sm font-medium text-surface-300 mb-1">ZIP Code</label>
                 <input
                   type="text"
                   value={shippingInfo.zipCode}
                   onChange={(e) => handleShippingChange('zipCode', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+                  className="w-full px-3 py-2 border border-white/10 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Country</label>
+                <label className="block text-sm font-medium text-surface-300 mb-1">Country</label>
                 <select
                   value={shippingInfo.country}
                   onChange={(e) => handleShippingChange('country', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+                  className="w-full px-3 py-2 border border-white/10 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
                 >
                   <option value="Bangladesh">Bangladesh</option>
                   <option value="India">India</option>
@@ -350,51 +351,51 @@ export default function CheckoutPage() {
           </div>
 
           {/* Payment Information */}
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+          <div className="bg-surface-800/80 rounded-2xl shadow-sm border border-white/[0.06] p-6">
             <div className="flex items-center gap-2 mb-6">
-              <CreditCard className="w-5 h-5 text-teal-600" />
-              <h2 className="text-lg font-semibold text-gray-900">Payment Information</h2>
-              <Lock className="w-4 h-4 text-gray-400" />
+              <CreditCard className="w-5 h-5 text-teal-400" />
+              <h2 className="text-lg font-semibold text-white">Payment Information</h2>
+              <Lock className="w-4 h-4 text-surface-500" />
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-1">Card Number</label>
+                <label className="block text-sm font-medium text-surface-300 mb-1">Card Number</label>
                 <input
                   type="text"
                   value={paymentInfo.cardNumber}
                   onChange={(e) => handlePaymentChange('cardNumber', e.target.value)}
                   placeholder="1234 5678 9012 3456"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+                  className="w-full px-3 py-2 border border-white/10 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
                 />
               </div>
               <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-1">Cardholder Name</label>
+                <label className="block text-sm font-medium text-surface-300 mb-1">Cardholder Name</label>
                 <input
                   type="text"
                   value={paymentInfo.cardName}
                   onChange={(e) => handlePaymentChange('cardName', e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+                  className="w-full px-3 py-2 border border-white/10 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Expiry Date</label>
+                <label className="block text-sm font-medium text-surface-300 mb-1">Expiry Date</label>
                 <input
                   type="text"
                   value={paymentInfo.expiryDate}
                   onChange={(e) => handlePaymentChange('expiryDate', e.target.value)}
                   placeholder="MM/YY"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+                  className="w-full px-3 py-2 border border-white/10 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">CVV</label>
+                <label className="block text-sm font-medium text-surface-300 mb-1">CVV</label>
                 <input
                   type="text"
                   value={paymentInfo.cvv}
                   onChange={(e) => handlePaymentChange('cvv', e.target.value)}
                   placeholder="123"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+                  className="w-full px-3 py-2 border border-white/10 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
                 />
               </div>
             </div>
@@ -403,14 +404,14 @@ export default function CheckoutPage() {
 
         {/* Order Summary */}
         <div className="lg:col-span-1">
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 sticky top-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Order Summary</h2>
+          <div className="bg-surface-800/80 rounded-2xl shadow-sm border border-white/[0.06] p-6 sticky top-6">
+            <h2 className="text-lg font-semibold text-white mb-4">Order Summary</h2>
             
             {/* Cart Items */}
             <div className="space-y-3 mb-6">
               {cart.items.map((item) => (
                 <div key={item._id} className="flex items-center gap-3">
-                  <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                  <div className="w-12 h-12 bg-white/[0.04] rounded-lg flex items-center justify-center flex-shrink-0">
                     {item.image ? (
                       <img 
                         src={item.image} 
@@ -422,10 +423,10 @@ export default function CheckoutPage() {
                     )}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-900 truncate">{item.name}</p>
-                    <p className="text-xs text-gray-600">Qty: {item.quantity}</p>
+                    <p className="text-sm font-medium text-white truncate">{item.name}</p>
+                    <p className="text-xs text-surface-400">Qty: {item.quantity}</p>
                   </div>
-                  <p className="text-sm font-medium text-gray-900">${(item.price * item.quantity).toFixed(2)}</p>
+                  <p className="text-sm font-medium text-white">${(item.price * item.quantity).toFixed(2)}</p>
                 </div>
               ))}
             </div>
@@ -433,21 +434,21 @@ export default function CheckoutPage() {
             {/* Price Breakdown */}
             <div className="space-y-3 mb-6">
               <div className="flex justify-between text-sm">
-                <span className="text-gray-600">Subtotal ({cart.itemCount} items)</span>
+                <span className="text-surface-400">Subtotal ({cart.itemCount} items)</span>
                 <span className="font-medium">${cart.total.toFixed(2)}</span>
               </div>
               <div className="flex justify-between text-sm">
-                <span className="text-gray-600">Shipping</span>
+                <span className="text-surface-400">Shipping</span>
                 <span className="font-medium">Free</span>
               </div>
               <div className="flex justify-between text-sm">
-                <span className="text-gray-600">Tax</span>
+                <span className="text-surface-400">Tax</span>
                 <span className="font-medium">${(cart.total * 0.08).toFixed(2)}</span>
               </div>
-              <div className="border-t border-gray-200 pt-3">
+              <div className="border-t border-white/[0.06] pt-3">
                 <div className="flex justify-between text-lg font-semibold">
                   <span>Total</span>
-                  <span className="text-teal-600">${(cart.total * 1.08).toFixed(2)}</span>
+                  <span className="text-teal-400">${(cart.total * 1.08).toFixed(2)}</span>
                 </div>
               </div>
             </div>
@@ -456,7 +457,7 @@ export default function CheckoutPage() {
             <button
               onClick={processOrder}
               disabled={processing || cart.items.length === 0}
-              className="w-full flex items-center justify-center gap-2 bg-teal-600 text-white py-3 px-4 rounded-lg hover:bg-teal-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-emerald-600 to-emerald-500 text-white py-3 px-4 rounded-lg hover:brightness-110 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {processing ? (
                 <>
@@ -471,7 +472,7 @@ export default function CheckoutPage() {
               )}
             </button>
 
-            <p className="text-xs text-gray-500 text-center mt-3">
+            <p className="text-xs text-surface-500 text-center mt-3">
               Your payment information is secure and encrypted
             </p>
           </div>

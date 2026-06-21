@@ -1,6 +1,7 @@
 "use client";
 import ConfirmDialog from "@/app/components/ConfirmDialog";
 import { useToast } from "@/app/components/ToastProvider";
+import { getApiUrl } from '@/lib/apiConfig';
 import { ArrowLeft, Check, CheckCircle, Clock, Edit, MessageCircle, Reply, Trash2, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
@@ -33,7 +34,7 @@ export default function AdminQAPage() {
 
   const fetchQuestions = async () => {
     setLoading(true);
-    const res = await fetch("http://localhost:5000/api/qa/admin", { credentials: "include" });
+    const res = await fetch(getApiUrl("/qa/admin"), { credentials: "include" });
     const data = await res.json();
     if (data.success) setQuestions(data.data);
     setLoading(false);
@@ -41,7 +42,7 @@ export default function AdminQAPage() {
 
   const handleAnswerQuestion = async (questionId) => {
     if (!answerText.trim()) return;
-    const res = await fetch(`http://localhost:5000/api/qa/${questionId}/answer`, {
+    const res = await fetch(getApiUrl(`/qa/${questionId}/answer`), {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       credentials: "include",
@@ -58,7 +59,7 @@ export default function AdminQAPage() {
   };
 
   const handleEditAnswer = async (questionId, updatedAnswer) => {
-    const res = await fetch(`http://localhost:5000/api/qa/${questionId}/answer/edit`, {
+    const res = await fetch(getApiUrl(`/qa/${questionId}/answer/edit`), {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       credentials: "include",
@@ -77,7 +78,7 @@ export default function AdminQAPage() {
 
   const handleDeleteQuestion = async (questionId) => {
     setDeleting({ ...deleting, [questionId]: true });
-    const res = await fetch(`http://localhost:5000/api/qa/${questionId}`, {
+    const res = await fetch(getApiUrl(`/qa/${questionId}`), {
       method: "DELETE",
       credentials: "include",
     });
@@ -131,13 +132,13 @@ export default function AdminQAPage() {
       <h1 className="text-2xl font-bold mb-4">Q&A Management</h1>
 
       {!selectedFarmer && (
-        <div className="bg-white rounded shadow p-6">
+        <div className="bg-surface-800/80 rounded-2xl shadow-sm border border-white/[0.06] p-6">
           <h2 className="text-lg font-semibold mb-4">Farmers with Questions</h2>
           {loading ? (
             <div className="text-center py-8">Loading...</div>
           ) : farmers.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">
-              <MessageCircle className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+            <div className="text-center py-8 text-surface-500">
+              <MessageCircle className="w-12 h-12 mx-auto mb-4 text-surface-400" />
               <p>No questions have been asked yet.</p>
             </div>
           ) : (
@@ -154,14 +155,14 @@ export default function AdminQAPage() {
                   >
                     <div className="flex items-center justify-between">
                       <div>
-                        <div className="font-semibold text-gray-900">{farmer.name}</div>
-                        <div className="text-sm text-gray-600">{farmer.email}</div>
+                        <div className="font-semibold text-white">{farmer.name}</div>
+                        <div className="text-sm text-surface-400">{farmer.email}</div>
                       </div>
-                      <div className="text-sm text-gray-500">{total} question{total !== 1 ? 's' : ''}</div>
+                      <div className="text-sm text-surface-500">{total} question{total !== 1 ? 's' : ''}</div>
                     </div>
                     <div className="mt-3 flex items-center gap-3 text-xs">
-                      <span className="px-2 py-1 rounded bg-yellow-100 text-yellow-800">Pending: {p}</span>
-                      <span className="px-2 py-1 rounded bg-green-100 text-green-800">Answered: {a}</span>
+                      <span className="px-2 py-1 rounded bg-amber-500/10 text-amber-300">Pending: {p}</span>
+                      <span className="px-2 py-1 rounded bg-emerald-500/10 text-emerald-300">Answered: {a}</span>
                     </div>
                   </button>
                 );
@@ -176,23 +177,23 @@ export default function AdminQAPage() {
           <div className="flex items-center gap-2 mb-4">
             <button
               onClick={() => setSelectedFarmerId(null)}
-              className="flex items-center gap-2 text-sm text-gray-700 hover:text-gray-900"
+              className="flex items-center gap-2 text-sm text-surface-300 hover:text-white"
             >
               <ArrowLeft className="w-4 h-4" /> Back to farmers
             </button>
           </div>
 
-          <div className="bg-white rounded shadow p-6 mb-8">
+          <div className="bg-surface-800/80 rounded-2xl shadow-sm border border-white/[0.06] p-6 mb-8">
             <div className="mb-4">
               <h2 className="text-lg font-semibold">Questions from {selectedFarmer.name}</h2>
-              <div className="text-sm text-gray-600">{selectedFarmer.email}</div>
+              <div className="text-sm text-surface-400">{selectedFarmer.email}</div>
             </div>
             <h3 className="text-md font-semibold mb-4">Unanswered Questions</h3>
             {loading ? (
               <div className="text-center py-8">Loading questions...</div>
             ) : unanswered.length === 0 ? (
-              <div className="text-center py-8 text-gray-500">
-                <MessageCircle className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+              <div className="text-center py-8 text-surface-500">
+                <MessageCircle className="w-12 h-12 mx-auto mb-4 text-surface-400" />
                 <p>No unanswered questions.</p>
               </div>
             ) : (
@@ -201,21 +202,21 @@ export default function AdminQAPage() {
                   <div key={qa._id} className="border rounded-lg p-4">
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center gap-2">
-                        <Clock className="w-5 h-5 text-yellow-600" />
-                        <span className="px-2 py-1 text-xs rounded bg-yellow-100 text-yellow-800">Pending</span>
-                        <span className="text-xs text-gray-500">{new Date(qa.createdAt).toLocaleDateString()}</span>
+                        <Clock className="w-5 h-5 text-amber-400" />
+                        <span className="px-2 py-1 text-xs rounded bg-amber-500/10 text-amber-300">Pending</span>
+                        <span className="text-xs text-surface-500">{new Date(qa.createdAt).toLocaleDateString()}</span>
                       </div>
                       <div className="flex items-center gap-2">
                         <button
                           onClick={() => setAnsweringQuestion(qa)}
-                          className="text-green-600 hover:text-green-800"
+                          className="text-emerald-400 hover:text-emerald-300"
                         >
                           <Reply className="w-4 h-4" />
                         </button>
                         <button
                           onClick={() => openConfirmForQuestion(qa._id)}
                           disabled={deleting[qa._id]}
-                          className="text-red-600 hover:text-red-800"
+                          className="text-red-400 hover:text-red-300"
                         >
                           {deleting[qa._id] ? (
                             <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
@@ -226,11 +227,11 @@ export default function AdminQAPage() {
                       </div>
                     </div>
                     <div className="mb-3">
-                      <h4 className="font-semibold text-gray-900 mb-2">Question:</h4>
-                      <p className="text-gray-700 whitespace-pre-line">{qa.question}</p>
+                      <h4 className="font-semibold text-white mb-2">Question:</h4>
+                      <p className="text-surface-300 whitespace-pre-line">{qa.question}</p>
                     </div>
                     {answeringQuestion?._id === qa._id && (
-                      <div className="bg-blue-50 border-l-4 border-blue-400 p-4">
+                      <div className="bg-sky-500/5 border-l-4 border-blue-400 p-4">
                         <h5 className="font-semibold text-blue-900 mb-2">Answer:</h5>
                         <textarea
                           value={answerText}
@@ -242,7 +243,7 @@ export default function AdminQAPage() {
                         <div className="flex gap-2">
                           <button
                             onClick={() => handleAnswerQuestion(qa._id)}
-                            className="bg-green-600 text-white px-3 py-1 rounded text-sm"
+                            className="bg-gradient-to-r from-emerald-600 to-emerald-500 text-white px-3 py-1 rounded text-sm"
                           >
                             <Check className="w-4 h-4 inline mr-1" />
                             Submit Answer
@@ -266,13 +267,13 @@ export default function AdminQAPage() {
             )}
           </div>
 
-          <div className="bg-white rounded shadow p-6">
+          <div className="bg-surface-800/80 rounded-2xl shadow-sm border border-white/[0.06] p-6">
             <h3 className="text-md font-semibold mb-4">Answered Questions</h3>
             {loading ? (
               <div className="text-center py-8">Loading questions...</div>
             ) : answered.length === 0 ? (
-              <div className="text-center py-8 text-gray-500">
-                <MessageCircle className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+              <div className="text-center py-8 text-surface-500">
+                <MessageCircle className="w-12 h-12 mx-auto mb-4 text-surface-400" />
                 <p>No answered questions yet.</p>
               </div>
             ) : (
@@ -281,22 +282,22 @@ export default function AdminQAPage() {
                   <div key={qa._id} className="border rounded-lg p-4">
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center gap-2">
-                        <CheckCircle className="w-5 h-5 text-green-600" />
-                        <span className="px-2 py-1 text-xs rounded bg-green-100 text-green-800">Answered</span>
-                        <span className="text-xs text-gray-500">{new Date(qa.createdAt).toLocaleDateString()}</span>
+                        <CheckCircle className="w-5 h-5 text-emerald-400" />
+                        <span className="px-2 py-1 text-xs rounded bg-emerald-500/10 text-emerald-300">Answered</span>
+                        <span className="text-xs text-surface-500">{new Date(qa.createdAt).toLocaleDateString()}</span>
                       </div>
                       {qa.admin?._id === currentAdmin && (
                         <div className="flex items-center gap-2">
                           <button
                             onClick={() => setEditingAnswer(qa)}
-                            className="text-blue-600 hover:text-blue-800"
+                            className="text-sky-400 hover:text-sky-300"
                           >
                             <Edit className="w-4 h-4" />
                           </button>
                           <button
                             onClick={() => openConfirmForQuestion(qa._id)}
                             disabled={deleting[qa._id]}
-                            className="text-red-600 hover:text-red-800"
+                            className="text-red-400 hover:text-red-300"
                           >
                             {deleting[qa._id] ? (
                               <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
@@ -308,11 +309,11 @@ export default function AdminQAPage() {
                       )}
                     </div>
                     <div className="mb-3">
-                      <h4 className="font-semibold text-gray-900 mb-2">Question:</h4>
-                      <p className="text-gray-700 whitespace-pre-line">{qa.question}</p>
+                      <h4 className="font-semibold text-white mb-2">Question:</h4>
+                      <p className="text-surface-300 whitespace-pre-line">{qa.question}</p>
                     </div>
                     {editingAnswer?._id === qa._id ? (
-                      <div className="bg-blue-50 border-l-4 border-blue-400 p-4">
+                      <div className="bg-sky-500/5 border-l-4 border-blue-400 p-4">
                         <h5 className="font-semibold text-blue-900 mb-2">Edit Answer:</h5>
                         <textarea
                           value={editingAnswer.answer}
@@ -324,7 +325,7 @@ export default function AdminQAPage() {
                         <div className="flex gap-2">
                           <button
                             onClick={() => handleEditAnswer(qa._id, editingAnswer.answer)}
-                            className="bg-green-600 text-white px-3 py-1 rounded text-sm"
+                            className="bg-gradient-to-r from-emerald-600 to-emerald-500 text-white px-3 py-1 rounded text-sm"
                           >
                             <Check className="w-4 h-4 inline mr-1" />
                             Save
@@ -339,10 +340,10 @@ export default function AdminQAPage() {
                         </div>
                       </div>
                     ) : qa.answer ? (
-                      <div className="bg-green-50 border-l-4 border-green-400 p-4">
+                      <div className="bg-emerald-500/5 border-l-4 border-green-400 p-4">
                         <h5 className="font-semibold text-green-900 mb-2">Answer:</h5>
-                        <p className="text-green-800 whitespace-pre-line">{qa.answer}</p>
-                        <div className="mt-2 text-sm text-green-600">
+                        <p className="text-emerald-300 whitespace-pre-line">{qa.answer}</p>
+                        <div className="mt-2 text-sm text-emerald-400">
                           Answered by {qa.admin?.name || 'Admin'} on {new Date(qa.answeredAt).toLocaleDateString()}
                         </div>
                       </div>

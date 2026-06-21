@@ -250,7 +250,7 @@ export default function MarketplacePage() {
   return (
     <div className="space-y-4 sm:space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Marketplace</h1>
+        <h1 className="text-2xl sm:text-3xl font-bold text-white">Marketplace</h1>
         <Link 
           href="/dashboard/buyer/cart"
           className="bg-teal-600 text-white px-4 py-2 rounded-lg hover:bg-teal-700 transition-colors flex items-center justify-center gap-2"
@@ -261,7 +261,7 @@ export default function MarketplacePage() {
       </div>
 
       {/* Search and Filters */}
-      <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6">
+      <div className="bg-surface-800/80 rounded-2xl shadow-sm border border-white/[0.06] p-4 sm:p-6">
         <div className="flex flex-col gap-4">
           <div className="flex-1">
             <div className="relative">
@@ -271,7 +271,7 @@ export default function MarketplacePage() {
                 placeholder="Search for products..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                className="bg-surface-900/50 text-white w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent placeholder:text-surface-500"
               />
             </div>
           </div>
@@ -309,8 +309,8 @@ export default function MarketplacePage() {
       </div>
 
       {/* Products */}
-      <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6">
-        <h2 className="text-lg sm:text-xl font-semibold text-gray-900 mb-4">
+      <div className="bg-surface-800/80 rounded-2xl shadow-sm border border-white/[0.06] p-4 sm:p-6">
+        <h2 className="text-lg sm:text-xl font-semibold text-white mb-4">
           {loading ? 'Loading products...' : `${filteredProducts.length} Products Found`}
         </h2>
         
@@ -321,7 +321,7 @@ export default function MarketplacePage() {
         ) : filteredProducts.length === 0 ? (
           <div className="text-center py-12">
             <div className="text-4xl mb-4">🌾</div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">No products found</h3>
+            <h3 className="text-lg font-semibold text-white mb-2">No products found</h3>
             <p className="text-gray-600">Try adjusting your search or filter criteria</p>
           </div>
         ) : (
@@ -345,7 +345,7 @@ export default function MarketplacePage() {
                 </div>
                 <div className="p-4">
                   <div className="flex items-center justify-between mb-2">
-                    <h3 className="font-semibold text-gray-900">{product.name}</h3>
+                    <h3 className="font-semibold text-white">{product.name}</h3>
                     <button 
                       className={`${favorites.includes(product._id) ? 'text-red-500' : 'text-gray-400 hover:text-red-500'}`}
                       onClick={(e) => {
@@ -379,7 +379,7 @@ export default function MarketplacePage() {
                   </div>
                   <div className="flex items-center justify-between">
                     <div>
-                      <span className="text-lg font-bold text-gray-900">${product.price.toFixed(2)}</span>
+                      <span className="text-lg font-bold text-white">${product.price.toFixed(2)}</span>
                       <span className="text-sm text-gray-600">/{product.unit}</span>
                     </div>
                     <button 
@@ -414,11 +414,11 @@ export default function MarketplacePage() {
                       {showModal && selectedProduct && (
           <div className="fixed inset-0 z-50 p-4">
             <div className="absolute inset-0 bg-black bg-opacity-50" onClick={() => setShowModal(false)} />
-            <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-white rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-surface-800/80 rounded-2xl border border-white/[0.06] max-w-2xl w-full max-h-[90vh] overflow-y-auto">
             <div className="p-6">
               {/* Header */}
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-2xl font-bold text-gray-900">{selectedProduct.name}</h2>
+                <h2 className="text-2xl font-bold text-white">{selectedProduct.name}</h2>
                 <button
                   onClick={closeModal}
                   className="text-gray-400 hover:text-gray-600 transition-colors"
@@ -461,13 +461,13 @@ export default function MarketplacePage() {
 
                 {/* Description */}
                 <div>
-                  <h3 className="font-semibold text-gray-900 mb-2">Description</h3>
+                  <h3 className="font-semibold text-white mb-2">Description</h3>
                   <p className="text-gray-600">{selectedProduct.description}</p>
                 </div>
 
                 {/* Farmer Info */}
                 <div className="bg-gray-50 rounded-lg p-4">
-                  <h3 className="font-semibold text-gray-900 mb-2">Farmer Information</h3>
+                  <h3 className="font-semibold text-white mb-2">Farmer Information</h3>
                   <div className="space-y-2">
                     <div className="flex items-center gap-2">
                       <MapPin className="w-4 h-4 text-gray-400" />
@@ -493,7 +493,7 @@ export default function MarketplacePage() {
                 {/* Stock and Price */}
                 <div className="flex items-center justify-between">
                   <div>
-                    <span className="text-2xl font-bold text-gray-900">
+                    <span className="text-2xl font-bold text-white">
                       ${selectedProduct.price.toFixed(2)}
                     </span>
                     <span className="text-sm text-gray-600 ml-1">/{selectedProduct.unit}</span>
@@ -518,7 +518,7 @@ export default function MarketplacePage() {
                       >
                         <Minus className="w-4 h-4" />
                       </button>
-                      <span className="px-4 py-1 text-gray-900 font-medium">{quantity}</span>
+                      <span className="px-4 py-1 text-white font-medium">{quantity}</span>
                       <button
                         onClick={() => handleQuantityChange(quantity + 1)}
                         disabled={quantity >= selectedProduct.stock}

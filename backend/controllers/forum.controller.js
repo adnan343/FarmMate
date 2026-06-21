@@ -12,7 +12,7 @@ export const getAllPosts = async (req, res) => {
       .sort({ createdAt: -1 });
     res.json({ success: true, data: posts });
   } catch (err) {
-    res.status(500).json({ success: false, msg: 'Error fetching posts', error: err.message });
+    res.status(500).json({ success: false, msg: 'Internal Server Error' });
   }
 };
 
@@ -28,7 +28,7 @@ export const getPost = async (req, res) => {
     if (!post) return res.status(404).json({ success: false, msg: 'Post not found' });
     res.json({ success: true, data: post });
   } catch (err) {
-    res.status(500).json({ success: false, msg: 'Error fetching post', error: err.message });
+    res.status(500).json({ success: false, msg: 'Internal Server Error' });
   }
 };
 
@@ -39,6 +39,24 @@ export const createPost = async (req, res) => {
     if (!req.user || req.user.role !== 'farmer') {
       return res.status(403).json({ success: false, msg: 'Only farmers can post in the forum' });
     }
+    // M3: Validate required fields and length limits
+    if (!type || !['question', 'experience'].includes(type)) {
+      return res.status(400).json({ success: false, msg: 'Type must be question or experience' });
+    }
+    if (!content || content.trim().length === 0) {
+      return res.status(400).json({ success: false, msg: 'Content is required' });
+    }
+    if (content.length > 5000) {
+      return res.status(400).json({ success: false, msg: 'Content must be 5000 characters or less' });
+    }
+    if (type === 'question') {
+      if (!title || title.trim().length === 0) {
+        return res.status(400).json({ success: false, msg: 'Title is required for questions' });
+      }
+      if (title.length > 200) {
+        return res.status(400).json({ success: false, msg: 'Title must be 200 characters or less' });
+      }
+    }
     const post = new ForumPost({
       author: req.user._id,
       type,
@@ -48,7 +66,7 @@ export const createPost = async (req, res) => {
     await post.save();
     res.status(201).json({ success: true, data: post });
   } catch (err) {
-    res.status(500).json({ success: false, msg: 'Error creating post', error: err.message });
+    res.status(500).json({ success: false, msg: 'Internal Server Error' });
   }
 };
 
@@ -78,7 +96,7 @@ export const editPost = async (req, res) => {
     await post.save();
     res.json({ success: true, data: post });
   } catch (err) {
-    res.status(500).json({ success: false, msg: 'Error editing post', error: err.message });
+    res.status(500).json({ success: false, msg: 'Internal Server Error' });
   }
 };
 
@@ -105,7 +123,7 @@ export const deletePost = async (req, res) => {
     await ForumPost.findByIdAndDelete(req.params.id);
     res.json({ success: true, msg: 'Post deleted successfully' });
   } catch (err) {
-    res.status(500).json({ success: false, msg: 'Error deleting post', error: err.message });
+    res.status(500).json({ success: false, msg: 'Internal Server Error' });
   }
 };
 
@@ -115,6 +133,13 @@ export const addReply = async (req, res) => {
     const { content } = req.body;
     if (!req.user || req.user.role !== 'farmer') {
       return res.status(403).json({ success: false, msg: 'Only farmers can reply in the forum' });
+    }
+    // M3: Validate reply content length
+    if (!content || content.trim().length === 0) {
+      return res.status(400).json({ success: false, msg: 'Reply content is required' });
+    }
+    if (content.length > 2000) {
+      return res.status(400).json({ success: false, msg: 'Reply must be 2000 characters or less' });
     }
     const parentPost = await ForumPost.findById(req.params.id);
     if (!parentPost) return res.status(404).json({ success: false, msg: 'Post not found' });
@@ -128,7 +153,7 @@ export const addReply = async (req, res) => {
     await parentPost.save();
     res.status(201).json({ success: true, data: reply });
   } catch (err) {
-    res.status(500).json({ success: false, msg: 'Error adding reply', error: err.message });
+    res.status(500).json({ success: false, msg: 'Internal Server Error' });
   }
 };
 
@@ -155,7 +180,7 @@ export const editReply = async (req, res) => {
     await reply.save();
     res.json({ success: true, data: reply });
   } catch (err) {
-    res.status(500).json({ success: false, msg: 'Error editing reply', error: err.message });
+    res.status(500).json({ success: false, msg: 'Internal Server Error' });
   }
 };
 
@@ -188,6 +213,6 @@ export const deleteReply = async (req, res) => {
     await ForumPost.findByIdAndDelete(req.params.replyId);
     res.json({ success: true, msg: 'Reply deleted successfully' });
   } catch (err) {
-    res.status(500).json({ success: false, msg: 'Error deleting reply', error: err.message });
+    res.status(500).json({ success: false, msg: 'Internal Server Error' });
   }
 };

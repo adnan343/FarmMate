@@ -77,9 +77,11 @@ export function ToastProvider({ children }) {
       {children}
       {/* Container */}
       <div className="pointer-events-none fixed right-4 top-4 z-50 flex flex-col items-end">
-        {toasts.map((t) => (
-          <ToastItem key={t.id} toast={t} onClose={remove} />
-        ))}
+        <div aria-live="polite" className="toast-max">
+          {toasts.map((t) => (
+            <ToastItem key={t.id} toast={t} onClose={remove} />
+          ))}
+        </div>
       </div>
     </ToastContext.Provider>
   );

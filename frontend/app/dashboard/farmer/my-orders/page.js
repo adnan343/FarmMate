@@ -105,32 +105,32 @@ export default function FarmerOrdersPage() {
       case 'pending':
         return <Clock className="w-4 h-4 text-yellow-500" />;
       case 'confirmed':
-        return <CheckCircle className="w-4 h-4 text-blue-500" />;
+        return <CheckCircle className="w-4 h-4 text-sky-400" />;
       case 'shipped':
         return <Truck className="w-4 h-4 text-purple-500" />;
       case 'delivered':
-        return <CheckCircle className="w-4 h-4 text-green-500" />;
+        return <CheckCircle className="w-4 h-4 text-emerald-400" />;
       case 'cancelled':
-        return <XCircle className="w-4 h-4 text-red-500" />;
+        return <XCircle className="w-4 h-4 text-red-400" />;
       default:
-        return <AlertCircle className="w-4 h-4 text-gray-500" />;
+        return <AlertCircle className="w-4 h-4 text-surface-500" />;
     }
   };
 
   const getStatusColor = (status) => {
     switch (status) {
       case 'pending':
-        return 'bg-yellow-100 text-yellow-800';
+        return 'bg-amber-500/10 text-amber-300';
       case 'confirmed':
-        return 'bg-blue-100 text-blue-800';
+        return 'bg-sky-500/10 text-sky-300';
       case 'shipped':
         return 'bg-purple-100 text-purple-800';
       case 'delivered':
-        return 'bg-green-100 text-green-800';
+        return 'bg-emerald-500/10 text-emerald-300';
       case 'cancelled':
-        return 'bg-red-100 text-red-800';
+        return 'bg-red-500/50/10 text-red-300';
       default:
-        return 'bg-gray-100 text-gray-800';
+        return 'bg-white/[0.04] text-gray-800';
     }
   };
 
@@ -192,15 +192,15 @@ export default function FarmerOrdersPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">My Orders</h1>
-          <p className="text-gray-600 mt-2">Manage orders for your products</p>
+          <h1 className="text-3xl font-bold text-white">My Orders</h1>
+          <p className="text-surface-400 mt-2">Manage orders for your products</p>
         </div>
         <div className="flex items-center gap-2">
-          <Filter className="w-5 h-5 text-gray-400" />
+          <Filter className="w-5 h-5 text-surface-500" />
           <select
             value={selectedStatus}
             onChange={(e) => setSelectedStatus(e.target.value)}
-            className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+            className="px-3 py-2 border border-white/10 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
           >
             <option value="all">All Orders</option>
             <option value="pending">Pending</option>
@@ -213,16 +213,16 @@ export default function FarmerOrdersPage() {
       </div>
 
       {/* Orders */}
-      <div className="bg-white rounded-xl shadow-sm p-6">
+      <div className="bg-surface-800/80 rounded-2xl shadow-sm border border-white/[0.06] p-6">
         {loading ? (
           <div className="flex items-center justify-center h-64">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-600"></div>
           </div>
         ) : orders.length === 0 ? (
           <div className="text-center py-12">
-            <Package className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">No orders found</h3>
-            <p className="text-gray-600">
+            <Package className="w-16 h-16 text-surface-500 mx-auto mb-4" />
+            <h3 className="text-lg font-semibold text-white mb-2">No orders found</h3>
+            <p className="text-surface-400">
               {selectedStatus === 'all' 
                 ? "You don't have any orders yet. Orders will appear here when customers purchase your products."
                 : `No ${selectedStatus} orders found.`
@@ -236,7 +236,7 @@ export default function FarmerOrdersPage() {
               const myProductsTotal = getMyProductsTotal(order);
               
               return (
-                <div key={order._id} className="border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow">
+                <div key={order._id} className="border border-white/[0.06] rounded-lg p-6 hover:shadow-md transition-shadow">
                   <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-3">
                       <div className="flex items-center gap-2">
@@ -245,17 +245,17 @@ export default function FarmerOrdersPage() {
                           {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
                         </span>
                       </div>
-                      <span className="text-sm text-gray-500">
+                      <span className="text-sm text-surface-500">
                         Order #{order._id.slice(-8).toUpperCase()}
                       </span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <span className="text-sm text-gray-600">
+                      <span className="text-sm text-surface-400">
                         {formatDate(order.createdAt)}
                       </span>
                       <button
                         onClick={() => openOrderModal(order)}
-                        className="p-2 text-gray-400 hover:text-gray-600 transition-colors"
+                        className="p-2 text-surface-500 hover:text-surface-400 transition-colors"
                       >
                         <Eye className="w-4 h-4" />
                       </button>
@@ -263,13 +263,13 @@ export default function FarmerOrdersPage() {
                   </div>
 
                   {/* Buyer Info */}
-                  <div className="flex items-center gap-4 mb-4 p-3 bg-gray-50 rounded-lg">
-                    <div className="w-10 h-10 bg-teal-100 rounded-full flex items-center justify-center">
-                      <User className="w-5 h-5 text-teal-600" />
+                  <div className="flex items-center gap-4 mb-4 p-3 bg-white/[0.02] rounded-lg">
+                    <div className="w-10 h-10 bg-teal-500/10 rounded-full flex items-center justify-center">
+                      <User className="w-5 h-5 text-teal-400" />
                     </div>
                     <div className="flex-1">
-                      <h4 className="font-medium text-gray-900">{order.buyer.name}</h4>
-                      <div className="flex items-center gap-4 text-sm text-gray-600">
+                      <h4 className="font-medium text-white">{order.buyer.name}</h4>
+                      <div className="flex items-center gap-4 text-sm text-surface-400">
                         <div className="flex items-center gap-1">
                           <Mail className="w-3 h-3" />
                           <span>{order.buyer.email}</span>
@@ -286,23 +286,23 @@ export default function FarmerOrdersPage() {
 
                   {/* My Products in this Order */}
                   <div className="mb-4">
-                    <h5 className="font-medium text-gray-900 mb-2">Your Products in this Order:</h5>
+                    <h5 className="font-medium text-white mb-2">Your Products in this Order:</h5>
                     <div className="space-y-2">
                       {myProducts.map((item, index) => (
-                        <div key={index} className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
+                        <div key={index} className="flex items-center justify-between p-3 bg-emerald-500/5 rounded-lg">
                           <div className="flex items-center gap-3">
-                            <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
-                              <Package className="w-6 h-6 text-green-600" />
+                            <div className="w-12 h-12 bg-emerald-500/10 rounded-lg flex items-center justify-center">
+                              <Package className="w-6 h-6 text-emerald-400" />
                             </div>
                             <div>
-                              <h6 className="font-medium text-gray-900">{item.name}</h6>
-                              <p className="text-sm text-gray-600">
+                              <h6 className="font-medium text-white">{item.name}</h6>
+                              <p className="text-sm text-surface-400">
                                 Qty: {item.quantity} × ${item.price.toFixed(2)}
                               </p>
                             </div>
                           </div>
                           <div className="text-right">
-                            <p className="font-medium text-gray-900">
+                            <p className="font-medium text-white">
                               ${(item.price * item.quantity).toFixed(2)}
                             </p>
                           </div>
@@ -312,11 +312,11 @@ export default function FarmerOrdersPage() {
                   </div>
 
                   {/* Order Summary */}
-                  <div className="flex items-center justify-between pt-4 border-t border-gray-200">
+                  <div className="flex items-center justify-between pt-4 border-t border-white/[0.06]">
                     <div className="flex items-center gap-2">
-                      <DollarSign className="w-4 h-4 text-gray-400" />
-                      <span className="text-sm text-gray-600">Your Total:</span>
-                      <span className="font-semibold text-gray-900">${myProductsTotal.toFixed(2)}</span>
+                      <DollarSign className="w-4 h-4 text-surface-500" />
+                      <span className="text-sm text-surface-400">Your Total:</span>
+                      <span className="font-semibold text-white">${myProductsTotal.toFixed(2)}</span>
                     </div>
                     
                     {/* Status Update Buttons */}
@@ -329,7 +329,7 @@ export default function FarmerOrdersPage() {
                               <button
                                 onClick={() => updateOrderStatus(order._id, 'confirmed')}
                                 disabled={updatingStatus === order._id}
-                                className="px-3 py-1 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
+                                className="px-3 py-1 bg-gradient-to-r from-sky-600 to-sky-500 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
                               >
                                 {updatingStatus === order._id ? 'Updating...' : 'Confirm'}
                               </button>
@@ -347,7 +347,7 @@ export default function FarmerOrdersPage() {
                               <button
                                 onClick={() => updateOrderStatus(order._id, 'delivered')}
                                 disabled={updatingStatus === order._id}
-                                className="px-3 py-1 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50"
+                                className="px-3 py-1 bg-gradient-to-r from-emerald-600 to-emerald-500 text-white text-sm rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50"
                               >
                                 {updatingStatus === order._id ? 'Updating...' : 'Mark Delivered'}
                               </button>
@@ -356,7 +356,7 @@ export default function FarmerOrdersPage() {
                               <button
                                 onClick={() => updateOrderStatus(order._id, 'cancelled')}
                                 disabled={updatingStatus === order._id}
-                                className="px-3 py-1 bg-red-600 text-white text-sm rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50"
+                                className="px-3 py-1 bg-gradient-to-r from-red-600 to-red-500 text-white text-sm rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50"
                               >
                                 {updatingStatus === order._id ? 'Updating...' : 'Cancel'}
                               </button>
@@ -376,49 +376,49 @@ export default function FarmerOrdersPage() {
       {/* Order Detail Modal */}
       {showOrderModal && selectedOrder && (
         <div className="fixed inset-0 z-50 p-4">
-          <div className="absolute inset-0 bg-black bg-opacity-50" onClick={() => setShowOrderModal(false)} />
-          <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-white rounded-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowOrderModal(false)} />
+          <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-surface-800/80 rounded-2xl border border-white/[0.06] max-w-4xl w-full max-h-[90vh] overflow-y-auto">
             <div className="p-6">
               {/* Header */}
               <div className="flex items-center justify-between mb-6">
                 <div>
-                  <h2 className="text-2xl font-bold text-gray-900">Order Details</h2>
-                  <p className="text-gray-600">Order #{selectedOrder._id.slice(-8).toUpperCase()}</p>
+                  <h2 className="text-2xl font-bold text-white">Order Details</h2>
+                  <p className="text-surface-400">Order #{selectedOrder._id.slice(-8).toUpperCase()}</p>
                 </div>
                 <button
                   onClick={closeOrderModal}
-                  className="text-gray-400 hover:text-gray-600 transition-colors"
+                  className="text-surface-500 hover:text-surface-400 transition-colors"
                 >
                   <XCircle className="w-6 h-6" />
                 </button>
               </div>
 
               {/* Order Status */}
-              <div className="flex items-center gap-3 mb-6 p-4 bg-gray-50 rounded-lg">
+              <div className="flex items-center gap-3 mb-6 p-4 bg-white/[0.02] rounded-lg">
                 {getStatusIcon(selectedOrder.status)}
                 <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(selectedOrder.status)}`}>
                   {selectedOrder.status.charAt(0).toUpperCase() + selectedOrder.status.slice(1)}
                 </span>
-                <span className="text-sm text-gray-600">
+                <span className="text-sm text-surface-400">
                   Ordered on {formatDate(selectedOrder.createdAt)}
                 </span>
               </div>
 
               {/* Buyer Information */}
               <div className="mb-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-3">Buyer Information</h3>
-                <div className="bg-gray-50 rounded-lg p-4">
+                <h3 className="text-lg font-semibold text-white mb-3">Buyer Information</h3>
+                <div className="bg-white/[0.02] rounded-lg p-4">
                   <div className="flex items-center gap-3 mb-3">
-                    <div className="w-12 h-12 bg-teal-100 rounded-full flex items-center justify-center">
-                      <User className="w-6 h-6 text-teal-600" />
+                    <div className="w-12 h-12 bg-teal-500/10 rounded-full flex items-center justify-center">
+                      <User className="w-6 h-6 text-teal-400" />
                     </div>
                     <div>
-                      <h4 className="font-medium text-gray-900">{selectedOrder.buyer.name}</h4>
-                      <p className="text-sm text-gray-600">{selectedOrder.buyer.email}</p>
+                      <h4 className="font-medium text-white">{selectedOrder.buyer.name}</h4>
+                      <p className="text-sm text-surface-400">{selectedOrder.buyer.email}</p>
                     </div>
                   </div>
                   {selectedOrder.buyer.phone && (
-                    <div className="flex items-center gap-2 text-sm text-gray-600">
+                    <div className="flex items-center gap-2 text-sm text-surface-400">
                       <Phone className="w-4 h-4" />
                       <span>{selectedOrder.buyer.phone}</span>
                     </div>
@@ -429,11 +429,11 @@ export default function FarmerOrdersPage() {
               {/* Shipping Address */}
               {selectedOrder.shippingAddress && (
                 <div className="mb-6">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-3">Shipping Address</h3>
-                  <div className="bg-gray-50 rounded-lg p-4">
+                  <h3 className="text-lg font-semibold text-white mb-3">Shipping Address</h3>
+                  <div className="bg-white/[0.02] rounded-lg p-4">
                     <div className="flex items-start gap-2">
-                      <MapPin className="w-4 h-4 text-gray-400 mt-0.5" />
-                      <div className="text-sm text-gray-600">
+                      <MapPin className="w-4 h-4 text-surface-500 mt-0.5" />
+                      <div className="text-sm text-surface-400">
                         <p>{selectedOrder.shippingAddress.street}</p>
                         <p>
                           {selectedOrder.shippingAddress.city}, {selectedOrder.shippingAddress.state} {selectedOrder.shippingAddress.zipCode}
@@ -447,27 +447,27 @@ export default function FarmerOrdersPage() {
 
               {/* Order Items (only your products) */}
               <div className="mb-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-3">Your Items in this Order</h3>
+                <h3 className="text-lg font-semibold text-white mb-3">Your Items in this Order</h3>
                 <div className="space-y-3">
                   {getMyProductsFromOrder(selectedOrder).map((item, index) => (
-                    <div key={index} className={`flex items-center justify-between p-4 rounded-lg bg-green-50 border border-green-200`}>
+                    <div key={index} className={`flex items-center justify-between p-4 rounded-lg bg-emerald-500/5 border border-green-200`}>
                       <div className="flex items-center gap-3">
-                        <div className={`w-12 h-12 rounded-lg flex items-center justify-center bg-green-100`}>
-                          <Package className={`w-6 h-6 text-green-600`} />
+                        <div className={`w-12 h-12 rounded-lg flex items-center justify-center bg-emerald-500/10`}>
+                          <Package className={`w-6 h-6 text-emerald-400`} />
                         </div>
                         <div>
-                          <h4 className="font-medium text-gray-900">{item.name}</h4>
-                          <p className="text-sm text-gray-600">
+                          <h4 className="font-medium text-white">{item.name}</h4>
+                          <p className="text-sm text-surface-400">
                             Qty: {item.quantity} × ${item.price.toFixed(2)}
                           </p>
-                          <p className="text-xs text-gray-500">
+                          <p className="text-xs text-surface-500">
                             Farmer: {item?.farmer?.name || 'You'}
-                            <span className="ml-2 text-green-600 font-medium">(Your Product)</span>
+                            <span className="ml-2 text-emerald-400 font-medium">(Your Product)</span>
                           </p>
                         </div>
                       </div>
                       <div className="text-right">
-                        <p className="font-medium text-gray-900">
+                        <p className="font-medium text-white">
                           ${(item.price * item.quantity).toFixed(2)}
                         </p>
                       </div>
@@ -477,18 +477,18 @@ export default function FarmerOrdersPage() {
               </div>
 
               {/* Order Summary (your share only) */}
-              <div className="border-t border-gray-200 pt-4">
+              <div className="border-t border-white/[0.06] pt-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <DollarSign className="w-4 h-4 text-gray-400" />
-                    <span className="text-sm text-gray-600">Your Total:</span>
-                    <span className="font-semibold text-gray-900">
+                    <DollarSign className="w-4 h-4 text-surface-500" />
+                    <span className="text-sm text-surface-400">Your Total:</span>
+                    <span className="font-semibold text-white">
                       ${getMyProductsTotal(selectedOrder).toFixed(2)}
                     </span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="text-sm text-gray-600">Buyer Paid Total (all sellers):</span>
-                    <span className="font-semibold text-gray-900">${getMyProductsTotal(selectedOrder).toFixed(2)}</span>
+                    <span className="text-sm text-surface-400">Buyer Paid Total (all sellers):</span>
+                    <span className="font-semibold text-white">${getMyProductsTotal(selectedOrder).toFixed(2)}</span>
                   </div>
                 </div>
               </div>
@@ -496,9 +496,9 @@ export default function FarmerOrdersPage() {
               {/* Notes */}
               {selectedOrder.notes && (
                 <div className="mt-6">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-3">Order Notes</h3>
-                  <div className="bg-gray-50 rounded-lg p-4">
-                    <p className="text-sm text-gray-600">{selectedOrder.notes}</p>
+                  <h3 className="text-lg font-semibold text-white mb-3">Order Notes</h3>
+                  <div className="bg-white/[0.02] rounded-lg p-4">
+                    <p className="text-sm text-surface-400">{selectedOrder.notes}</p>
                   </div>
                 </div>
               )}

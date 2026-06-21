@@ -1,15 +1,25 @@
+import mongoose from 'mongoose';
 import Product from '../models/product.model.js';
 import User from '../models/user.model.js';
 
 // Get user's cart
 export const getCart = async (req, res) => {
-    const { userId } = req.params;
+    // Use authenticated user's ID — ignore URL param to prevent IDOR
+    const userId = req.user._id;
 
     try {
         const user = await User.findById(userId).populate('cart.items.productId');
         
         if (!user) {
             return res.status(404).json({ success: false, msg: 'User not found' });
+        }
+
+        const validItems = user.cart.items.filter(item => item.productId);
+        if (validItems.length !== user.cart.items.length) {
+            user.cart.items = validItems;
+            user.cart.itemCount = validItems.reduce((total, item) => total + item.quantity, 0);
+            user.cart.total = validItems.reduce((total, item) => total + (item.price * item.quantity), 0);
+            await user.save();
         }
 
         res.status(200).json({
@@ -24,10 +34,21 @@ export const getCart = async (req, res) => {
 
 // Add item to cart
 export const addToCart = async (req, res) => {
-    const { userId } = req.params;
+    // Use authenticated user's ID — ignore URL param to prevent IDOR
+    const userId = req.user._id;
     const { productId, quantity = 1 } = req.body;
 
+    if (!mongoose.Types.ObjectId.isValid(productId)) {
+        return res.status(400).json({ success: false, msg: 'Invalid product ID' });
+    }
+
     try {
+        // Validate quantity: must be a positive integer
+        const parsedQuantity = parseInt(quantity, 10);
+        if (!parsedQuantity || parsedQuantity < 1) {
+            return res.status(400).json({ success: false, msg: 'Quantity must be a positive integer' });
+        }
+
         // Validate product exists
         const product = await Product.findById(productId);
         if (!product) {
@@ -48,10 +69,9 @@ export const addToCart = async (req, res) => {
             item => item.productId && item.productId.toString() === productId
         );
 
-        let newQuantity = quantity;
+        let newQuantity = parsedQuantity;
         if (existingItemIndex > -1) {
-            // Add to existing quantity
-            newQuantity = user.cart.items[existingItemIndex].quantity + quantity;
+            newQuantity = user.cart.items[existingItemIndex].quantity + parsedQuantity;
         }
 
         // Validate stock availability
@@ -63,15 +83,13 @@ export const addToCart = async (req, res) => {
         }
 
         if (existingItemIndex > -1) {
-            // Update quantity if item exists
             user.cart.items[existingItemIndex].quantity = newQuantity;
         } else {
-            // Add new item to cart
             user.cart.items.push({
                 productId: productId,
                 name: product.name,
                 price: product.price,
-                quantity: quantity,
+                quantity: parsedQuantity,
                 image: product.image,
                 farmer: product.farmer
             });
@@ -96,11 +114,19 @@ export const addToCart = async (req, res) => {
 
 // Update cart item quantity
 export const updateCartItem = async (req, res) => {
-    const { userId, itemId } = req.params;
+    // Use authenticated user's ID — ignore URL param to prevent IDOR
+    const userId = req.user._id;
+    const { itemId } = req.params;
     const { quantity } = req.body;
 
+    if (!mongoose.Types.ObjectId.isValid(itemId)) {
+        return res.status(400).json({ success: false, msg: 'Invalid cart item ID' });
+    }
+
     try {
-        if (quantity < 1) {
+        // Validate quantity: must be a positive integer
+        const parsedQuantity = parseInt(quantity, 10);
+        if (!parsedQuantity || parsedQuantity < 1) {
             return res.status(400).json({ success: false, msg: 'Quantity must be at least 1' });
         }
 
@@ -124,14 +150,14 @@ export const updateCartItem = async (req, res) => {
             return res.status(400).json({ success: false, msg: 'Product is not available' });
         }
         
-        if (product.stock < quantity) {
+        if (product.stock < parsedQuantity) {
             return res.status(400).json({ 
                 success: false, 
-                msg: `Cannot update to more than available stock. Available: ${product.stock}, Requested: ${quantity}` 
+                msg: `Cannot update to more than available stock. Available: ${product.stock}, Requested: ${parsedQuantity}` 
             });
         }
 
-        user.cart.items[itemIndex].quantity = quantity;
+        user.cart.items[itemIndex].quantity = parsedQuantity;
 
         // Update cart totals
         user.cart.itemCount = user.cart.items.reduce((total, item) => total + item.quantity, 0);
@@ -152,7 +178,13 @@ export const updateCartItem = async (req, res) => {
 
 // Remove item from cart
 export const removeFromCart = async (req, res) => {
-    const { userId, itemId } = req.params;
+    // Use authenticated user's ID — ignore URL param to prevent IDOR
+    const userId = req.user._id;
+    const { itemId } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(itemId)) {
+        return res.status(400).json({ success: false, msg: 'Invalid cart item ID' });
+    }
 
     try {
         const user = await User.findById(userId);
@@ -165,7 +197,6 @@ export const removeFromCart = async (req, res) => {
             return res.status(404).json({ success: false, msg: 'Item not found in cart' });
         }
 
-        // Remove item from cart
         user.cart.items.splice(itemIndex, 1);
 
         // Update cart totals
@@ -187,7 +218,8 @@ export const removeFromCart = async (req, res) => {
 
 // Clear entire cart
 export const clearCart = async (req, res) => {
-    const { userId } = req.params;
+    // Use authenticated user's ID — ignore URL param to prevent IDOR
+    const userId = req.user._id;
 
     try {
         const user = await User.findById(userId);
@@ -210,4 +242,4 @@ export const clearCart = async (req, res) => {
         console.error('Error clearing cart:', error);
         res.status(500).json({ success: false, msg: 'Internal Server Error' });
     }
-}; 
+};

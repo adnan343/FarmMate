@@ -55,32 +55,32 @@ export default function MyOrdersPage() {
       case 'pending':
         return <Clock className="w-5 h-5 text-yellow-500" />;
       case 'confirmed':
-        return <AlertCircle className="w-5 h-5 text-blue-500" />;
+        return <AlertCircle className="w-5 h-5 text-sky-400" />;
       case 'shipped':
         return <Truck className="w-5 h-5 text-purple-500" />;
       case 'delivered':
-        return <CheckCircle className="w-5 h-5 text-green-500" />;
+        return <CheckCircle className="w-5 h-5 text-emerald-400" />;
       case 'cancelled':
-        return <XCircle className="w-5 h-5 text-red-500" />;
+        return <XCircle className="w-5 h-5 text-red-400" />;
       default:
-        return <Package className="w-5 h-5 text-gray-500" />;
+        return <Package className="w-5 h-5 text-surface-500" />;
     }
   };
 
   const getStatusColor = (status) => {
     switch (status) {
       case 'pending':
-        return 'bg-yellow-100 text-yellow-800';
+        return 'bg-amber-500/10 text-amber-300';
       case 'confirmed':
-        return 'bg-blue-100 text-blue-800';
+        return 'bg-sky-500/10 text-sky-300';
       case 'shipped':
         return 'bg-purple-100 text-purple-800';
       case 'delivered':
-        return 'bg-green-100 text-green-800';
+        return 'bg-emerald-500/10 text-emerald-300';
       case 'cancelled':
-        return 'bg-red-100 text-red-800';
+        return 'bg-red-500/50/10 text-red-300';
       default:
-        return 'bg-gray-100 text-gray-800';
+        return 'bg-white/[0.04] text-gray-800';
     }
   };
 
@@ -224,13 +224,13 @@ export default function MyOrdersPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">My Orders</h1>
-          <p className="text-gray-600 mt-2">Track your current and past orders</p>
+          <h1 className="text-3xl font-bold text-white">My Orders</h1>
+          <p className="text-surface-400 mt-2">Track your current and past orders</p>
         </div>
       </div>
 
-      <div className="bg-white rounded-xl shadow-sm p-6">
-        <h2 className="text-xl font-semibold text-gray-900 mb-4">
+      <div className="bg-surface-800/80 rounded-2xl shadow-sm border border-white/[0.06] p-6">
+        <h2 className="text-xl font-semibold text-white mb-4">
           {loading ? 'Loading orders...' : `${groupedOrders.length} Orders Found`}
         </h2>
         
@@ -241,21 +241,21 @@ export default function MyOrdersPage() {
         ) : orders.length === 0 ? (
           <div className="text-center py-12">
             <div className="text-4xl mb-4">📦</div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">No orders found</h3>
-            <p className="text-gray-600">You haven&apos;t placed any orders yet</p>
+            <h3 className="text-lg font-semibold text-white mb-2">No orders found</h3>
+            <p className="text-surface-400">You haven&apos;t placed any orders yet</p>
           </div>
         ) : (
           <div className="space-y-4">
             {groupedOrders.map((g, idx) => (
-              <div key={`${g.parentOrderId}-${idx}`} className="border border-gray-200 rounded-lg p-6">
+              <div key={`${g.parentOrderId}-${idx}`} className="border border-white/[0.06] rounded-lg p-6">
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-teal-100 rounded-lg flex items-center justify-center">
-                      <ShoppingBag className="w-5 h-5 text-teal-600" />
+                    <div className="w-10 h-10 bg-teal-500/10 rounded-lg flex items-center justify-center">
+                      <ShoppingBag className="w-5 h-5 text-teal-400" />
                     </div>
                     <div>
-                      <h3 className="font-semibold text-gray-900">Order #{g.parentOrderId.slice(-8)} • {g.farmer?.name || 'Unknown farmer'}</h3>
-                      <p className="text-sm text-gray-600">
+                      <h3 className="font-semibold text-white">Order #{g.parentOrderId.slice(-8)} • {g.farmer?.name || 'Unknown farmer'}</h3>
+                      <p className="text-sm text-surface-400">
                         Placed on {formatDate(g.orderDate)}
                       </p>
                     </div>
@@ -268,7 +268,7 @@ export default function MyOrdersPage() {
                     {(g.status === 'confirmed' || g.status === 'shipped' || g.status === 'delivered') && (
                       <button
                         onClick={() => downloadPayslip(g)}
-                        className="inline-flex items-center gap-1 px-3 py-1 text-sm rounded-md bg-teal-600 text-white hover:bg-teal-700"
+                        className="inline-flex items-center gap-1 px-3 py-1 text-sm rounded-md bg-gradient-to-r from-emerald-600 to-emerald-500 text-white hover:brightness-110"
                         title="Download payslip"
                       >
                         <FileDown className="w-4 h-4" /> Payslip
@@ -280,8 +280,8 @@ export default function MyOrdersPage() {
                 {/* Items for this farmer */}
                 <div className="space-y-3 mb-4">
                   {g.items.map((item, index) => (
-                    <div key={index} className={`flex items-center gap-4 p-3 rounded-lg ${item.status === 'cancelled' ? 'bg-red-50' : 'bg-gray-50'}`}>
-                      <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                    <div key={index} className={`flex items-center gap-4 p-3 rounded-lg ${item.status === 'cancelled' ? 'bg-red-500/5' : 'bg-white/[0.02]'}`}>
+                      <div className="w-12 h-12 bg-emerald-500/10 rounded-lg flex items-center justify-center">
                         {item.image ? (
                           <img 
                             src={item.image} 
@@ -293,18 +293,18 @@ export default function MyOrdersPage() {
                         )}
                       </div>
                       <div className="flex-1">
-                        <h4 className="font-medium text-gray-900">{item.name}</h4>
-                        <p className="text-sm text-gray-600">
+                        <h4 className="font-medium text-white">{item.name}</h4>
+                        <p className="text-sm text-surface-400">
                           Qty: {item.quantity} {item.productId?.unit || 'unit(s)'}
                         </p>
-                        <p className="text-sm text-gray-600">
+                        <p className="text-sm text-surface-400">
                           Farmer: {item.farmer?.name || 'Unknown'}
                           {item.status && (
                             <span className={`ml-2 text-xs px-2 py-0.5 rounded-full ${
-                              item.status === 'cancelled' ? 'bg-red-100 text-red-700' :
-                              item.status === 'confirmed' ? 'bg-blue-100 text-blue-700' :
+                              item.status === 'cancelled' ? 'bg-red-500/50/10 text-red-700' :
+                              item.status === 'confirmed' ? 'bg-sky-500/10 text-blue-700' :
                               item.status === 'shipped' ? 'bg-purple-100 text-purple-700' :
-                              item.status === 'delivered' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-800'
+                              item.status === 'delivered' ? 'bg-emerald-500/10 text-green-700' : 'bg-amber-500/10 text-amber-300'
                             }`}>
                               {item.status}
                             </span>
@@ -312,8 +312,8 @@ export default function MyOrdersPage() {
                         </p>
                       </div>
                       <div className="text-right">
-                        <p className="font-semibold text-gray-900">${item.price.toFixed(2)}</p>
-                        <p className="text-sm text-gray-600">${(item.price * item.quantity).toFixed(2)}</p>
+                        <p className="font-semibold text-white">${item.price.toFixed(2)}</p>
+                        <p className="text-sm text-surface-400">${(item.price * item.quantity).toFixed(2)}</p>
                       </div>
                     </div>
                   ))}
@@ -323,10 +323,10 @@ export default function MyOrdersPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                   {g.shippingAddress && (
                     <div>
-                      <h4 className="font-medium text-gray-900 mb-2">Shipping Address</h4>
+                      <h4 className="font-medium text-white mb-2">Shipping Address</h4>
                       <div className="flex items-start gap-2">
-                        <MapPin className="w-4 h-4 text-gray-400 mt-0.5" />
-                        <div className="text-sm text-gray-600">
+                        <MapPin className="w-4 h-4 text-surface-500 mt-0.5" />
+                        <div className="text-sm text-surface-400">
                           <p>{g.shippingAddress.street}</p>
                           <p>{g.shippingAddress.city}, {g.shippingAddress.state} {g.shippingAddress.zipCode}</p>
                           <p>{g.shippingAddress.country}</p>
@@ -336,8 +336,8 @@ export default function MyOrdersPage() {
                   )}
                   
                   <div>
-                    <h4 className="font-medium text-gray-900 mb-2">Order Details</h4>
-                    <div className="space-y-1 text-sm text-gray-600">
+                    <h4 className="font-medium text-white mb-2">Order Details</h4>
+                    <div className="space-y-1 text-sm text-surface-400">
                       <div className="flex items-center gap-2">
                         <Calendar className="w-4 h-4" />
                         <span>Order Date: {formatDate(g.orderDate)}</span>
@@ -360,9 +360,9 @@ export default function MyOrdersPage() {
                 </div>
 
                 {g.notes && (
-                  <div className="p-3 bg-blue-50 rounded-lg">
-                    <h4 className="font-medium text-gray-900 mb-1">Notes</h4>
-                    <p className="text-sm text-gray-600">{g.notes}</p>
+                  <div className="p-3 bg-sky-500/5 rounded-lg">
+                    <h4 className="font-medium text-white mb-1">Notes</h4>
+                    <p className="text-sm text-surface-400">{g.notes}</p>
                   </div>
                 )}
               </div>

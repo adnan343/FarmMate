@@ -59,12 +59,12 @@ export default function FarmPhotoUpload({ photo, onPhotoChange }) {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h3 className="text-base sm:text-lg font-semibold text-gray-800">Farm Photo</h3>
+        <h3 className="text-base sm:text-lg font-semibold text-white">Farm Photo</h3>
         {photo && (
           <button
             type="button"
             onClick={removePhoto}
-            className="text-red-600 hover:text-red-800 transition-colors"
+            className="text-red-400 hover:text-red-300 transition-colors"
           >
             <X className="w-4 h-4 sm:w-5 sm:h-5" />
           </button>
@@ -78,7 +78,7 @@ export default function FarmPhotoUpload({ photo, onPhotoChange }) {
             type="button"
             onClick={() => fileInputRef.current?.click()}
             disabled={uploading}
-            className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base"
+            className="flex items-center gap-2 px-3 sm:px-4 py-2 bg-gradient-to-r from-emerald-600 to-emerald-500 text-white rounded-lg hover:brightness-110 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base"
           >
             <Upload className="w-4 h-4" />
             {uploading ? 'Uploading...' : 'Upload Photo'}
@@ -113,10 +113,10 @@ export default function FarmPhotoUpload({ photo, onPhotoChange }) {
           </div>
         </div>
       ) : (
-        <div className="text-center py-6 sm:py-8 border border-dashed border-gray-300 rounded-lg">
-          <ImageIcon className="w-8 h-8 sm:w-12 sm:h-12 text-gray-400 mx-auto mb-3 sm:mb-4" />
-          <p className="text-sm sm:text-base text-gray-600 mb-2">No photo uploaded yet</p>
-          <p className="text-xs sm:text-sm text-gray-500">Upload a photo to document farm conditions</p>
+        <div className="text-center py-6 sm:py-8 border border-dashed border-white/[0.1] rounded-lg">
+          <ImageIcon className="w-8 h-8 sm:w-12 sm:h-12 text-surface-400 mx-auto mb-3 sm:mb-4" />
+          <p className="text-sm sm:text-base text-surface-400 mb-2">No photo uploaded yet</p>
+          <p className="text-xs sm:text-sm text-surface-500">Upload a photo to document farm conditions</p>
         </div>
       )}
     </div>

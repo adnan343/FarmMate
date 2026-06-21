@@ -160,14 +160,14 @@ export default function MyProductsPage() {
 
   const getCategoryColor = (category) => {
     const colors = {
-      vegetables: 'bg-green-100 text-green-800',
-      fruits: 'bg-orange-100 text-orange-800',
-      grains: 'bg-yellow-100 text-yellow-800',
-      dairy: 'bg-blue-100 text-blue-800',
-      meat: 'bg-red-100 text-red-800',
-      other: 'bg-gray-100 text-gray-800'
+      vegetables: 'bg-emerald-500/10 text-emerald-300',
+      fruits: 'bg-orange-500/10 text-orange-300',
+      grains: 'bg-amber-500/10 text-amber-300',
+      dairy: 'bg-sky-500/10 text-sky-300',
+      meat: 'bg-red-500/50/10 text-red-300',
+      other: 'bg-white/[0.04] text-gray-800'
     };
-    return colors[category] || 'bg-gray-100 text-gray-800';
+    return colors[category] || 'bg-white/[0.04] text-gray-800';
   };
 
   if (loading) {
@@ -177,8 +177,8 @@ export default function MyProductsPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold text-gray-900">My Products</h1>
-        <div className="flex items-center gap-2 text-sm text-gray-600">
+        <h1 className="text-3xl font-bold text-white">My Products</h1>
+        <div className="flex items-center gap-2 text-sm text-surface-400">
           <Package className="w-4 h-4" />
           <span>{products.length} products</span>
         </div>
@@ -187,11 +187,11 @@ export default function MyProductsPage() {
       {/* Products Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {products.map((product) => (
-          <div key={product._id} className="bg-white rounded-xl shadow-sm border p-6">
+          <div key={product._id} className="bg-surface-800/80 rounded-2xl shadow-sm border border-white/[0.06] border p-6">
             <div className="flex items-start justify-between mb-4">
               <div className="flex-1">
-                <h3 className="font-semibold text-gray-900 text-lg">{product.name}</h3>
-                <p className="text-sm text-gray-500 mt-1">{product.description}</p>
+                <h3 className="font-semibold text-white text-lg">{product.name}</h3>
+                <p className="text-sm text-surface-500 mt-1">{product.description}</p>
               </div>
               <span className={`px-2 py-1 text-xs rounded-full ${getCategoryColor(product.category)}`}>
                 {product.category}
@@ -200,29 +200,29 @@ export default function MyProductsPage() {
 
             <div className="space-y-3 mb-4">
               <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-500">Price:</span>
-                <span className="font-semibold text-gray-900">
+                <span className="text-sm text-surface-500">Price:</span>
+                <span className="font-semibold text-white">
                   ${product.price > 0 ? product.price.toFixed(2) : 'Not set'} / {product.unit}
                 </span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-500">Stock:</span>
-                <span className="font-semibold text-gray-900">{product.stock} {product.unit}</span>
+                <span className="text-sm text-surface-500">Stock:</span>
+                <span className="font-semibold text-white">{product.stock} {product.unit}</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-500">Status:</span>
+                <span className="text-sm text-surface-500">Status:</span>
                 <span className={`px-2 py-1 text-xs rounded-full ${
                   product.isAvailable 
-                    ? 'bg-green-100 text-green-800' 
-                    : 'bg-gray-100 text-gray-800'
+                    ? 'bg-emerald-500/10 text-emerald-300' 
+                    : 'bg-white/[0.04] text-gray-800'
                 }`}>
                   {product.isAvailable ? 'Published' : 'Draft'}
                 </span>
               </div>
               {product.farm && (
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-gray-500">Farm:</span>
-                  <span className="text-sm text-gray-900">{product.farm.name}</span>
+                  <span className="text-sm text-surface-500">Farm:</span>
+                  <span className="text-sm text-white">{product.farm.name}</span>
                 </div>
               )}
             </div>
@@ -230,7 +230,7 @@ export default function MyProductsPage() {
             <div className="flex items-center gap-2">
               <button
                 onClick={() => handleEditProduct(product)}
-                className="flex-1 bg-teal-600 text-white px-3 py-2 rounded-lg hover:bg-teal-700 transition-colors text-sm flex items-center justify-center gap-1"
+                className="flex-1 bg-gradient-to-r from-emerald-600 to-emerald-500 text-white px-3 py-2 rounded-lg hover:brightness-110 transition-colors text-sm flex items-center justify-center gap-1"
               >
                 <Edit className="w-3 h-3" />
                 Edit
@@ -240,7 +240,7 @@ export default function MyProductsPage() {
                 className={`flex-1 px-3 py-2 rounded-lg transition-colors text-sm flex items-center justify-center gap-1 ${
                   product.isAvailable
                     ? 'bg-orange-600 text-white hover:bg-orange-700'
-                    : 'bg-green-600 text-white hover:bg-green-700'
+                    : 'bg-gradient-to-r from-emerald-600 to-emerald-500 text-white hover:bg-green-700'
                 }`}
               >
                 {product.isAvailable ? (
@@ -257,7 +257,7 @@ export default function MyProductsPage() {
               </button>
               <button
                 onClick={() => openConfirmDelete(product._id)}
-                className="bg-red-600 text-white px-3 py-2 rounded-lg hover:bg-red-700 transition-colors text-sm"
+                className="bg-gradient-to-r from-red-600 to-red-500 text-white px-3 py-2 rounded-lg hover:bg-red-700 transition-colors text-sm"
               >
                 <Trash2 className="w-3 h-3" />
               </button>
@@ -268,9 +268,9 @@ export default function MyProductsPage() {
 
       {products.length === 0 && (
         <div className="text-center py-12">
-          <Package className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-          <h3 className="text-lg font-medium text-gray-900 mb-2">No products yet</h3>
-          <p className="text-gray-500">
+          <Package className="w-12 h-12 text-surface-500 mx-auto mb-4" />
+          <h3 className="text-lg font-medium text-white mb-2">No products yet</h3>
+          <p className="text-surface-500">
             Harvest your crops to automatically create products here. You can then edit and publish them to the marketplace.
           </p>
         </div>
@@ -279,12 +279,12 @@ export default function MyProductsPage() {
       {/* Edit Product Modal */}
                       {showEditModal && selectedProduct && (
           <div className="fixed inset-0 z-50">
-            <div className="absolute inset-0 bg-black bg-opacity-50" onClick={() => setShowEditModal(false)} />
-            <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-white rounded-lg p-6 w-full max-w-md">
+            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowEditModal(false)} />
+            <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-surface-800/80 rounded-2xl border border-white/[0.06] p-6 w-full max-w-md">
             <h2 className="text-xl font-semibold mb-4">Edit Product</h2>
             <form onSubmit={handleUpdateProduct} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Product Name</label>
+                <label className="block text-sm font-medium text-surface-300 mb-1">Product Name</label>
                 <input
                   type="text"
                   value={editForm.name}
@@ -294,7 +294,7 @@ export default function MyProductsPage() {
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                <label className="block text-sm font-medium text-surface-300 mb-1">Description</label>
                 <textarea
                   value={editForm.description}
                   onChange={(e) => setEditForm({...editForm, description: e.target.value})}
@@ -305,9 +305,9 @@ export default function MyProductsPage() {
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Price</label>
+                  <label className="block text-sm font-medium text-surface-300 mb-1">Price</label>
                   <div className="relative">
-                    <DollarSign className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" />
+                    <DollarSign className="absolute left-3 top-2.5 w-4 h-4 text-surface-500" />
                     <input
                       type="number"
                       step="0.01"
@@ -319,7 +319,7 @@ export default function MyProductsPage() {
                   </div>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Stock</label>
+                  <label className="block text-sm font-medium text-surface-300 mb-1">Stock</label>
                   <input
                     type="number"
                     value={editForm.stock}
@@ -331,7 +331,7 @@ export default function MyProductsPage() {
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
+                  <label className="block text-sm font-medium text-surface-300 mb-1">Category</label>
                   <select
                     value={editForm.category}
                     onChange={(e) => setEditForm({...editForm, category: e.target.value})}
@@ -346,7 +346,7 @@ export default function MyProductsPage() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Unit</label>
+                  <label className="block text-sm font-medium text-surface-300 mb-1">Unit</label>
                   <select
                     value={editForm.unit}
                     onChange={(e) => setEditForm({...editForm, unit: e.target.value})}
@@ -363,14 +363,14 @@ export default function MyProductsPage() {
               <div className="flex gap-2">
                 <button
                   type="submit"
-                  className="flex-1 bg-teal-600 text-white py-2 rounded-lg hover:bg-teal-700"
+                  className="flex-1 bg-gradient-to-r from-emerald-600 to-emerald-500 text-white py-2 rounded-lg hover:brightness-110"
                 >
                   Update Product
                 </button>
                 <button
                   type="button"
                   onClick={() => setShowEditModal(false)}
-                  className="flex-1 bg-gray-300 text-gray-700 py-2 rounded-lg hover:bg-gray-400"
+                  className="flex-1 bg-gray-300 text-surface-300 py-2 rounded-lg hover:bg-gray-400"
                 >
                   Cancel
                 </button>

@@ -1,6 +1,7 @@
 "use client";
 import ConfirmDialog from "@/app/components/ConfirmDialog";
 import { useToast } from "@/app/components/ToastProvider";
+import Button from '@/app/components/ui/Button';
 import { Check, CheckCircle, Clock, Edit, MessageCircle, Trash2, X } from "lucide-react";
 import { useEffect, useState } from "react";
 
@@ -161,7 +162,7 @@ export default function CommunityForumPage() {
   return (
     <div className="max-w-3xl mx-auto p-4">
       <h1 className="text-2xl font-bold mb-4">Community Forum</h1>
-      <form onSubmit={handleCreatePost} className="bg-white rounded shadow p-4 mb-6">
+      <form onSubmit={handleCreatePost} className="bg-surface-800/80 rounded-2xl shadow-sm border border-white/[0.06] p-4 mb-6">
         <div className="flex gap-2 mb-2">
           <select name="type" value={newPost.type} onChange={handlePostChange} className="border rounded p-2">
             <option value="question">Question</option>
@@ -186,34 +187,34 @@ export default function CommunityForumPage() {
           className="border rounded p-2 w-full mb-2"
           required
         />
-        <button type="submit" className="bg-teal-600 text-white px-4 py-2 rounded" disabled={posting}>
+        <Button type="submit" disabled={posting}>
           {posting ? "Posting..." : "Post"}
-        </button>
+        </Button>
       </form>
       {loading ? (
         <div>Loading posts...</div>
       ) : (
         <div className="space-y-6">
           {posts.map((post) => (
-            <div key={post._id} className="bg-white rounded shadow p-4">
+            <div key={post._id} className="bg-surface-800/80 rounded-2xl shadow-sm border border-white/[0.06] p-4">
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-2">
                   <span className="font-semibold text-teal-700">{post.author?.name || "Farmer"}</span>
-                  <span className="text-xs text-gray-500">{new Date(post.createdAt).toLocaleString()}</span>
-                  <span className="ml-2 px-2 py-1 text-xs rounded bg-gray-100 text-gray-600">{post.type}</span>
+                  <span className="text-xs text-surface-500">{new Date(post.createdAt).toLocaleString()}</span>
+                  <span className="ml-2 px-2 py-1 text-xs rounded bg-white/[0.04] text-surface-400">{post.type}</span>
                 </div>
                 {currentUser === post.author?._id && (
                   <div className="flex gap-2">
                     <button
                       onClick={() => setEditingPost(post)}
-                      className="text-blue-600 hover:text-blue-800"
+                      className="text-sky-400 hover:text-sky-300"
                     >
                       <Edit className="w-4 h-4" />
                     </button>
                     <button
                       onClick={() => openConfirmForPost(post._id)}
                       disabled={deleting[post._id]}
-                      className="text-red-600 hover:text-red-800"
+                      className="text-red-400 hover:text-red-300"
                     >
                       {deleting[post._id] ? (
                         <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current"></div>
@@ -247,7 +248,7 @@ export default function CommunityForumPage() {
                         title: editingPost.title,
                         content: editingPost.content
                       })}
-                      className="bg-green-600 text-white px-3 py-1 rounded text-sm"
+                      className="bg-gradient-to-r from-emerald-600 to-emerald-500 text-white px-3 py-1 rounded text-sm"
                     >
                       <Check className="w-4 h-4 inline mr-1" />
                       Save
@@ -270,24 +271,24 @@ export default function CommunityForumPage() {
               
               <div className="ml-4 border-l-2 border-teal-100 pl-4 space-y-2">
                 {post.replies?.map((reply) => (
-                  <div key={reply._id} className="bg-gray-50 rounded p-2">
+                  <div key={reply._id} className="bg-white/[0.02] rounded p-2">
                     <div className="flex items-center justify-between mb-1">
                       <div className="flex items-center gap-2">
-                        <span className="font-semibold text-teal-600">{reply.author?.name || "Farmer"}</span>
-                        <span className="text-xs text-gray-400">{new Date(reply.createdAt).toLocaleString()}</span>
+                        <span className="font-semibold text-teal-400">{reply.author?.name || "Farmer"}</span>
+                        <span className="text-xs text-surface-500">{new Date(reply.createdAt).toLocaleString()}</span>
                       </div>
                       {currentUser === reply.author?._id && (
                         <div className="flex gap-2">
                           <button
                             onClick={() => setEditingReply({...reply, postId: post._id})}
-                            className="text-blue-600 hover:text-blue-800"
+                            className="text-sky-400 hover:text-sky-300"
                           >
                             <Edit className="w-3 h-3" />
                           </button>
                           <button
                             onClick={() => openConfirmForReply(post._id, reply._id)}
                             disabled={deleting[reply._id]}
-                            className="text-red-600 hover:text-red-800"
+                            className="text-red-400 hover:text-red-300"
                           >
                             {deleting[reply._id] ? (
                               <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-current"></div>
@@ -309,7 +310,7 @@ export default function CommunityForumPage() {
                         <div className="flex gap-2">
                           <button
                             onClick={() => handleEditReply(post._id, reply._id, editingReply.content)}
-                            className="bg-green-600 text-white px-2 py-1 rounded text-xs"
+                            className="bg-gradient-to-r from-emerald-600 to-emerald-500 text-white px-2 py-1 rounded text-xs"
                           >
                             <Check className="w-3 h-3 inline mr-1" />
                             Save
@@ -336,13 +337,13 @@ export default function CommunityForumPage() {
                     onChange={e => handleReplyChange(post._id, e.target.value)}
                     className="border rounded p-2 flex-1"
                   />
-                  <button
+                  <Button
                     onClick={() => handleReply(post._id)}
-                    className="bg-teal-500 text-white px-3 py-1 rounded"
                     disabled={replying[post._id] || !replyContent[post._id]}
+                    className="px-3 py-1"
                   >
                     {replying[post._id] ? "Replying..." : "Reply"}
-                  </button>
+                  </Button>
                 </div>
               </div>
             </div>

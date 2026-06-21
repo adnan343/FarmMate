@@ -1,6 +1,9 @@
 import mongoose from 'mongoose';
 import Crop from '../models/crop.model.js';
 import Farm from '../models/farm.model.js';
+import Order from '../models/order.model.js';
+import User from '../models/user.model.js';
+import Product from '../models/product.model.js';
 
 function convertToKilograms(value, unit) {
   if (value == null) return null;
@@ -161,4 +164,97 @@ export const getYieldAnalyticsByFarmer = async (req, res) => {
   }
 };
 
+// Farmer dashboard analytics (sales, orders, products overview)
+export const getFarmerDashboardAnalytics = async (req, res) => {
+  try {
+    const { farmerId } = req.params;
+    
+    if (!mongoose.Types.ObjectId.isValid(farmerId)) {
+      return res.status(400).json({ success: false, message: 'Invalid farmer ID' });
+    }
 
+    // IDOR guard
+    if (req.user._id.toString() !== farmerId && req.user.role !== 'admin') {
+      return res.status(403).json({ success: false, message: 'Not authorized' });
+    }
+
+    // Total products
+    const totalProducts = await Product.countDocuments({ farmer: farmerId });
+
+    // Orders containing this farmer's products
+    const orders = await Order.find({ 'items.farmer': farmerId });
+    const totalOrders = orders.length;
+    const totalRevenue = orders.reduce((sum, order) => {
+      const farmerItems = order.items.filter(
+        item => (item.farmer?._id?.toString() || item.farmer?.toString()) === farmerId
+      );
+      return sum + farmerItems.reduce((itemSum, item) => itemSum + (item.price * item.quantity), 0);
+    }, 0);
+
+    // Order status breakdown
+    const statusBreakdown = {
+      pending: orders.filter(o => o.status === 'pending').length,
+      confirmed: orders.filter(o => o.status === 'confirmed').length,
+      shipped: orders.filter(o => o.status === 'shipped').length,
+      delivered: orders.filter(o => o.status === 'delivered').length,
+      cancelled: orders.filter(o => o.status === 'cancelled').length,
+    };
+
+    res.status(200).json({
+      success: true,
+      data: {
+        totalProducts,
+        totalOrders,
+        totalRevenue,
+        statusBreakdown,
+      }
+    });
+  } catch (err) {
+    console.error('Error fetching farmer dashboard analytics:', err);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+};
+
+// Admin platform analytics
+export const getAdminAnalytics = async (req, res) => {
+  try {
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ success: false, message: 'Admin access required' });
+    }
+
+    const totalUsers = await User.countDocuments();
+    const totalFarmers = await User.countDocuments({ role: 'farmer' });
+    const totalBuyers = await User.countDocuments({ role: 'buyer' });
+    const totalProducts = await Product.countDocuments();
+    const totalOrders = await Order.countDocuments();
+    
+    // Total revenue across all orders
+    const orders = await Order.find({});
+    const totalRevenue = orders.reduce((sum, order) => sum + (order.total || 0), 0);
+
+    // Order status breakdown
+    const statusBreakdown = {
+      pending: orders.filter(o => o.status === 'pending').length,
+      confirmed: orders.filter(o => o.status === 'confirmed').length,
+      shipped: orders.filter(o => o.status === 'shipped').length,
+      delivered: orders.filter(o => o.status === 'delivered').length,
+      cancelled: orders.filter(o => o.status === 'cancelled').length,
+    };
+
+    res.status(200).json({
+      success: true,
+      data: {
+        totalUsers,
+        totalFarmers,
+        totalBuyers,
+        totalProducts,
+        totalOrders,
+        totalRevenue,
+        statusBreakdown,
+      }
+    });
+  } catch (err) {
+    console.error('Error fetching admin analytics:', err);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+};

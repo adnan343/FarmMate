@@ -2,6 +2,7 @@
 
 import ConfirmDialog from '@/app/components/ConfirmDialog';
 import { useToast } from '@/app/components/ToastProvider';
+import { getApiUrl } from '@/lib/apiConfig';
 import { ArrowLeft, CreditCard, Minus, Plus, ShoppingCart, Trash2 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -39,7 +40,7 @@ export default function CartPage() {
         return;
       }
 
-      const response = await fetch(`http://localhost:5000/api/cart/${userId}`, {
+      const response = await fetch(getApiUrl(`/cart/${userId}`), {
         credentials: 'include'
       });
       if (response.ok) {
@@ -68,7 +69,7 @@ export default function CartPage() {
 
       const userId = cookies.userId;
       
-      const response = await fetch(`http://localhost:5000/api/cart/${userId}/items/${itemId}`, {
+      const response = await fetch(getApiUrl(`/cart/${userId}/items/${itemId}`), {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -104,7 +105,7 @@ export default function CartPage() {
 
       const userId = cookies.userId;
       
-      const response = await fetch(`http://localhost:5000/api/cart/${userId}/items/${itemId}`, {
+      const response = await fetch(getApiUrl(`/cart/${userId}/items/${itemId}`), {
         method: 'DELETE',
         credentials: 'include'
       });
@@ -130,7 +131,7 @@ export default function CartPage() {
 
       const userId = cookies.userId;
       
-      const response = await fetch(`http://localhost:5000/api/cart/${userId}/clear`, {
+      const response = await fetch(getApiUrl(`/cart/${userId}/clear`), {
         method: 'DELETE',
         credentials: 'include'
       });
@@ -172,26 +173,26 @@ export default function CartPage() {
         <div className="flex items-center gap-4 mb-4">
           <Link 
             href="/dashboard/buyer/marketplace" 
-            className="flex items-center gap-2 text-gray-600 hover:text-teal-600 transition-colors"
+            className="flex items-center gap-2 text-surface-400 hover:text-teal-400 transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
             Back to Marketplace
           </Link>
         </div>
-        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">Shopping Cart</h1>
-        <p className="text-sm sm:text-base text-gray-600">
+        <h1 className="text-2xl sm:text-3xl font-bold text-white mb-2">Shopping Cart</h1>
+        <p className="text-sm sm:text-base text-surface-400">
           {cart.itemCount} {cart.itemCount === 1 ? 'item' : 'items'} in your cart
         </p>
       </div>
 
       {cart.items.length === 0 ? (
         <div className="text-center py-12">
-          <ShoppingCart className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">Your cart is empty</h2>
-          <p className="text-gray-600 mb-6">Add some products to your cart to get started</p>
+          <ShoppingCart className="w-16 h-16 text-surface-500 mx-auto mb-4" />
+          <h2 className="text-xl font-semibold text-white mb-2">Your cart is empty</h2>
+          <p className="text-surface-400 mb-6">Add some products to your cart to get started</p>
           <Link
             href="/dashboard/buyer/marketplace"
-            className="inline-flex items-center gap-2 px-6 py-3 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors"
+            className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-emerald-600 to-emerald-500 text-white rounded-lg hover:brightness-110 transition-colors"
           >
             Browse Products
           </Link>
@@ -200,25 +201,25 @@ export default function CartPage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-8">
           {/* Cart Items */}
           <div className="lg:col-span-2">
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-              <div className="p-4 sm:p-6 border-b border-gray-200">
+            <div className="bg-surface-800/80 rounded-2xl shadow-sm border border-white/[0.06]">
+              <div className="p-4 sm:p-6 border-b border-white/[0.06]">
                 <div className="flex items-center justify-between">
-                  <h2 className="text-base sm:text-lg font-semibold text-gray-900">Cart Items</h2>
+                  <h2 className="text-base sm:text-lg font-semibold text-white">Cart Items</h2>
                   <button
                     onClick={onClickClearCart}
-                    className="text-sm text-red-600 hover:text-red-700 transition-colors"
+                    className="text-sm text-red-400 hover:text-red-700 transition-colors"
                   >
                     Clear Cart
                   </button>
                 </div>
               </div>
               
-              <div className="divide-y divide-gray-200">
+              <div className="divide-y divide-white/[0.06]">
                 {cart.items.map((item) => (
                   <div key={item._id} className="p-4 sm:p-6">
                     <div className="flex items-start gap-3 sm:gap-4">
                       {/* Product Image */}
-                      <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                      <div className="w-16 h-16 sm:w-20 sm:h-20 bg-white/[0.04] rounded-lg flex items-center justify-center flex-shrink-0">
                         {item.image ? (
                           <img 
                             src={item.image} 
@@ -232,10 +233,10 @@ export default function CartPage() {
 
                       {/* Product Details */}
                       <div className="flex-1 min-w-0">
-                        <h3 className="text-base sm:text-lg font-medium text-gray-900 mb-1">{item.name}</h3>
-                        <p className="text-xs sm:text-sm text-gray-600 mb-2">Farmer: {item.farmer?.name || 'Unknown'}</p>
-                        <p className="text-base sm:text-lg font-semibold text-teal-600">${item.price.toFixed(2)}</p>
-                        <p className="text-xs sm:text-sm text-gray-500">
+                        <h3 className="text-base sm:text-lg font-medium text-white mb-1">{item.name}</h3>
+                        <p className="text-xs sm:text-sm text-surface-400 mb-2">Farmer: {item.farmer?.name || 'Unknown'}</p>
+                        <p className="text-base sm:text-lg font-semibold text-teal-400">${item.price.toFixed(2)}</p>
+                        <p className="text-xs sm:text-sm text-surface-500">
                           Stock: {item.productId?.stock || 'Unknown'} available
                         </p>
                       </div>
@@ -245,7 +246,7 @@ export default function CartPage() {
                         <button
                           onClick={() => updateQuantity(item._id, item.quantity - 1)}
                           disabled={updatingItem === item._id}
-                          className="p-1 rounded-lg hover:bg-gray-100 transition-colors disabled:opacity-50"
+                          className="p-1 rounded-lg hover:bg-white/[0.04] transition-colors disabled:opacity-50"
                         >
                           <Minus className="w-4 h-4" />
                         </button>
@@ -255,7 +256,7 @@ export default function CartPage() {
                         <button
                           onClick={() => updateQuantity(item._id, item.quantity + 1)}
                           disabled={updatingItem === item._id}
-                          className="p-1 rounded-lg hover:bg-gray-100 transition-colors disabled:opacity-50"
+                          className="p-1 rounded-lg hover:bg-white/[0.04] transition-colors disabled:opacity-50"
                         >
                           <Plus className="w-4 h-4" />
                         </button>
@@ -264,7 +265,7 @@ export default function CartPage() {
                       {/* Remove Button */}
                       <button
                         onClick={() => removeItem(item._id)}
-                        className="p-2 text-gray-400 hover:text-red-600 transition-colors"
+                        className="p-2 text-surface-500 hover:text-red-400 transition-colors"
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
@@ -272,8 +273,8 @@ export default function CartPage() {
 
                     {/* Item Total */}
                     <div className="mt-4 text-right">
-                      <p className="text-sm text-gray-600">
-                        Total: <span className="font-semibold text-gray-900">${(item.price * item.quantity).toFixed(2)}</span>
+                      <p className="text-sm text-surface-400">
+                        Total: <span className="font-semibold text-white">${(item.price * item.quantity).toFixed(2)}</span>
                       </p>
                     </div>
                   </div>
@@ -284,33 +285,33 @@ export default function CartPage() {
 
           {/* Order Summary */}
           <div className="lg:col-span-1">
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6 sticky top-6">
-              <h2 className="text-base sm:text-lg font-semibold text-gray-900 mb-4">Order Summary</h2>
+            <div className="bg-surface-800/80 rounded-2xl shadow-sm border border-white/[0.06] p-4 sm:p-6 sticky top-6">
+              <h2 className="text-base sm:text-lg font-semibold text-white mb-4">Order Summary</h2>
               
               <div className="space-y-3 mb-6">
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">Subtotal ({cart.itemCount} items)</span>
+                  <span className="text-surface-400">Subtotal ({cart.itemCount} items)</span>
                   <span className="font-medium">${cart.total.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">Shipping</span>
+                  <span className="text-surface-400">Shipping</span>
                   <span className="font-medium">Free</span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-gray-600">Tax</span>
+                  <span className="text-surface-400">Tax</span>
                   <span className="font-medium">${(cart.total * 0.08).toFixed(2)}</span>
                 </div>
-                <div className="border-t border-gray-200 pt-3">
+                <div className="border-t border-white/[0.06] pt-3">
                   <div className="flex justify-between text-lg font-semibold">
                     <span>Total</span>
-                    <span className="text-teal-600">${(cart.total * 1.08).toFixed(2)}</span>
+                    <span className="text-teal-400">${(cart.total * 1.08).toFixed(2)}</span>
                   </div>
                 </div>
               </div>
 
               <button
                 onClick={() => router.push('/dashboard/buyer/checkout')}
-                className="w-full flex items-center justify-center gap-2 bg-teal-600 text-white py-3 px-4 rounded-lg hover:bg-teal-700 transition-colors font-medium"
+                className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-emerald-600 to-emerald-500 text-white py-3 px-4 rounded-lg hover:brightness-110 transition-colors font-medium"
               >
                 <CreditCard className="w-4 h-4" />
                 Proceed to Checkout
@@ -319,7 +320,7 @@ export default function CartPage() {
               <div className="mt-4 text-center">
                 <Link
                   href="/dashboard/buyer/marketplace"
-                  className="text-sm text-teal-600 hover:text-teal-700 transition-colors"
+                  className="text-sm text-teal-400 hover:text-teal-700 transition-colors"
                 >
                   Continue Shopping
                 </Link>

@@ -1,21 +1,26 @@
 import express from 'express';
-import { createTask, deleteTask, getCategoryProgress, getSummary, getTaskById, getTasks, getUpcoming, updateTask } from '../controllers/task.controller.js';
+import { createTask, deleteTask, getCategoryProgress, getSummary, getTaskById, getTasks, getUpcoming, updateTask, getAIPrioritized, getGroupedTasks } from '../controllers/task.controller.js';
 import auth from '../middleware/auth.js';
+import { requireRole } from '../middleware/rbac.js';
 
 const router = express.Router();
 
-// List tasks (optionally filter by farmerId)
-router.get('/', auth, getTasks);
-router.get('/farmer/:farmerId', auth, getTasks);
-router.get('/summary/:farmerId', auth, getSummary);
-router.get('/upcoming/:farmerId', auth, getUpcoming);
-router.get('/categories/:farmerId', auth, getCategoryProgress);
+// List tasks (farmer or admin)
+router.get('/', auth, requireRole('farmer', 'admin'), getTasks);
+router.get('/farmer/:farmerId', auth, requireRole('farmer', 'admin'), getTasks);
+router.get('/summary/:farmerId', auth, requireRole('farmer', 'admin'), getSummary);
+router.get('/upcoming/:farmerId', auth, requireRole('farmer', 'admin'), getUpcoming);
+router.get('/categories/:farmerId', auth, requireRole('farmer', 'admin'), getCategoryProgress);
 
-// CRUD
-router.post('/', auth, createTask);
-router.get('/:id', auth, getTaskById);
-router.put('/:id', auth, updateTask);
-router.delete('/:id', auth, deleteTask);
+// AI-Prioritized endpoints (farmer only)
+router.get('/ai-prioritized/:farmerId', auth, requireRole('farmer'), getAIPrioritized);
+router.get('/grouped/:farmerId', auth, requireRole('farmer'), getGroupedTasks);
+
+// CRUD (farmer only)
+router.post('/', auth, requireRole('farmer'), createTask);
+router.get('/:id', auth, requireRole('farmer', 'admin'), getTaskById);
+router.put('/:id', auth, requireRole('farmer'), updateTask);
+router.delete('/:id', auth, requireRole('farmer'), deleteTask);
 
 export default router;
 

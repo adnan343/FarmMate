@@ -1,44 +1,56 @@
 import express from 'express';
 import auth from '../middleware/auth.js';
+import { requireRole, requireAdmin } from '../middleware/rbac.js';
 import { 
     getAllProducts, 
+    getMarketplaceProducts,
     getProductsByCategory, 
     getProductById, 
     createProduct, 
+    createHarvestedProduct,
+    addToMarketplace,
+    removeFromMarketplace,
     updateProduct, 
     deleteProduct,
     getProductsByFarmer,
     getFarmerOwnProducts,
-    toggleProductAvailability
+    toggleProductAvailability,
+    getHarvestedProductsByFarmer,
+    getMarketplaceProductsByFarmer
 } from '../controllers/product.controller.js';
 
 const router = express.Router();
 
-// Get all products
+// Public routes (browse products)
 router.get('/', getAllProducts);
-
-// Get products by category
+router.get('/marketplace', getMarketplaceProducts);
 router.get('/category/:category', getProductsByCategory);
 
-// Get products by farmer (for marketplace)
+// Protected farmer-specific routes must be declared before /farmer/:farmerId and /:id.
+router.get('/farmer/:farmerId/own', auth, requireRole('farmer', 'admin'), getFarmerOwnProducts);
+router.get('/farmer/:farmerId/harvested', auth, requireRole('farmer', 'admin'), getHarvestedProductsByFarmer);
+router.get('/farmer/:farmerId/marketplace', auth, requireRole('farmer', 'admin'), getMarketplaceProductsByFarmer);
+router.post('/harvested', auth, requireRole('farmer'), createHarvestedProduct);
+
 router.get('/farmer/:farmerId', getProductsByFarmer);
 
-// Get farmer's own products (including unpublished)
-router.get('/farmer/:farmerId/own', auth, getFarmerOwnProducts);
-
-// Get single product
+// Single product (public for browsing)
 router.get('/:id', getProductById);
 
-// Create new product
-router.post('/', auth, createProduct);
+// Create new product (farmer only)
+router.post('/', auth, requireRole('farmer'), createProduct);
 
-// Update product
-router.put('/:id', auth, updateProduct);
+// Update product (farmer owner or admin)
+router.put('/:id', auth, requireRole('farmer', 'admin'), updateProduct);
 
-// Toggle product availability (publish/unpublish)
-router.patch('/:id/availability', auth, toggleProductAvailability);
+// Marketplace operations (farmer only)
+router.put('/:id/marketplace', auth, requireRole('farmer'), addToMarketplace);
+router.put('/:id/remove-marketplace', auth, requireRole('farmer'), removeFromMarketplace);
 
-// Delete product
-router.delete('/:id', auth, deleteProduct);
+// Toggle product availability (farmer only)
+router.patch('/:id/availability', auth, requireRole('farmer'), toggleProductAvailability);
 
-export default router; 
+// Delete product (farmer owner or admin)
+router.delete('/:id', auth, requireRole('farmer', 'admin'), deleteProduct);
+
+export default router;

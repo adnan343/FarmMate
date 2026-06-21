@@ -163,31 +163,31 @@ export default function FavoritesPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">My Favorites</h1>
-          <p className="text-gray-600 mt-2">Your saved favorite products</p>
+          <h1 className="text-3xl font-bold text-white">My Favorites</h1>
+          <p className="text-surface-400 mt-2">Your saved favorite products</p>
         </div>
         <div className="flex items-center gap-2">
-          <span className="text-sm text-gray-600">Cart: {cartCount} items</span>
+          <span className="text-sm text-surface-400">Cart: {cartCount} items</span>
         </div>
       </div>
 
       {/* Search */}
-      <div className="bg-white rounded-xl shadow-sm p-6">
+      <div className="bg-surface-800/80 rounded-2xl shadow-sm border border-white/[0.06] p-6">
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-surface-500 z-10 pointer-events-none" />
           <input
             type="text"
             placeholder="Search your favorites..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent"
+                  className="w-full pl-10 pr-4 py-2 bg-surface-900/50 text-white border border-white/10 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-transparent placeholder:text-surface-500"
           />
         </div>
       </div>
 
       {/* Favorites */}
-      <div className="bg-white rounded-xl shadow-sm p-6">
-        <h2 className="text-xl font-semibold text-gray-900 mb-4">
+      <div className="bg-surface-800/80 rounded-2xl shadow-sm border border-white/[0.06] p-6">
+        <h2 className="text-xl font-semibold text-white mb-4">
           {loading ? 'Loading favorites...' : `${filteredFavorites.length} Favorite Products`}
         </h2>
         
@@ -198,15 +198,15 @@ export default function FavoritesPage() {
         ) : filteredFavorites.length === 0 ? (
           <div className="text-center py-12">
             <div className="text-4xl mb-4">💔</div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">No favorites found</h3>
-            <p className="text-gray-600">You haven&apos;t added any products to your favorites yet</p>
+            <h3 className="text-lg font-semibold text-white mb-2">No favorites found</h3>
+            <p className="text-surface-400">You haven&apos;t added any products to your favorites yet</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {filteredFavorites.map((product) => (
               <div 
                 key={product._id} 
-                className="border border-gray-200 rounded-lg overflow-hidden hover:shadow-lg transition-shadow"
+                className="border border-white/[0.06] rounded-lg overflow-hidden hover:shadow-lg transition-shadow"
               >
                 <div className="h-48 bg-gradient-to-br from-green-100 to-green-200 flex items-center justify-center relative">
                   {product.image ? (
@@ -221,7 +221,7 @@ export default function FavoritesPage() {
                   <button
                     onClick={() => removeFromFavorites(product._id)}
                     disabled={removingFromFavorites === product._id}
-                    className="absolute top-2 right-2 p-2 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors disabled:opacity-50"
+                    className="absolute top-2 right-2 p-2 bg-red-500/50 text-white rounded-full hover:bg-gradient-to-r from-red-600 to-red-500 transition-colors disabled:opacity-50"
                   >
                     {removingFromFavorites === product._id ? (
                       <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
@@ -232,34 +232,34 @@ export default function FavoritesPage() {
                 </div>
                 <div className="p-4">
                   <div className="flex items-center justify-between mb-2">
-                    <h3 className="font-semibold text-gray-900">{product.name}</h3>
-                    <Heart className="w-5 h-5 text-red-500 fill-current" />
+                    <h3 className="font-semibold text-white">{product.name}</h3>
+                    <Heart className="w-5 h-5 text-red-400 fill-current" />
                   </div>
-                  <p className="text-sm text-gray-600 mb-2 line-clamp-2">{product.description}</p>
+                  <p className="text-sm text-surface-400 mb-2 line-clamp-2">{product.description}</p>
                   <div className="flex items-center gap-1 mb-2">
                     {Array.from({ length: 5 }, (_, i) => (
                       <Star
                         key={i}
-                        className={`w-4 h-4 ${i < (product.rating || 0) ? 'text-yellow-400 fill-current' : 'text-gray-300'}`}
+                        className={`w-4 h-4 ${i < (product.rating || 0) ? 'text-yellow-400 fill-current' : 'text-surface-400'}`}
                       />
                     ))}
-                    <span className="text-sm text-gray-600 ml-1">({product.reviewCount || 0} reviews)</span>
+                    <span className="text-sm text-surface-400 ml-1">({product.reviewCount || 0} reviews)</span>
                   </div>
                   <div className="flex items-center gap-2 mb-3">
-                    <MapPin className="w-4 h-4 text-gray-400" />
-                    <span className="text-sm text-gray-600">
+                    <MapPin className="w-4 h-4 text-surface-500" />
+                    <span className="text-sm text-surface-400">
                       {product.farmer?.name || 'Unknown Farmer'}
                     </span>
                   </div>
                   <div className="flex items-center justify-between">
                     <div>
-                      <span className="text-lg font-bold text-gray-900">${product.price.toFixed(2)}</span>
-                      <span className="text-sm text-gray-600">/{product.unit}</span>
+                      <span className="text-lg font-bold text-white">${product.price.toFixed(2)}</span>
+                      <span className="text-sm text-surface-400">/{product.unit}</span>
                     </div>
                     <button 
                       onClick={() => addToCart(product._id)}
                       disabled={addingToCart === product._id || !product.isAvailable || product.stock === 0}
-                      className="bg-teal-600 text-white px-3 py-1 rounded-lg hover:bg-teal-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
+                      className="bg-gradient-to-r from-emerald-600 to-emerald-500 text-white px-3 py-1 rounded-lg hover:brightness-110 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
                     >
                       {addingToCart === product._id ? (
                         <>
@@ -274,8 +274,8 @@ export default function FavoritesPage() {
                       )}
                     </button>
                   </div>
-                  <div className="mt-2 text-sm text-gray-600">
-                    <span className={product.stock > 10 ? 'text-green-600' : product.stock > 0 ? 'text-yellow-600' : 'text-red-600'}>
+                  <div className="mt-2 text-sm text-surface-400">
+                    <span className={product.stock > 10 ? 'text-emerald-400' : product.stock > 0 ? 'text-amber-400' : 'text-red-400'}>
                       {product.stock > 10 ? 'In Stock' : product.stock > 0 ? 'Low Stock' : 'Out of Stock'}
                     </span>
                     <span className="ml-2">({product.stock} available)</span>

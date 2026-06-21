@@ -1,385 +1,697 @@
+/**
+ * FarmMate Landing Page — SaaS-Grade Redesign
+ * Full-screen hero, floating dashboard preview, animated stats,
+ * AI intelligence section, feature grid, step stepper, CTA
+ */
+"use client";
+
 import {
     ArrowRight,
     Calendar,
     CheckCircle,
+    ChevronRight,
     Globe,
     Leaf,
     LineChart,
+    List,
     Shield,
     Star,
     Store,
     TrendingUp,
-    Users
+    Users,
+    Sprout,
+    Search,
+    Bell,
+    BarChart3,
+    Quote,
+    Brain,
+    AlertTriangle,
+    Lightbulb,
 } from 'lucide-react';
 import Link from 'next/link';
+import { motion, useInView, AnimatePresence } from 'framer-motion';
+import { useRef, useState, useEffect } from 'react';
+
+/* ─── Animation Variants ─── */
+const fadeUp = {
+  hidden: { opacity: 0, y: 20 },
+  visible: (delay = 0) => ({
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.5, delay, ease: [0.25, 0.1, 0.25, 1] },
+  }),
+};
+
+const staggerContainer = {
+  hidden: {},
+  visible: { transition: { staggerChildren: 0.08, delayChildren: 0.1 } },
+};
+
+const staggerItem = {
+  hidden: { opacity: 0, y: 20 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.4, ease: [0.25, 0.1, 0.25, 1] } },
+};
+
+/* ─── Section Wrapper ─── */
+function Section({ children, className = '' }) {
+  const ref = useRef(null);
+  const isInView = useInView(ref, { once: true, margin: '-80px' });
+  return (
+    <motion.section
+      ref={ref}
+      initial="hidden"
+      animate={isInView ? 'visible' : 'hidden'}
+      variants={staggerContainer}
+      className={className}
+    >
+      {children}
+    </motion.section>
+  );
+}
+
+/* ─── Animated Counter ─── */
+function AnimatedStat({ value, label, suffix = '' }) {
+  const ref = useRef(null);
+  const isInView = useInView(ref, { once: true });
+  const [count, setCount] = useState(0);
+
+  useEffect(() => {
+    if (!isInView) return;
+    const num = parseInt(value.replace(/[^0-9]/g, ''));
+    if (isNaN(num)) { setCount(value); return; }
+    let start = 0;
+    const duration = 1500;
+    const step = Math.max(1, Math.floor(num / 30));
+    const interval = setInterval(() => {
+      start += step;
+      if (start >= num) { setCount(value); clearInterval(interval); }
+      else setCount(start + suffix);
+    }, duration / 30);
+    return () => clearInterval(interval);
+  }, [isInView, value, suffix]);
+
+  return (
+    <motion.div
+      ref={ref}
+      initial={{ opacity: 0, y: 20 }}
+      animate={isInView ? { opacity: 1, y: 0 } : {}}
+      transition={{ duration: 0.5, ease: 'easeOut' }}
+      className="text-center"
+    >
+      <div className="text-3xl sm:text-4xl font-bold text-white mb-1 tracking-tight">{count}</div>
+      <div className="text-sm text-emerald-200/60">{label}</div>
+    </motion.div>
+  );
+}
+
+/* ─── Nav Link ─── */
+function NavLink({ href, children, className = '' }) {
+  return (
+    <Link href={href} className={`text-surface-300 hover:text-white transition-colors text-sm font-medium ${className}`}>
+      {children}
+    </Link>
+  );
+}
+
+/* ─── Dashboard Preview Card ─── */
+function DashboardPreview() {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 30 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.7, delay: 0.3, ease: 'easeOut' }}
+      className="relative"
+    >
+      <motion.div
+        animate={{ y: [0, -8, 0] }}
+        transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut' }}
+        className="relative z-10 glass-card rounded-3xl p-6 border border-white/[0.08] shadow-glow-lg"
+      >
+        {/* Chart area */}
+        <div className="bg-gradient-to-br from-emerald-600/30 to-emerald-800/30 rounded-2xl p-5 mb-4 border border-emerald-500/20">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-sm font-semibold text-white">Smart Analytics</h3>
+            <TrendingUp className="w-5 h-5 text-emerald-400" />
+          </div>
+          <div className="space-y-3">
+            {[
+              { label: 'Crop Yield', value: '+24%', color: 'text-emerald-400' },
+              { label: 'Water Efficiency', value: '+18%', color: 'text-teal-400' },
+              { label: 'Cost Reduction', value: '−12%', color: 'text-amber-400' },
+            ].map((item, i) => (
+              <div key={i} className="flex items-center justify-between">
+                <span className="text-xs text-surface-300">{item.label}</span>
+                <div className="flex items-center gap-2">
+                  <div className="w-20 h-1.5 bg-white/10 rounded-full overflow-hidden">
+                    <motion.div
+                      initial={{ width: 0 }}
+                      animate={{ width: `${60 + i * 15}%` }}
+                      transition={{ duration: 1, delay: 0.8 + i * 0.2 }}
+                      className="h-full bg-gradient-to-r from-emerald-400 to-emerald-500 rounded-full"
+                    />
+                  </div>
+                  <span className={`text-xs font-bold ${item.color}`}>{item.value}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Mini cards grid */}
+        <div className="grid grid-cols-2 gap-3">
+          <div className="glass-card-light rounded-2xl p-3">
+            <div className="w-7 h-7 bg-emerald-500/15 rounded-lg flex items-center justify-center mb-2">
+              <Calendar className="w-3.5 h-3.5 text-emerald-400" />
+            </div>
+            <p className="text-xs font-semibold text-white">Planting Calendar</p>
+            <p className="text-[10px] text-surface-400">AI-optimized</p>
+          </div>
+          <div className="glass-card-light rounded-2xl p-3">
+            <div className="w-7 h-7 bg-teal-500/15 rounded-lg flex items-center justify-center mb-2">
+              <BarChart3 className="w-3.5 h-3.5 text-teal-400" />
+            </div>
+            <p className="text-xs font-semibold text-white">Real-time Data</p>
+            <p className="text-[10px] text-surface-400">Live monitoring</p>
+          </div>
+        </div>
+      </motion.div>
+
+      {/* Decorative floating elements */}
+      <motion.div
+        animate={{ y: [0, -12, 0], rotate: [0, 5, 0] }}
+        transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut' }}
+        className="absolute -top-3 -right-3 w-12 h-12 bg-emerald-500/10 rounded-2xl border border-emerald-500/20 flex items-center justify-center backdrop-blur-sm"
+      >
+        <Brain className="w-6 h-6 text-emerald-400" />
+      </motion.div>
+      <motion.div
+        animate={{ y: [0, 10, 0], rotate: [0, -5, 0] }}
+        transition={{ duration: 7, repeat: Infinity, ease: 'easeInOut' }}
+        className="absolute -bottom-2 -left-2 w-10 h-10 bg-amber-500/10 rounded-xl border border-amber-500/20 flex items-center justify-center backdrop-blur-sm"
+      >
+        <Lightbulb className="w-5 h-5 text-amber-400" />
+      </motion.div>
+    </motion.div>
+  );
+}
+
+/* ─── Feature Card ─── */
+function FeatureCard({ icon: Icon, title, description, items, color = 'emerald' }) {
+  const colorMap = {
+    emerald: 'from-emerald-500 to-emerald-600',
+    teal: 'from-teal-500 to-teal-600',
+    sky: 'from-sky-500 to-sky-600',
+    amber: 'from-amber-500 to-amber-600',
+    purple: 'from-purple-500 to-purple-600',
+    red: 'from-red-500 to-red-600',
+  };
+  const dotMap = {
+    emerald: 'bg-emerald-400',
+    teal: 'bg-teal-400',
+    sky: 'bg-sky-400',
+    amber: 'bg-amber-400',
+    purple: 'bg-purple-400',
+    red: 'bg-red-400',
+  };
+  return (
+    <motion.div
+      variants={staggerItem}
+      className="group glass-card rounded-2xl p-6 sm:p-8 border border-white/[0.06] hover:border-white/[0.12] hover:-translate-y-1 transition-all duration-300"
+    >
+      <motion.div
+        whileHover={{ scale: 1.1, rotate: 5 }}
+        className={`w-12 h-12 sm:w-14 sm:h-14 bg-gradient-to-br ${colorMap[color]} rounded-2xl flex items-center justify-center mb-4 sm:mb-5 shadow-lg`}
+      >
+        <Icon className="w-6 h-6 sm:w-7 sm:h-7 text-white" />
+      </motion.div>
+      <h3 className="text-lg sm:text-xl font-bold text-white mb-2 sm:mb-3 tracking-tight">{title}</h3>
+      <p className="text-sm text-surface-400 leading-relaxed mb-4 sm:mb-5">{description}</p>
+      <ul className="space-y-2">
+        {items.map((item, i) => (
+          <li key={i} className="flex items-center gap-2 text-xs sm:text-sm text-surface-400">
+            <span className={`w-1.5 h-1.5 rounded-full ${dotMap[color]} shrink-0`} />
+            {item}
+          </li>
+        ))}
+      </ul>
+    </motion.div>
+  );
+}
 
 export default function HomePage() {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
+  if (!mounted) return null;
+
   return (
-    <div className="bg-white min-h-screen">
-      {/* Header */}
-      <header className="sticky top-0 bg-white/90 backdrop-blur-md z-50 border-b border-gray-100">
+    <div className="bg-surface-900 min-h-screen text-surface-50 overflow-x-hidden">
+      {/* ─── HEADER ─── */}
+      <header className="sticky top-0 z-50 border-b border-white/[0.06] bg-surface-900/80 backdrop-blur-xl">
         <nav className="container mx-auto flex justify-between items-center p-4 px-4 sm:px-6">
-          <Link href="/" className="flex items-center gap-2 sm:gap-3">
-            <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-teal-500 to-teal-600 rounded-xl flex items-center justify-center shadow-lg">
-              <Leaf className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
-            </div>
-            <span className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-teal-600 to-teal-800 bg-clip-text text-transparent">
+          <Link href="/" className="flex items-center gap-2.5 group">
+            <motion.div
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className="w-9 h-9 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-xl flex items-center justify-center shadow-glow-emerald"
+            >
+              <Leaf className="h-5 w-5 text-white" />
+            </motion.div>
+            <span className="text-xl font-bold bg-gradient-to-r from-emerald-400 to-teal-400 bg-clip-text text-transparent tracking-tight">
               FarmMate
             </span>
           </Link>
           <div className="hidden sm:flex items-center gap-6">
-            <a href="#features" className="text-gray-600 hover:text-teal-600 transition-colors font-medium text-sm sm:text-base whitespace-nowrap">
-              Features
-            </a>
-            <a href="#about" className="text-gray-600 hover:text-teal-600 transition-colors font-medium text-sm sm:text-base whitespace-nowrap">
-              About
-            </a>
-            <Link href="/login" className="text-gray-600 hover:text-teal-600 transition-colors font-medium text-sm sm:text-base whitespace-nowrap">
+            <NavLink href="#features">Features</NavLink>
+            <NavLink href="#how-it-works">How It Works</NavLink>
+            <NavLink href="#ai-intelligence">AI</NavLink>
+            <Link href="/login" className="text-surface-300 hover:text-white transition-colors text-sm font-medium">
               Login
             </Link>
-            <Link href="/register" className="bg-gradient-to-r from-teal-500 to-teal-600 text-white px-4 sm:px-6 py-2 rounded-xl font-semibold hover:shadow-lg hover:shadow-teal-500/25 transition-all duration-300 text-sm sm:text-base whitespace-nowrap">
+            <Link
+              href="/register"
+              className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-500 text-white px-5 py-2.5 text-sm font-semibold shadow-sm hover:shadow-emerald-500/20 hover:brightness-110 transition-all duration-200"
+            >
               Get Started
             </Link>
           </div>
-          {/* Mobile navigation */}
           <div className="sm:hidden flex items-center gap-3">
-            <Link href="/login" className="text-gray-600 hover:text-teal-600 transition-colors font-medium text-sm whitespace-nowrap">
+            <Link href="/login" className="text-surface-300 hover:text-white text-sm font-medium">
               Login
             </Link>
-            <Link href="/register" className="bg-gradient-to-r from-teal-500 to-teal-600 text-white px-4 py-2 rounded-xl font-semibold hover:shadow-lg hover:shadow-teal-500/25 transition-all duration-300 text-sm whitespace-nowrap">
+            <Link href="/register" className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-500 text-white px-4 py-2 text-sm font-semibold hover:brightness-110 transition-all">
               Get Started
             </Link>
           </div>
         </nav>
       </header>
 
-      {/* Hero Section */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-teal-50 via-white to-blue-50 py-12 sm:py-20">
-        <div className="absolute inset-0 bg-[url('data:image/svg+xml,%3Csvg width=&quot;60&quot; height=&quot;60&quot; viewBox=&quot;0 0 60 60&quot; xmlns=&quot;http://www.w3.org/2000/svg&quot;%3E%3Cg fill=&quot;none&quot; fill-rule=&quot;evenodd&quot;%3E%3Cg fill=&quot;%2306b6d4&quot; fill-opacity=&quot;0.05&quot;%3E%3Ccircle cx=&quot;30&quot; cy=&quot;30&quot; r=&quot;2&quot;/%3E%3C/g%3E%3C/g%3E%3C/svg%3E')] opacity-50"></div>
-        <div className="container mx-auto px-4 sm:px-6 relative z-10">
+      {/* ─── HERO SECTION ─── */}
+      <section className="relative min-h-[90vh] flex items-center overflow-hidden pt-20 pb-16 sm:pb-20">
+        {/* Background decorations */}
+        <div className="absolute inset-0 mesh-overlay pointer-events-none" />
+        <motion.div
+          className="absolute -top-40 -left-40 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl"
+          animate={{ x: [0, 30, 0], y: [0, -30, 0] }}
+          transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
+        />
+        <motion.div
+          className="absolute top-1/3 -right-40 w-80 h-80 bg-teal-500/8 rounded-full blur-3xl"
+          animate={{ x: [0, -20, 0], y: [0, 20, 0] }}
+          transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut' }}
+        />
+        <motion.div
+          className="absolute bottom-20 left-1/4 w-64 h-64 bg-amber-500/8 rounded-full blur-3xl"
+          animate={{ x: [0, 15, 0], y: [0, -15, 0] }}
+          transition={{ duration: 7, repeat: Infinity, ease: 'easeInOut' }}
+        />
+
+        <div className="relative z-10 container mx-auto px-4 sm:px-6">
           <div className="grid lg:grid-cols-2 gap-8 sm:gap-12 items-center">
-            <div className="space-y-6 sm:space-y-8">
-              <div className="inline-flex items-center gap-2 bg-teal-100 text-teal-700 px-3 sm:px-4 py-2 rounded-full text-xs sm:text-sm font-medium">
+            {/* Hero Left */}
+            <motion.div
+              initial="hidden"
+              animate="visible"
+              variants={staggerContainer}
+              className="space-y-6 sm:space-y-8"
+            >
+              <motion.div
+                variants={fadeUp}
+                custom={0}
+                className="inline-flex items-center gap-2 bg-white/5 text-emerald-300 px-3 sm:px-4 py-2 rounded-full text-xs sm:text-sm font-medium border border-emerald-500/20"
+              >
                 <Star className="w-3 h-3 sm:w-4 sm:h-4" />
-                <span className="hidden sm:inline">Trusted by 10,000+ farmers worldwide</span>
-                <span className="sm:hidden">10,000+ farmers</span>
-              </div>
-              <h1 className="text-3xl sm:text-5xl lg:text-7xl font-bold leading-tight">
-                <span className="bg-gradient-to-r from-teal-600 to-blue-600 bg-clip-text text-transparent">
+                <span>Trusted by 10,000+ farmers worldwide</span>
+              </motion.div>
+
+              <motion.h1
+                variants={fadeUp}
+                custom={0.1}
+                className="text-4xl sm:text-5xl lg:text-6xl font-bold leading-tight text-white tracking-tight"
+              >
+                <span className="bg-gradient-to-r from-emerald-400 to-teal-400 bg-clip-text text-transparent">
                   The Future of
                 </span>
                 <br />
-                <span className="text-gray-900">Farming is Here</span>
-              </h1>
-              <p className="text-base sm:text-xl text-gray-600 leading-relaxed max-w-2xl">
-                FarmMate revolutionizes agriculture with AI-powered insights, smart crop management, 
-                and a thriving marketplace connecting farmers and buyers worldwide.
-              </p>
-              <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
-                <Link href="/register" className="bg-gradient-to-r from-teal-500 to-teal-600 text-white px-6 sm:px-8 py-3 sm:py-4 rounded-xl font-semibold text-base sm:text-lg hover:shadow-xl hover:shadow-teal-500/25 transition-all duration-300 flex items-center justify-center gap-2 group">
+                <span>Farming is Here</span>
+              </motion.h1>
+
+              <motion.p
+                variants={fadeUp}
+                custom={0.2}
+                className="text-base sm:text-lg text-surface-400 leading-relaxed max-w-xl"
+              >
+                AI-powered insights, smart crop management, and a thriving marketplace — all in one platform. 
+                FarmMate revolutionizes agriculture for the modern era.
+              </motion.p>
+
+              <motion.div
+                variants={fadeUp}
+                custom={0.3}
+                className="flex flex-col sm:flex-row gap-3 sm:gap-4"
+              >
+                <Link
+                  href="/register"
+                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-500 text-white px-6 py-3 text-base font-semibold shadow-sm hover:shadow-emerald-500/30 hover:brightness-110 transition-all duration-200 group"
+                >
                   Start Free Trial
                   <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5 group-hover:translate-x-1 transition-transform" />
                 </Link>
-                <a href="#demo" className="border-2 border-gray-300 text-gray-700 px-6 sm:px-8 py-3 sm:py-4 rounded-xl font-semibold text-base sm:text-lg hover:border-teal-500 hover:text-teal-600 transition-all duration-300 text-center">
-                  Watch Demo
-                </a>
-              </div>
-              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-8 text-xs sm:text-sm text-gray-500">
+                <Link
+                  href="/dashboard/buyer/marketplace"
+                  className="inline-flex items-center justify-center gap-2 rounded-xl border border-white/10 text-surface-300 px-6 py-3 text-base font-semibold hover:bg-white/5 hover:text-white hover:border-white/20 transition-all duration-200"
+                >
+                  View Marketplace
+                </Link>
+              </motion.div>
+
+              <motion.div
+                variants={fadeUp}
+                custom={0.4}
+                className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-6 text-xs sm:text-sm text-surface-400"
+              >
                 <div className="flex items-center gap-2">
-                  <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 text-green-500" />
+                  <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-400" />
                   No credit card required
                 </div>
                 <div className="flex items-center gap-2">
-                  <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 text-green-500" />
+                  <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-400" />
                   Free 30-day trial
                 </div>
-              </div>
-            </div>
-            <div className="relative">
-              <div className="relative z-10 bg-white rounded-2xl sm:rounded-3xl shadow-2xl p-6 sm:p-8 border border-gray-100">
-                <div className="bg-gradient-to-br from-teal-500 to-blue-600 rounded-xl sm:rounded-2xl p-4 sm:p-6 text-white mb-4 sm:mb-6">
-                  <div className="flex items-center justify-between mb-3 sm:mb-4">
-                    <h3 className="text-lg sm:text-xl font-semibold">Smart Analytics</h3>
-                    <TrendingUp className="w-5 h-5 sm:w-6 sm:h-6" />
-                  </div>
-                  <div className="space-y-2 sm:space-y-3">
-                    <div className="flex justify-between text-sm sm:text-base">
-                      <span>Rice Yield</span>
-                      <span className="font-semibold">+24%</span>
-                    </div>
-                    <div className="flex justify-between text-sm sm:text-base">
-                      <span>Water Efficiency</span>
-                      <span className="font-semibold">+18%</span>
-                    </div>
-                    <div className="flex justify-between text-sm sm:text-base">
-                      <span>Cost Reduction</span>
-                      <span className="font-semibold">-12%</span>
-                    </div>
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-3 sm:gap-4">
-                  <div className="bg-gray-50 rounded-lg sm:rounded-xl p-3 sm:p-4">
-                    <div className="w-6 h-6 sm:w-8 sm:h-8 bg-teal-100 rounded-lg flex items-center justify-center mb-2 sm:mb-3">
-                      <Calendar className="w-3 h-3 sm:w-4 sm:h-4 text-teal-600" />
-                    </div>
-                    <h4 className="font-semibold text-gray-900 text-sm sm:text-base">Planting Calendar</h4>
-                    <p className="text-xs sm:text-sm text-gray-600">AI-optimized schedules</p>
-                  </div>
-                  <div className="bg-gray-50 rounded-lg sm:rounded-xl p-3 sm:p-4">
-                    <div className="w-6 h-6 sm:w-8 sm:h-8 bg-blue-100 rounded-lg flex items-center justify-center mb-2 sm:mb-3">
-                      <LineChart className="w-3 h-3 sm:w-4 sm:h-4 text-blue-600" />
-                    </div>
-                    <h4 className="font-semibold text-gray-900 text-sm sm:text-base">Real-time Data</h4>
-                    <p className="text-xs sm:text-sm text-gray-600">Live farm monitoring</p>
-                  </div>
-                </div>
-              </div>
-              <div className="absolute -top-2 -right-2 sm:-top-4 sm:-right-4 w-16 h-16 sm:w-24 sm:h-24 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full opacity-20 animate-pulse"></div>
-              <div className="absolute -bottom-2 -left-2 sm:-bottom-4 sm:-left-4 w-12 h-12 sm:w-16 sm:h-16 bg-gradient-to-br from-purple-400 to-pink-500 rounded-full opacity-20 animate-pulse delay-1000"></div>
-            </div>
+              </motion.div>
+            </motion.div>
+
+            {/* Hero Right */}
+            <DashboardPreview />
           </div>
         </div>
       </section>
 
-      {/* Features Section */}
-      <section id="features" className="py-12 sm:py-20 bg-white">
+      {/* ─── STATS SECTION ─── */}
+      <Section className="py-16 sm:py-20 border-y border-white/[0.04]">
         <div className="container mx-auto px-4 sm:px-6">
-          <div className="text-center mb-12 sm:mb-16">
-            <h2 className="text-2xl sm:text-4xl font-bold text-gray-900 mb-3 sm:mb-4">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-8 sm:gap-12 text-center">
+            <AnimatedStat value="10,000+" label="Active Farmers" />
+            <AnimatedStat value="50+" label="Countries Worldwide" />
+            <AnimatedStat value="2.5M" label="Revenue Generated" suffix="+" />
+            <AnimatedStat value="98%" label="Satisfaction Rate" />
+          </div>
+        </div>
+      </Section>
+
+      {/* ─── FEATURES SECTION ─── */}
+      <Section id="features" className="py-16 sm:py-24">
+        <div className="container mx-auto px-4 sm:px-6">
+          <motion.div variants={staggerItem} className="text-center mb-12 sm:mb-16">
+            <h2 className="text-2xl sm:text-4xl font-bold text-white mb-3 sm:mb-4 tracking-tight">
               Everything You Need to Succeed
             </h2>
-            <p className="text-base sm:text-xl text-gray-600 max-w-3xl mx-auto">
-              From AI-powered insights to marketplace connections, FarmMate provides the complete toolkit 
-              for modern agriculture.
+            <p className="text-base sm:text-lg text-surface-400 max-w-2xl mx-auto leading-relaxed">
+              From AI-powered crop recommendations to a seamless marketplace, FarmMate provides every tool for modern agriculture.
             </p>
-          </div>
-          
-          <div className="grid md:grid-cols-3 gap-6 sm:gap-8">
-            {/* Feature 1 */}
-            <div className="group bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl sm:rounded-2xl p-6 sm:p-8 border border-green-100 hover:shadow-xl hover:shadow-green-500/10 transition-all duration-300">
-              <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl sm:rounded-2xl flex items-center justify-center mb-4 sm:mb-6 group-hover:scale-110 transition-transform">
-                <Calendar className="w-6 h-6 sm:w-8 sm:h-8 text-white" />
-              </div>
-              <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-3 sm:mb-4">Smart Planning</h3>
-              <p className="text-sm sm:text-base text-gray-600 leading-relaxed mb-4 sm:mb-6">
-                Receive AI-powered crop suggestions and dynamic planting calendars tailored to your farm&apos;s unique conditions and local weather patterns.
-              </p>
-              <ul className="space-y-2">
-                <li className="flex items-center gap-2 text-xs sm:text-sm text-gray-600">
-                  <CheckCircle className="w-3 h-3 sm:w-4 sm:h-4 text-green-500" />
-                  Weather-optimized schedules
-                </li>
-                <li className="flex items-center gap-2 text-xs sm:text-sm text-gray-600">
-                  <CheckCircle className="w-3 h-3 sm:w-4 sm:h-4 text-green-500" />
-                  Crop rotation planning
-                </li>
-                <li className="flex items-center gap-2 text-xs sm:text-sm text-gray-600">
-                  <CheckCircle className="w-3 h-3 sm:w-4 sm:h-4 text-green-500" />
-                  Resource optimization
-                </li>
-              </ul>
-            </div>
+          </motion.div>
 
-            {/* Feature 2 */}
-            <div className="group bg-gradient-to-br from-blue-50 to-cyan-50 rounded-xl sm:rounded-2xl p-6 sm:p-8 border border-blue-100 hover:shadow-xl hover:shadow-blue-500/10 transition-all duration-300">
-              <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gradient-to-br from-blue-500 to-cyan-600 rounded-xl sm:rounded-2xl flex items-center justify-center mb-4 sm:mb-6 group-hover:scale-110 transition-transform">
-                <LineChart className="w-6 h-6 sm:w-8 sm:h-8 text-white" />
-              </div>
-              <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-3 sm:mb-4">Data-Driven Analytics</h3>
-              <p className="text-sm sm:text-base text-gray-600 leading-relaxed mb-4 sm:mb-6">
-                Track your finances, manage tasks, and get accurate crop yield predictions to maximize profitability with advanced analytics.
-              </p>
-              <ul className="space-y-2">
-                <li className="flex items-center gap-2 text-xs sm:text-sm text-gray-600">
-                  <CheckCircle className="w-3 h-3 sm:w-4 sm:h-4 text-blue-500" />
-                  Real-time monitoring
-                </li>
-                <li className="flex items-center gap-2 text-xs sm:text-sm text-gray-600">
-                  <CheckCircle className="w-3 h-3 sm:w-4 sm:h-4 text-blue-500" />
-                  Predictive analytics
-                </li>
-                <li className="flex items-center gap-2 text-xs sm:text-sm text-gray-600">
-                  <CheckCircle className="w-3 h-3 sm:w-4 sm:h-4 text-blue-500" />
-                  Financial insights
-                </li>
-              </ul>
-            </div>
-
-            {/* Feature 3 */}
-            <div className="group bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl sm:rounded-2xl p-6 sm:p-8 border border-purple-100 hover:shadow-xl hover:shadow-purple-500/10 transition-all duration-300">
-              <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gradient-to-br from-purple-500 to-pink-600 rounded-xl sm:rounded-2xl flex items-center justify-center mb-4 sm:mb-6 group-hover:scale-110 transition-transform">
-                <Store className="w-6 h-6 sm:w-8 sm:h-8 text-white" />
-              </div>
-              <h3 className="text-xl sm:text-2xl font-bold text-gray-900 mb-3 sm:mb-4">Thriving Marketplace</h3>
-              <p className="text-sm sm:text-base text-gray-600 leading-relaxed mb-4 sm:mb-6">
-                Connect directly with buyers to sell your produce, or source high-quality products from other trusted farmers in our secure marketplace.
-              </p>
-              <ul className="space-y-2">
-                <li className="flex items-center gap-2 text-xs sm:text-sm text-gray-600">
-                  <CheckCircle className="w-3 h-3 sm:w-4 sm:h-4 text-purple-500" />
-                  Direct buyer connections
-                </li>
-                <li className="flex items-center gap-2 text-xs sm:text-sm text-gray-600">
-                  <CheckCircle className="w-3 h-3 sm:w-4 sm:h-4 text-purple-500" />
-                  Secure transactions
-                </li>
-                <li className="flex items-center gap-2 text-xs sm:text-sm text-gray-600">
-                  <CheckCircle className="w-3 h-3 sm:w-4 sm:h-4 text-purple-500" />
-                  Quality assurance
-                </li>
-              </ul>
-            </div>
-          </div>
+          <motion.div
+            variants={staggerContainer}
+            className="grid md:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-6"
+          >
+            <FeatureCard
+              icon={Calendar} color="emerald"
+              title="AI Crop Recommendations"
+              description="Receive AI-powered crop suggestions optimized for your farm's soil, climate, and market demand."
+              items={['Weather-optimized schedules', 'Crop rotation planning', 'Multi-variety analysis']}
+            />
+            <FeatureCard
+              icon={Store} color="amber"
+              title="Smart Marketplace"
+              description="Connect directly with buyers. List products, negotiate prices, and grow your business securely."
+              items={['Direct buyer connections', 'Secure transactions', 'Quality assurance ratings']}
+            />
+            <FeatureCard
+              icon={Search} color="red"
+              title="Pest Detection AI"
+              description="Upload a photo of your crops and our AI instantly detects pests and recommends treatments."
+              items={['Instant AI diagnosis', 'Treatment recommendations', 'Detection history tracking']}
+            />
+            <FeatureCard
+              icon={List} color="sky"
+              title="Task Automation"
+              description="AI-powered task prioritization with smart scheduling based on weather, season, and crop stage."
+              items={['AI-prioritized tasks', 'Category-based tracking', 'Team assignment']}
+            />
+            <FeatureCard
+              icon={BarChart3} color="purple"
+              title="Agricultural Analytics"
+              description="Track yields, monitor costs, analyze profits, and get data-driven insights to maximize ROI."
+              items={['Yield predictions', 'Cost & profit tracking', 'Interactive charts']}
+            />
+            <FeatureCard
+              icon={Bell} color="teal"
+              title="Smart Notifications"
+              description="Get real-time alerts for weather changes, pest risks, market opportunities, and task deadlines."
+              items={['Weather alerts', 'Pest risk warnings', 'Market updates']}
+            />
+          </motion.div>
         </div>
-      </section>
+      </Section>
 
-      {/* Stats Section */}
-      <section className="py-12 sm:py-20 bg-gradient-to-r from-teal-600 to-blue-600">
+      {/* ─── HOW IT WORKS ─── */}
+      <Section id="how-it-works" className="py-16 sm:py-24 bg-surface-800/60">
         <div className="container mx-auto px-4 sm:px-6">
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 sm:gap-8 text-center">
-            <div>
-              <div className="text-2xl sm:text-4xl font-bold text-white mb-1 sm:mb-2">10,000+</div>
-              <div className="text-teal-100 text-xs sm:text-sm">Active Farmers</div>
-            </div>
-            <div>
-              <div className="text-2xl sm:text-4xl font-bold text-white mb-1 sm:mb-2">50+</div>
-              <div className="text-teal-100 text-xs sm:text-sm">Countries</div>
-            </div>
-            <div>
-              <div className="text-2xl sm:text-4xl font-bold text-white mb-1 sm:mb-2">$2.5M</div>
-              <div className="text-teal-100 text-xs sm:text-sm">Revenue Generated</div>
-            </div>
-            <div>
-              <div className="text-2xl sm:text-4xl font-bold text-white mb-1 sm:mb-2">98%</div>
-              <div className="text-teal-100 text-xs sm:text-sm">Satisfaction Rate</div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* How It Works */}
-      <section className="py-12 sm:py-20 bg-gray-50">
-        <div className="container mx-auto px-4 sm:px-6">
-          <div className="text-center mb-12 sm:mb-16">
-            <h2 className="text-2xl sm:text-4xl font-bold text-gray-900 mb-3 sm:mb-4">
+          <motion.div variants={staggerItem} className="text-center mb-12 sm:mb-16">
+            <h2 className="text-2xl sm:text-4xl font-bold text-white mb-3 sm:mb-4 tracking-tight">
               How FarmMate Works
             </h2>
-            <p className="text-base sm:text-xl text-gray-600 max-w-3xl mx-auto">
+            <p className="text-base sm:text-lg text-surface-400 max-w-2xl mx-auto leading-relaxed">
               Get started in minutes with our simple three-step process
             </p>
-          </div>
-          
-          <div className="grid md:grid-cols-3 gap-6 sm:gap-8">
-            <div className="text-center">
-              <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-teal-500 to-teal-600 rounded-full flex items-center justify-center mx-auto mb-4 sm:mb-6 text-white text-xl sm:text-2xl font-bold">
-                1
-              </div>
-              <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-3 sm:mb-4">Create Your Profile</h3>
-              <p className="text-sm sm:text-base text-gray-600">
-                Sign up and tell us about your farm. Our AI will analyze your location, soil type, and climate to provide personalized recommendations.
-              </p>
-            </div>
-            <div className="text-center">
-              <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center mx-auto mb-4 sm:mb-6 text-white text-xl sm:text-2xl font-bold">
-                2
-              </div>
-              <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-3 sm:mb-4">Get Smart Insights</h3>
-              <p className="text-sm sm:text-base text-gray-600">
-                Receive AI-powered crop suggestions, weather alerts, and market analysis to optimize your farming decisions and maximize yields.
-              </p>
-            </div>
-            <div className="text-center">
-              <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-purple-500 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-4 sm:mb-6 text-white text-xl sm:text-2xl font-bold">
-                3
-              </div>
-              <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-3 sm:mb-4">Connect & Sell</h3>
-              <p className="text-sm sm:text-base text-gray-600">
-                Join our marketplace to connect with buyers, sell your produce at competitive prices, and grow your business with trusted partners.
-              </p>
-            </div>
+          </motion.div>
+
+          <div className="relative">
+            {/* Connecting line */}
+            <div className="hidden md:block absolute top-16 left-[16.66%] right-[16.66%] h-px bg-gradient-to-r from-emerald-500/30 via-teal-500/30 to-amber-500/30" />
+
+            <motion.div
+              variants={staggerContainer}
+              className="grid md:grid-cols-3 gap-8 sm:gap-12 relative"
+            >
+              {[
+                { num: '01', icon: Users, title: 'Create Your Profile', desc: 'Sign up and tell us about your farm. Our AI analyzes your location, soil, and climate for personalized recommendations.', color: 'from-emerald-400 to-emerald-600' },
+                { num: '02', icon: TrendingUp, title: 'Get Smart Insights', desc: 'Receive AI-powered crop suggestions, weather alerts, and market analysis to optimize your farming decisions.', color: 'from-teal-400 to-teal-600' },
+                { num: '03', icon: Store, title: 'Connect & Sell', desc: 'Join our marketplace to connect with buyers, sell your produce at competitive prices, and grow your business.', color: 'from-amber-400 to-amber-600' },
+              ].map((step, i) => {
+                const Icon = step.icon;
+                return (
+                  <motion.div key={i} variants={staggerItem} className="text-center relative">
+                    <motion.div
+                      whileHover={{ scale: 1.1, y: -4 }}
+                      className={`w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-gradient-to-br ${step.color} flex items-center justify-center mx-auto mb-4 sm:mb-5 shadow-lg relative z-10`}
+                    >
+                      <Icon className="w-7 h-7 sm:w-9 sm:h-9 text-white" />
+                    </motion.div>
+                    <div className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-emerald-500/10 text-emerald-400 text-xs font-bold mb-3 border border-emerald-500/20">
+                      {step.num}
+                    </div>
+                    <h3 className="text-lg sm:text-xl font-bold text-white mb-3 sm:mb-4 tracking-tight">{step.title}</h3>
+                    <p className="text-sm text-surface-400 leading-relaxed max-w-xs mx-auto">{step.desc}</p>
+                  </motion.div>
+                );
+              })}
+            </motion.div>
           </div>
         </div>
-      </section>
+      </Section>
 
-      {/* CTA Section */}
-      <section className="py-12 sm:py-20 bg-white">
+      {/* ─── AI INTELLIGENCE SECTION ─── */}
+      <Section id="ai-intelligence" className="py-16 sm:py-24">
         <div className="container mx-auto px-4 sm:px-6">
-          <div className="bg-gradient-to-r from-teal-500 to-blue-600 rounded-2xl sm:rounded-3xl p-8 sm:p-12 text-center text-white">
-            <h2 className="text-2xl sm:text-4xl font-bold mb-3 sm:mb-4">
-              Ready to Transform Your Farming?
+          <motion.div variants={staggerItem} className="text-center mb-12 sm:mb-16">
+            <div className="inline-flex items-center gap-2 bg-emerald-500/5 text-emerald-300 px-3 py-1.5 rounded-full text-xs font-medium border border-emerald-500/20 mb-4">
+              <Brain className="w-3.5 h-3.5" />
+              Powered by Advanced AI
+            </div>
+            <h2 className="text-2xl sm:text-4xl font-bold text-white mb-3 sm:mb-4 tracking-tight">
+              Intelligence That Works for You
             </h2>
-            <p className="text-base sm:text-xl text-teal-100 mb-6 sm:mb-8 max-w-2xl mx-auto">
-              Join thousands of farmers who are already using FarmMate to increase yields, reduce costs, and grow their businesses.
+            <p className="text-base sm:text-lg text-surface-400 max-w-2xl mx-auto leading-relaxed">
+              Our AI engine processes millions of data points to deliver actionable insights — from crop prediction to pest detection.
             </p>
-            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center">
-              <Link href="/register" className="bg-white text-teal-600 px-6 sm:px-8 py-3 sm:py-4 rounded-xl font-semibold text-base sm:text-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center gap-2">
+          </motion.div>
+
+          <motion.div
+            variants={staggerContainer}
+            className="grid md:grid-cols-3 gap-5 sm:gap-6"
+          >
+            {[
+              {
+                icon: TrendingUp, title: 'Crop Yield Prediction',
+                desc: 'AI forecasts your crop yields with high accuracy, helping you plan harvest, storage, and sales well in advance.',
+                color: 'from-emerald-400 to-teal-400',
+                bg: 'bg-emerald-500/5', border: 'border-emerald-500/20',
+              },
+              {
+                icon: AlertTriangle, title: 'Pest Risk Detection',
+                desc: 'Upload an image and our AI identifies pests with precision, suggesting organic and chemical treatments.',
+                color: 'from-amber-400 to-orange-400',
+                bg: 'bg-amber-500/5', border: 'border-amber-500/20',
+              },
+              {
+                icon: Lightbulb, title: 'Smart Task Prioritization',
+                desc: 'AI analyzes urgency, weather, and crop stages to prioritize your daily farming tasks intelligently.',
+                color: 'from-sky-400 to-blue-400',
+                bg: 'bg-sky-500/5', border: 'border-sky-500/20',
+              },
+            ].map((item, i) => (
+              <motion.div
+                key={i}
+                variants={staggerItem}
+                whileHover={{ y: -4 }}
+                className={`rounded-2xl ${item.bg} border ${item.border} p-6 sm:p-8 transition-all duration-300`}
+              >
+                <div className={`w-12 h-12 bg-gradient-to-br ${item.color} rounded-xl flex items-center justify-center mb-4`}>
+                  <item.icon className="w-6 h-6 text-white" />
+                </div>
+                <h3 className="text-lg font-bold text-white mb-2 tracking-tight">{item.title}</h3>
+                <p className="text-sm text-surface-400 leading-relaxed">{item.desc}</p>
+              </motion.div>
+            ))}
+          </motion.div>
+        </div>
+      </Section>
+
+      {/* ─── DASHBOARD PREVIEW SECTION ─── */}
+      <Section className="py-16 sm:py-24 bg-surface-800/60">
+        <div className="container mx-auto px-4 sm:px-6">
+          <motion.div variants={staggerItem} className="text-center mb-12 sm:mb-16">
+            <h2 className="text-2xl sm:text-4xl font-bold text-white mb-3 sm:mb-4 tracking-tight">
+              Built for Every Role
+            </h2>
+            <p className="text-base sm:text-lg text-surface-400 max-w-2xl mx-auto leading-relaxed">
+              Whether you're a farmer managing crops, a buyer sourcing products, or an admin overseeing operations — FarmMate fits your workflow.
+            </p>
+          </motion.div>
+
+          <motion.div
+            variants={staggerContainer}
+            className="grid md:grid-cols-3 gap-5 sm:gap-6"
+          >
+            {[
+              { title: 'Farmer Dashboard', desc: 'Manage crops, track tasks, view AI insights, and list products on the marketplace.', icon: Sprout, color: 'from-emerald-500/20 to-emerald-600/10', border: 'border-emerald-500/20', iconColor: 'text-emerald-400' },
+              { title: 'Buyer Dashboard', desc: 'Browse farmers, order products, track shipments, and manage favorites seamlessly.', icon: Store, color: 'from-amber-500/20 to-amber-600/10', border: 'border-amber-500/20', iconColor: 'text-amber-400' },
+              { title: 'Admin Panel', desc: 'Monitor platform analytics, manage users, oversee orders, and view system health.', icon: Shield, color: 'from-blue-500/20 to-blue-600/10', border: 'border-blue-500/20', iconColor: 'text-blue-400' },
+            ].map((item, i) => (
+              <motion.div
+                key={i}
+                variants={staggerItem}
+                whileHover={{ y: -4 }}
+                className={`rounded-2xl bg-gradient-to-br ${item.color} border ${item.border} p-6 sm:p-8 transition-all duration-300`}
+              >
+                <div className="flex items-start gap-4">
+                  <div className={`w-10 h-10 rounded-xl bg-white/5 border ${item.border} flex items-center justify-center shrink-0`}>
+                    <item.icon className={`w-5 h-5 ${item.iconColor}`} />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-bold text-white mb-2">{item.title}</h3>
+                    <p className="text-sm text-surface-400 leading-relaxed">{item.desc}</p>
+                  </div>
+                </div>
+              </motion.div>
+            ))}
+          </motion.div>
+        </div>
+      </Section>
+
+      {/* ─── CTA SECTION ─── */}
+      <Section className="py-16 sm:py-24">
+        <div className="container mx-auto px-4 sm:px-6">
+          <motion.div
+            variants={staggerContainer}
+            className="relative rounded-3xl p-8 sm:p-12 md:p-16 text-center overflow-hidden bg-gradient-to-br from-emerald-900/50 via-surface-800 to-teal-900/30 border border-emerald-500/20"
+          >
+            {/* Background blurs */}
+            <div className="absolute -top-32 -right-32 w-64 h-64 bg-emerald-500/15 rounded-full blur-3xl" />
+            <div className="absolute -bottom-32 -left-32 w-64 h-64 bg-teal-500/10 rounded-full blur-3xl" />
+            <div className="absolute inset-0 mesh-overlay pointer-events-none" />
+
+            <motion.h2
+              variants={staggerItem}
+              className="text-2xl sm:text-4xl font-bold mb-3 sm:mb-4 tracking-tight relative z-10"
+            >
+              Ready to Transform Your Farming?
+            </motion.h2>
+            <motion.p
+              variants={staggerItem}
+              className="text-base sm:text-lg text-surface-400 mb-6 sm:mb-8 max-w-xl mx-auto leading-relaxed relative z-10"
+            >
+              Join thousands of farmers who are already using FarmMate to increase yields, reduce costs, and grow their businesses.
+            </motion.p>
+            <motion.div
+              variants={staggerItem}
+              className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center relative z-10"
+            >
+              <Link
+                href="/register"
+                className="inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-500 text-white px-6 py-3 text-base font-semibold shadow-sm hover:shadow-emerald-500/30 hover:brightness-110 transition-all duration-200 group"
+              >
                 Start Free Trial
-                <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5" />
+                <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5 group-hover:translate-x-1 transition-transform" />
               </Link>
-              <Link href="/login" className="border-2 border-white text-white px-6 sm:px-8 py-3 sm:py-4 rounded-xl font-semibold text-base sm:text-lg hover:bg-white hover:text-teal-600 transition-all duration-300">
+              <Link
+                href="/login"
+                className="inline-flex items-center justify-center gap-2 rounded-xl border border-white/10 text-surface-300 px-6 py-3 text-base font-semibold hover:bg-white/5 hover:text-white hover:border-white/20 transition-all duration-200"
+              >
                 Sign In
               </Link>
-            </div>
-          </div>
+            </motion.div>
+          </motion.div>
         </div>
-      </section>
+      </Section>
 
-      {/* Footer */}
-      <footer className="bg-gray-900 text-white py-8 sm:py-12">
+      {/* ─── FOOTER ─── */}
+      <footer className="bg-surface-800/80 text-white py-8 sm:py-12 border-t border-white/[0.04]">
         <div className="container mx-auto px-4 sm:px-6">
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 sm:gap-8">
             <div className="col-span-2 sm:col-span-1">
               <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
-                <div className="w-6 h-6 sm:w-8 sm:h-8 bg-teal-500 rounded-lg flex items-center justify-center">
-                  <Leaf className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
+                <div className="w-7 h-7 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-lg flex items-center justify-center">
+                  <Leaf className="w-4 h-4 text-white" />
                 </div>
-                <span className="text-lg sm:text-xl font-bold">FarmMate</span>
+                <span className="text-lg font-bold tracking-tight bg-gradient-to-r from-emerald-400 to-teal-400 bg-clip-text text-transparent">FarmMate</span>
               </div>
-              <p className="text-gray-400 mb-3 sm:mb-4 text-sm sm:text-base">
-                Revolutionizing agriculture with AI-powered insights and smart farming solutions.
+              <p className="text-surface-400 text-sm leading-relaxed max-w-xs">
+                Revolutionizing agriculture with AI-powered insights and smart farming solutions for the modern era.
               </p>
-              <div className="flex gap-3 sm:gap-4">
-                <a href="#" className="text-gray-400 hover:text-white transition-colors">
-                  <Globe className="w-4 h-4 sm:w-5 sm:h-5" />
-                </a>
-                <a href="#" className="text-gray-400 hover:text-white transition-colors">
-                  <Users className="w-4 h-4 sm:w-5 sm:h-5" />
-                </a>
-                <a href="#" className="text-gray-400 hover:text-white transition-colors">
-                  <Shield className="w-4 h-4 sm:w-5 sm:h-5" />
-                </a>
-              </div>
             </div>
             <div>
-              <h3 className="font-semibold mb-3 sm:mb-4 text-sm sm:text-base">Product</h3>
-              <ul className="space-y-2 text-gray-400 text-xs sm:text-sm">
-                <li><a href="#" className="hover:text-white transition-colors">Features</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Pricing</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">API</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Integrations</a></li>
+              <h3 className="text-xs font-semibold text-surface-400 uppercase tracking-wider mb-3">Product</h3>
+              <ul className="space-y-2">
+                <li><a href="#features" className="text-sm text-surface-400 hover:text-white transition-colors">Features</a></li>
+                <li><a href="#" className="text-sm text-surface-400 hover:text-white transition-colors">Pricing</a></li>
+                <li><a href="#" className="text-sm text-surface-400 hover:text-white transition-colors">API</a></li>
+                <li><a href="#" className="text-sm text-surface-400 hover:text-white transition-colors">Integrations</a></li>
               </ul>
             </div>
             <div>
-              <h3 className="font-semibold mb-3 sm:mb-4 text-sm sm:text-base">Company</h3>
-              <ul className="space-y-2 text-gray-400 text-xs sm:text-sm">
-                <li><a href="#" className="hover:text-white transition-colors">About</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Blog</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Careers</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Contact</a></li>
+              <h3 className="text-xs font-semibold text-surface-400 uppercase tracking-wider mb-3">Company</h3>
+              <ul className="space-y-2">
+                <li><a href="#" className="text-sm text-surface-400 hover:text-white transition-colors">About</a></li>
+                <li><a href="#" className="text-sm text-surface-400 hover:text-white transition-colors">Blog</a></li>
+                <li><a href="#" className="text-sm text-surface-400 hover:text-white transition-colors">Careers</a></li>
+                <li><a href="#" className="text-sm text-surface-400 hover:text-white transition-colors">Contact</a></li>
               </ul>
             </div>
             <div>
-              <h3 className="font-semibold mb-3 sm:mb-4 text-sm sm:text-base">Support</h3>
-              <ul className="space-y-2 text-gray-400 text-xs sm:text-sm">
-                <li><a href="#" className="hover:text-white transition-colors">Help Center</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Documentation</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Community</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Status</a></li>
+              <h3 className="text-xs font-semibold text-surface-400 uppercase tracking-wider mb-3">Support</h3>
+              <ul className="space-y-2">
+                <li><a href="#" className="text-sm text-surface-400 hover:text-white transition-colors">Help Center</a></li>
+                <li><a href="#" className="text-sm text-surface-400 hover:text-white transition-colors">Documentation</a></li>
+                <li><a href="#" className="text-sm text-surface-400 hover:text-white transition-colors">Community</a></li>
+                <li><a href="#" className="text-sm text-surface-400 hover:text-white transition-colors">Status</a></li>
               </ul>
             </div>
           </div>
-          <div className="border-t border-gray-800 mt-6 sm:mt-8 pt-6 sm:pt-8 text-center text-gray-400 text-xs sm:text-sm">
-            <p>&copy; 2025 FarmMate. All rights reserved.</p>
+          <div className="border-t border-white/[0.04] mt-8 sm:mt-10 pt-6 sm:pt-8 text-center">
+            <p className="text-sm text-surface-500">&copy; 2025 FarmMate. All rights reserved.</p>
           </div>
         </div>
       </footer>

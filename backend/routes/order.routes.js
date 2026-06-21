@@ -1,5 +1,6 @@
 import express from 'express';
 import {
+    cancelOrder,
     createOrder,
     getAllOrders,
     getFarmerOrders,
@@ -8,25 +9,29 @@ import {
     updateOrderStatus
 } from '../controllers/order.controller.js';
 import auth from '../middleware/auth.js';
+import { requireRole, requireAdmin } from '../middleware/rbac.js';
 
 const router = express.Router();
 
-// Create new order (checkout)
-router.post('/:userId/checkout', auth, createOrder);
+// Get all orders (admin only)
+router.get('/', auth, requireAdmin, getAllOrders);
 
-// Get user's orders
-router.get('/user/:userId', auth, getUserOrders);
+// Create new order (buyer only)
+router.post('/:userId/checkout', auth, requireRole('buyer'), createOrder);
 
-// Get orders for a specific farmer
-router.get('/farmer/:farmerId', auth, getFarmerOrders);
+// Get user's orders (buyer sees own, admin sees all)
+router.get('/user/:userId', auth, requireRole('buyer', 'admin'), getUserOrders);
 
-// Get specific order
-router.get('/:orderId', auth, getOrderById);
+// Get orders for a specific farmer (farmer sees own, admin sees all)
+router.get('/farmer/:farmerId', auth, requireRole('farmer', 'admin'), getFarmerOrders);
 
-// Update order status (admin/farmer)
-router.patch('/:orderId/status', auth, updateOrderStatus);
+// Get specific order (buyer, farmer, or admin)
+router.get('/:orderId', auth, requireRole('buyer', 'farmer', 'admin'), getOrderById);
 
-// Get all orders (admin)
-router.get('/', auth, getAllOrders);
+// Cancel order (buyer only, status must be pending or confirmed)
+router.post('/:orderId/cancel', auth, requireRole('buyer'), cancelOrder);
 
-export default router; 
+// Update order status (admin or farmer)
+router.patch('/:orderId/status', auth, requireRole('admin', 'farmer'), updateOrderStatus);
+
+export default router;

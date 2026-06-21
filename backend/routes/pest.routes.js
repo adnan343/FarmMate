@@ -2,8 +2,9 @@ import express from "express";
 import multer from "multer";
 import path from "path";
 import { fileURLToPath } from "url";
-import { analyzePest, getDetections, saveDetection } from "../controllers/pest.controller.js";
+import { analyzePest, getDetections, saveDetection, clearDetections } from "../controllers/pest.controller.js";
 import auth from "../middleware/auth.js";
+import { requireRole } from "../middleware/rbac.js";
 
 const router = express.Router();
 
@@ -14,13 +15,16 @@ const uploadsDir = path.join(__dirname, '../../uploads');
 
 const upload = multer({ dest: uploadsDir });
 
-// AI Analysis Route
-router.post("/pest-analyze", upload.single("image"), analyzePest);
+// AI Analysis Route — farmer only
+router.post("/pest-analyze", auth, requireRole('farmer'), upload.single("image"), analyzePest);
 
-// Save detection result in database (requires authentication)
-router.post("/detections", auth, upload.single("image"), saveDetection);
+// Save detection result in database (farmer only)
+router.post("/detections", auth, requireRole('farmer'), upload.single("image"), saveDetection);
 
-// Fetch detection history (requires authentication)
-router.get("/detections", auth, getDetections);
+// Fetch detection history (farmer or admin)
+router.get("/detections", auth, requireRole('farmer', 'admin'), getDetections);
+
+// Clear all detection history (farmer only)
+router.delete("/detections", auth, requireRole('farmer'), clearDetections);
 
 export default router;

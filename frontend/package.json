@@ -10,6 +10,8 @@
   },
   "dependencies": {
     "chart.js": "^4.4.7",
+    "clsx": "^2.1.1",
+    "framer-motion": "^12.40.0",
     "html2pdf.js": "^0.11.2",
     "js-cookie": "^3.0.5",
     "lucide-react": "^0.536.0",

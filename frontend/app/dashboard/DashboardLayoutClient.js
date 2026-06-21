@@ -2,8 +2,9 @@
 
 import Sidebar from '@/app/components/Sidebar';
 import { ToastProvider } from '@/app/components/ToastProvider';
-import { Menu, X } from 'lucide-react';
+import { Menu, X, Leaf } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 
 export default function DashboardLayoutClient({ children, userData }) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -26,11 +27,11 @@ export default function DashboardLayoutClient({ children, userData }) {
 
   return (
     <ToastProvider>
-      <div className="flex h-screen bg-gray-50">
+      <div className="flex h-screen bg-surface-900 overflow-hidden">
         {/* Mobile menu overlay */}
         {isMobileMenuOpen && (
           <div 
-            className="fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden"
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 md:hidden transition-opacity"
             onClick={() => setIsMobileMenuOpen(false)}
           />
         )}
@@ -48,29 +49,29 @@ export default function DashboardLayoutClient({ children, userData }) {
         </div>
         
         {/* Main content */}
-        <div className="flex-1 flex flex-col md:ml-0">
+        <div className="flex-1 flex flex-col md:ml-0 min-w-0">
           {/* Mobile header */}
-          <div className="md:hidden bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between">
+          <div className="md:hidden bg-surface-800/80 backdrop-blur-xl border-b border-white/[0.06] px-4 py-3 flex items-center justify-between sticky top-0 z-30">
             <button
               onClick={toggleMobileMenu}
-              className="p-2 rounded-lg hover:bg-gray-100"
+              className="p-2 rounded-xl hover:bg-white/[0.06] transition-colors"
             >
               {isMobileMenuOpen ? (
-                <X className="w-6 h-6 text-gray-600" />
+                <X className="w-5 h-5 text-surface-300" />
               ) : (
-                <Menu className="w-6 h-6 text-gray-600" />
+                <Menu className="w-5 h-5 text-surface-300" />
               )}
             </button>
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-teal-600 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-sm">FM</span>
+            <Link href={userData.role === 'farmer' ? '/dashboard/farmer' : userData.role === 'buyer' ? '/dashboard/buyer' : '/dashboard/admin'} className="flex items-center gap-2">
+              <div className="w-7 h-7 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-lg flex items-center justify-center">
+                <Leaf className="w-4 h-4 text-white" />
               </div>
-              <span className="text-lg font-bold text-gray-900">FarmMate</span>
-            </div>
-            <div className="w-10"></div> {/* Spacer for centering */}
+              <span className="text-sm font-bold bg-gradient-to-r from-emerald-400 to-teal-400 bg-clip-text text-transparent">FarmMate</span>
+            </Link>
+            <div className="w-9" />
           </div>
           
-          <main className="flex-1 overflow-auto p-4 md:p-6">
+          <main className="flex-1 overflow-auto p-4 md:p-6 lg:p-8">
             {children}
           </main>
         </div>

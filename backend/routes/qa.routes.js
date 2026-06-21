@@ -11,22 +11,23 @@ import {
     getQuestion
 } from '../controllers/qa.controller.js';
 import auth from '../middleware/auth.js';
+import { requireRole } from '../middleware/rbac.js';
 
 const router = express.Router();
 
 // Farmer routes
-router.post('/ask', auth, askQuestion);
-router.get('/farmer', auth, getFarmerQuestions);
-router.put('/:id', auth, editQuestion);
-router.delete('/:id', auth, deleteQuestion);
+router.post('/ask', auth, requireRole('farmer'), askQuestion);
+router.get('/farmer', auth, requireRole('farmer'), getFarmerQuestions);
+router.put('/:id', auth, requireRole('farmer'), editQuestion);
+router.delete('/:id', auth, requireRole('farmer'), deleteQuestion);
 
 // Admin routes
-router.get('/admin', auth, getAllQuestions);
-router.put('/:id/answer', auth, answerQuestion); // create/overwrite answer
-router.put('/:id/answer/edit', auth, editAnswer); // edit own answer
-router.delete('/:id/answer', auth, deleteAnswer); // delete own answer
+router.get('/admin', auth, requireRole('admin'), getAllQuestions);
+router.put('/:id/answer', auth, requireRole('admin'), answerQuestion);
+router.put('/:id/answer/edit', auth, requireRole('admin'), editAnswer);
+router.delete('/:id/answer', auth, requireRole('admin'), deleteAnswer);
 
-// General route
+// General route (any authenticated user)
 router.get('/:id', auth, getQuestion);
 
-export default router; 
+export default router;

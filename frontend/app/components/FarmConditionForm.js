@@ -175,29 +175,29 @@ export default function FarmConditionForm({ farmerId, onCancel, onSuccess }) {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4 sm:mb-6">
         <button 
           onClick={onCancel} 
-          className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors self-start"
+          className="flex items-center gap-2 text-surface-400 hover:text-white transition-colors self-start"
         >
           <ArrowLeft className="w-5 h-5" /> Back to Reports
         </button>
-        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Create Farm Condition Report</h1>
+        <h1 className="text-2xl sm:text-3xl font-bold text-white">Create Farm Condition Report</h1>
       </div>
 
       {/* Farm Selection */}
-      <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6">
-        <h2 className="text-lg sm:text-xl font-semibold text-gray-900 mb-4">Farm Selection</h2>
+      <div className="bg-surface-800/80 rounded-2xl shadow-sm border border-white/[0.06] p-4 sm:p-6">
+        <h2 className="text-lg sm:text-xl font-semibold text-white mb-4">Farm Selection</h2>
         {farms.length === 0 ? (
           <div className="text-center py-6 sm:py-8">
-            <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <svg className="w-6 h-6 sm:w-8 sm:h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div className="w-12 h-12 sm:w-16 sm:h-16 bg-white/[0.04] rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg className="w-6 h-6 sm:w-8 sm:h-8 text-surface-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
               </svg>
             </div>
-            <h3 className="text-base sm:text-lg font-medium text-gray-900 mb-2">No Farms Available</h3>
-            <p className="text-sm sm:text-base text-gray-500 mb-4">You need to add a farm before creating condition reports.</p>
+            <h3 className="text-base sm:text-lg font-medium text-white mb-2">No Farms Available</h3>
+            <p className="text-sm sm:text-base text-surface-400 mb-4">You need to add a farm before creating condition reports.</p>
             <button
               type="button"
               onClick={handleAddFarmClick}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-emerald-600 to-emerald-500 text-white rounded-lg hover:brightness-110 transition-colors"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
@@ -207,14 +207,14 @@ export default function FarmConditionForm({ farmerId, onCancel, onSuccess }) {
           </div>
         ) : (
           <div>
-            <label htmlFor="farmId" className="block text-sm font-medium text-gray-700 mb-2">
-              Select Farm <span className="text-red-500">*</span>
+            <label htmlFor="farmId" className="block text-sm font-medium text-surface-300 mb-2">
+              Select Farm <span className="text-red-400">*</span>
             </label>
             <select
               id="farmId"
               value={formData.farmId}
               onChange={(e) => handleInputChange('farmId', e.target.value)}
-              className={`w-full rounded-md border-gray-300 shadow-sm focus:border-teal-500 focus:ring-teal-500 sm:text-sm ${
+              className={`w-full rounded-lg border border-white/10 bg-white/[0.04] text-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-teal-500 sm:text-sm ${
                 errors.farmId ? 'border-red-500' : ''
               }`}
             >
@@ -225,12 +225,12 @@ export default function FarmConditionForm({ farmerId, onCancel, onSuccess }) {
                 </option>
               ))}
             </select>
-            {errors.farmId && <p className="mt-1 text-sm text-red-600">{errors.farmId}</p>}
+            {errors.farmId && <p className="mt-1 text-sm text-red-400">{errors.farmId}</p>}
             <div className="mt-3">
               <button
                 type="button"
                 onClick={handleAddFarmClick}
-                className="text-sm text-teal-600 hover:text-teal-800 transition-colors"
+                className="text-sm text-teal-400 hover:text-teal-300 transition-colors"
               >
                 + Add another farm
               </button>
@@ -240,24 +240,24 @@ export default function FarmConditionForm({ farmerId, onCancel, onSuccess }) {
       </div>
 
       {/* Photo Upload */}
-      <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6">
+      <div className="bg-surface-800/80 rounded-2xl shadow-sm border border-white/[0.06] p-4 sm:p-6">
         <FarmPhotoUpload photo={photo} onPhotoChange={setPhoto} />
-        {errors.photo && <p className="mt-1 text-sm text-red-600">{errors.photo}</p>}
+        {errors.photo && <p className="mt-1 text-sm text-red-400">{errors.photo}</p>}
       </div>
 
       {/* Condition Details */}
-      <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6">
-        <h2 className="text-lg sm:text-xl font-semibold text-gray-900 mb-4">Condition Details</h2>
+      <div className="bg-surface-800/80 rounded-2xl shadow-sm border border-white/[0.06] p-4 sm:p-6">
+        <h2 className="text-lg sm:text-xl font-semibold text-white mb-4">Condition Details</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           <div>
-            <label htmlFor="weatherType" className="block text-sm font-medium text-gray-700 mb-2">
-              Weather Type <span className="text-red-500">*</span>
+            <label htmlFor="weatherType" className="block text-sm font-medium text-surface-300 mb-2">
+              Weather Type <span className="text-red-400">*</span>
             </label>
             <select
               id="weatherType"
               value={formData.weatherType}
               onChange={(e) => handleInputChange('weatherType', e.target.value)}
-              className={`w-full rounded-md border-gray-300 shadow-sm focus:border-teal-500 focus:ring-teal-500 sm:text-sm ${
+              className={`w-full rounded-lg border border-white/10 bg-white/[0.04] text-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-teal-500 sm:text-sm ${
                 errors.weatherType ? 'border-red-500' : ''
               }`}
             >
@@ -269,18 +269,18 @@ export default function FarmConditionForm({ farmerId, onCancel, onSuccess }) {
               <option value="foggy">Foggy</option>
               <option value="windy">Windy</option>
             </select>
-            {errors.weatherType && <p className="mt-1 text-sm text-red-600">{errors.weatherType}</p>}
+            {errors.weatherType && <p className="mt-1 text-sm text-red-400">{errors.weatherType}</p>}
           </div>
 
           <div>
-            <label htmlFor="soilType" className="block text-sm font-medium text-gray-700 mb-2">
-              Soil Type <span className="text-red-500">*</span>
+            <label htmlFor="soilType" className="block text-sm font-medium text-surface-300 mb-2">
+              Soil Type <span className="text-red-400">*</span>
             </label>
             <select
               id="soilType"
               value={formData.soilType}
               onChange={(e) => handleInputChange('soilType', e.target.value)}
-              className={`w-full rounded-md border-gray-300 shadow-sm focus:border-teal-500 focus:ring-teal-500 sm:text-sm ${
+              className={`w-full rounded-lg border border-white/10 bg-white/[0.04] text-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-teal-500 sm:text-sm ${
                 errors.soilType ? 'border-red-500' : ''
               }`}
             >
@@ -292,18 +292,18 @@ export default function FarmConditionForm({ farmerId, onCancel, onSuccess }) {
               <option value="chalky">Chalky</option>
               <option value="peaty">Peaty</option>
             </select>
-            {errors.soilType && <p className="mt-1 text-sm text-red-600">{errors.soilType}</p>}
+            {errors.soilType && <p className="mt-1 text-sm text-red-400">{errors.soilType}</p>}
           </div>
 
           <div className="sm:col-span-2 lg:col-span-1">
-            <label htmlFor="plantStatus" className="block text-sm font-medium text-gray-700 mb-2">
-              Plant Status <span className="text-red-500">*</span>
+            <label htmlFor="plantStatus" className="block text-sm font-medium text-surface-300 mb-2">
+              Plant Status <span className="text-red-400">*</span>
             </label>
             <select
               id="plantStatus"
               value={formData.plantStatus}
               onChange={(e) => handleInputChange('plantStatus', e.target.value)}
-              className={`w-full rounded-md border-gray-300 shadow-sm focus:border-teal-500 focus:ring-teal-500 sm:text-sm ${
+              className={`w-full rounded-lg border border-white/10 bg-white/[0.04] text-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-teal-500 sm:text-sm ${
                 errors.plantStatus ? 'border-red-500' : ''
               }`}
             >
@@ -316,12 +316,12 @@ export default function FarmConditionForm({ farmerId, onCancel, onSuccess }) {
               <option value="overwatered">Overwatered</option>
               <option value="underwatered">Underwatered</option>
             </select>
-            {errors.plantStatus && <p className="mt-1 text-sm text-red-600">{errors.plantStatus}</p>}
+            {errors.plantStatus && <p className="mt-1 text-sm text-red-400">{errors.plantStatus}</p>}
           </div>
         </div>
 
         <div className="mt-4">
-          <label htmlFor="additionalNotes" className="block text-sm font-medium text-gray-700 mb-2">
+          <label htmlFor="additionalNotes" className="block text-sm font-medium text-surface-300 mb-2">
             Additional Notes
           </label>
           <textarea
@@ -329,14 +329,7 @@ export default function FarmConditionForm({ farmerId, onCancel, onSuccess }) {
             rows="4"
             value={formData.additionalNotes}
             onChange={(e) => handleInputChange('additionalNotes', e.target.value)}
-            onFocus={(e) => {
-              e.target.style.caretColor = '#059669';
-              e.target.style.borderColor = '#059669';
-            }}
-            onBlur={(e) => {
-              e.target.style.borderColor = '#d1d5db';
-            }}
-            className="w-full rounded-md border-gray-300 shadow-sm focus:border-teal-500 focus:ring-teal-500 focus:ring-2 focus:ring-opacity-50 sm:text-sm resize-none"
+            className="w-full rounded-lg border border-white/10 bg-white/[0.04] text-white placeholder-surface-500 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-teal-500 sm:text-sm resize-none"
             placeholder="Any additional observations or notes about the farm condition..."
           ></textarea>
         </div>
@@ -344,20 +337,22 @@ export default function FarmConditionForm({ farmerId, onCancel, onSuccess }) {
 
       {/* AI Suggestions Preview */}
       {formData.weatherType && formData.soilType && formData.plantStatus && (
-        <div className="bg-white rounded-xl shadow-sm p-4 sm:p-6">
-          <h2 className="text-lg sm:text-xl font-semibold text-gray-900 mb-4">AI Suggestions Preview</h2>
-          <div className="bg-gradient-to-r from-teal-50 to-green-50 rounded-lg p-4 border border-teal-200">
+        <div className="bg-surface-800/80 rounded-2xl shadow-sm border border-white/[0.06] p-4 sm:p-6">
+          <h2 className="text-lg sm:text-xl font-semibold text-white mb-4">AI Suggestions Preview</h2>
+          <div className="bg-gradient-to-r from-teal-900/30 to-green-900/30 rounded-lg p-4 border border-teal-500/20">
             <div className="flex items-center gap-2 mb-3">
-              <Lightbulb className="w-5 h-5 text-teal-600" />
-              <h3 className="font-semibold text-teal-800">Based on your inputs, AI suggests:</h3>
+              <div className="p-1.5 bg-teal-500/20 rounded-lg">
+                <Lightbulb className="w-5 h-5 text-teal-400" />
+              </div>
+              <h3 className="font-semibold text-teal-300">Based on your inputs, AI suggests:</h3>
             </div>
             
             {/* This would be populated with actual AI suggestions after form submission */}
-            <div className="space-y-2 text-sm text-teal-700">
+            <div className="space-y-2 text-sm text-surface-300">
               <p>• Weather: {formData.weatherType}</p>
               <p>• Soil: {formData.soilType}</p>
               <p>• Plants: {formData.plantStatus}</p>
-              <p className="text-xs text-teal-600 mt-2">
+              <p className="text-xs text-teal-400 mt-2">
                 Submit the report to get detailed AI recommendations and action plan.
               </p>
             </div>
@@ -371,7 +366,7 @@ export default function FarmConditionForm({ farmerId, onCancel, onSuccess }) {
           type="button"
           onClick={onCancel}
           disabled={loading}
-          className="w-full sm:w-auto px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full sm:w-auto px-4 py-2 border border-white/10 rounded-lg text-surface-300 hover:bg-white/[0.04] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
           Cancel
         </button>
@@ -379,7 +374,7 @@ export default function FarmConditionForm({ farmerId, onCancel, onSuccess }) {
           type="button"
           onClick={handleSubmit}
           disabled={loading}
-          className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className="w-full sm:w-auto flex items-center justify-center gap-2 px-4 py-2 bg-gradient-to-r from-emerald-600 to-emerald-500 text-white rounded-lg hover:brightness-110 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <Send className="w-4 h-4" />
           {loading ? 'Submitting...' : 'Submit Report'}

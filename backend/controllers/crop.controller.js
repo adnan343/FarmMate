@@ -1,9 +1,34 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import OpenAI from "openai";
 import mongoose from "mongoose";
 import Crop from "../models/crop.model.js";
 import CropSuggestion from "../models/cropSuggestion.model.js";
 import Farm from "../models/farm.model.js";
 import Product from "../models/product.model.js";
+import { generateTaskFromCropSuggestion } from "../services/taskGenerator.js";
+import { getFallbackCropSuggestions } from "../services/cropFallback.js";
+
+const PRODUCT_UNIT_MAP = {
+    kg: 'kg',
+    kilogram: 'kg',
+    kilograms: 'kg',
+    lb: 'lb',
+    lbs: 'lb',
+    pound: 'lb',
+    pounds: 'lb',
+    piece: 'piece',
+    pieces: 'piece',
+    dozen: 'dozen',
+    bundle: 'bundle',
+    bundles: 'bundle',
+    ton: 'kg',
+    tons: 'kg',
+    tonne: 'kg',
+    tonnes: 'kg',
+    bushel: 'bundle',
+    bushels: 'bundle'
+};
+
+const normalizeProductUnit = (unit = 'kg') => PRODUCT_UNIT_MAP[String(unit).trim().toLowerCase()] || 'kg';
 
 // ---- Area/Unit helpers ----
 const AREA_UNITS = {
@@ -48,35 +73,38 @@ function parseFarmLandSize(landSizeRaw) {
     return { value, unit };
 }
 
-// Helper: build Gemini client
-function getGeminiModel() {
-    const apiKey = process.env.GEMINI_API || process.env.GOOGLE_API_KEY;
+// ---- OpenRouter Client ----
+const OPENROUTER_MODEL = "anthropic/claude-3-haiku";
+
+function getOpenRouterClient() {
+    const apiKey = process.env.OPENROUTER_API_KEY;
     if (!apiKey) {
-        throw new Error('Missing Gemini API key');
+        throw new Error('Missing OPENROUTER_API_KEY');
     }
-    const genAI = new GoogleGenerativeAI(apiKey);
-    return genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+    return new OpenAI({
+        apiKey: apiKey,
+        baseURL: "https://openrouter.ai/api/v1",
+    });
 }
 
-// Internal helper to predict yield using Gemini
-async function predictYieldWithGemini({
-    cropName,
-    variety,
-    area,
-    areaUnit,
-    farmLocation,
-    soilType,
-    plantingDate,
-    expectedHarvestDate,
-    yieldUnit
+// Helper to call OpenRouter and get text response
+async function callOpenRouter(prompt, model = OPENROUTER_MODEL) {
+    const client = getOpenRouterClient();
+    const completion = await client.chat.completions.create({
+        model,
+        messages: [{ role: "user", content: prompt }],
+    });
+    return completion.choices[0]?.message?.content || "";
+}
+
+// Internal helper to predict yield using OpenRouter
+async function predictYieldWithAI({
+    cropName, variety, area, areaUnit, farmLocation, soilType,
+    plantingDate, expectedHarvestDate, yieldUnit
 }) {
     try {
-        const apiKey = process.env.GEMINI_API || process.env.GOOGLE_API_KEY;
-        if (!apiKey) {
-            return null;
-        }
-        const genAI = new GoogleGenerativeAI(apiKey);
-        const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+        const apiKey = process.env.OPENROUTER_API_KEY;
+        if (!apiKey) return null;
 
         const prompt = `You are an agronomy assistant. Predict the yield for the following crop.
 Crop: ${cropName}
@@ -90,16 +118,14 @@ Desired unit: ${yieldUnit}
 
 Return ONLY a single positive number representing the predicted yield in ${yieldUnit}, with no unit text or extra commentary. If uncertain, provide your best estimate as a number.`;
 
-        const result = await model.generateContent(prompt);
-        const response = await result.response;
-        let text = (response && typeof response.text === 'function') ? response.text() : '';
+        const text = await callOpenRouter(prompt);
         if (!text) return null;
         // Clean code fencing if any
-        if (text.includes('```')) {
-            text = text.replace(/```[a-z]*\n?/gi, '').replace(/\n?```/g, '');
+        let cleaned = text;
+        if (cleaned.includes('```')) {
+            cleaned = cleaned.replace(/```[a-z]*\n?/gi, '').replace(/\n?```/g, '');
         }
-        // Extract number
-        const match = text.match(/\d+(?:\.\d+)?/);
+        const match = cleaned.match(/\d+(?:\.\d+)?/);
         if (!match) return null;
         const value = parseFloat(match[0]);
         if (isNaN(value) || value < 0) return null;
@@ -113,15 +139,12 @@ Return ONLY a single positive number representing the predicted yield in ${yield
 export const getCrops = async (req, res) => {
     try {
         const { farmerId } = req.params;
-        
         if (!mongoose.Types.ObjectId.isValid(farmerId)) {
             return res.status(400).json({ success: false, message: 'Invalid farmer ID' });
         }
-
         const crops = await Crop.find({ farmer: farmerId })
             .populate('farm', 'name location')
             .sort({ createdAt: -1 });
-
         res.status(200).json({ success: true, data: crops });
     } catch (err) {
         console.log("Error fetching crops", err.message);
@@ -133,15 +156,12 @@ export const getCrops = async (req, res) => {
 export const getCropsByFarm = async (req, res) => {
     try {
         const { farmId } = req.params;
-        
         if (!mongoose.Types.ObjectId.isValid(farmId)) {
             return res.status(400).json({ success: false, message: 'Invalid farm ID' });
         }
-
         const crops = await Crop.find({ farm: farmId })
             .populate('farm', 'name location')
             .sort({ createdAt: -1 });
-
         res.status(200).json({ success: true, data: crops });
     } catch (err) {
         console.log("Error fetching crops by farm", err.message);
@@ -153,39 +173,26 @@ export const getCropsByFarm = async (req, res) => {
 export const addCrop = async (req, res) => {
     try {
         const cropData = req.body;
-
-        // Validate required fields
         if (!cropData.name || !cropData.variety || !cropData.farm || !cropData.farmer || 
             !cropData.area || !cropData.plantingDate || !cropData.expectedHarvestDate) {
             return res.status(400).json({ success: false, message: 'Provide all required fields' });
         }
-
-        // Validate farm exists and belongs to farmer
         const farm = await Farm.findById(cropData.farm);
-        if (!farm) {
-            return res.status(404).json({ success: false, message: 'Farm not found' });
-        }
-
+        if (!farm) return res.status(404).json({ success: false, message: 'Farm not found' });
         if (farm.farmer.toString() !== cropData.farmer) {
             return res.status(403).json({ success: false, message: 'Farm does not belong to this farmer' });
         }
-
-        // Normalize numeric fields
         if (cropData.estimatedYield !== undefined && cropData.estimatedYield !== null) {
             cropData.estimatedYield = Number(cropData.estimatedYield);
         }
         cropData.area = Number(cropData.area);
-        // Force unit to acres everywhere
         cropData.unit = AREA_UNITS.acres;
 
-        // Validate available area on the farm (considering existing active crops)
         const { value: farmSizeValue, unit: farmSizeUnit } = parseFarmLandSize(farm.landSize);
         const farmSizeSqM = convertToSquareMeters(farmSizeValue, farmSizeUnit);
         if (isNaN(farmSizeSqM)) {
             return res.status(400).json({ success: false, message: 'Invalid farm land size configuration' });
         }
-
-        // Validate dates: expected harvest should not be earlier than planting date
         const plantingDateObj = new Date(cropData.plantingDate);
         const harvestDateObj = new Date(cropData.expectedHarvestDate);
         if (isNaN(plantingDateObj.getTime()) || isNaN(harvestDateObj.getTime())) {
@@ -194,51 +201,33 @@ export const addCrop = async (req, res) => {
         if (harvestDateObj < plantingDateObj) {
             return res.status(400).json({ success: false, message: 'Expected harvest date cannot be earlier than planting date' });
         }
-
-        const existingCrops = await Crop.find({ farm: farm._id, status: 'active' }).select('area unit');
+        const existingCrops = await Crop.find({ farm: farm._id, stage: { $ne: 'harvested' } }).select('area unit');
         const usedSqM = existingCrops.reduce((sum, c) => {
             const cSqm = convertToSquareMeters(Number(c.area), c.unit || AREA_UNITS.acres);
             return isNaN(cSqm) ? sum : sum + cSqm;
         }, 0);
-
         const requestedSqM = convertToSquareMeters(cropData.area, AREA_UNITS.acres);
         if (isNaN(requestedSqM) || requestedSqM <= 0) {
             return res.status(400).json({ success: false, message: 'Invalid crop area or unit' });
         }
-
         const remainingSqM = Math.max(0, farmSizeSqM - usedSqM);
-        const EPSILON = 1e-6; // allow tiny floating-point tolerance
+        const EPSILON = 1e-6;
         if (requestedSqM - remainingSqM > EPSILON) {
-            // Report remaining in acres for clarity
             const remainingInRequestedUnit = convertFromSquareMeters(remainingSqM, AREA_UNITS.acres);
-            return res.status(400).json({
-                success: false,
-                message: `Insufficient available area on this farm. Remaining: ${remainingInRequestedUnit.toFixed(2)} acres`
-            });
+            return res.status(400).json({ success: false, message: `Insufficient available area on this farm. Remaining: ${remainingInRequestedUnit.toFixed(2)} acres` });
         }
 
-        // Attempt AI predicted yield
-        const predicted = await predictYieldWithGemini({
-            cropName: cropData.name,
-            variety: cropData.variety,
-            area: cropData.area,
-            areaUnit: AREA_UNITS.acres,
-            farmLocation: farm.location,
-            soilType: farm.soilType,
-            plantingDate: cropData.plantingDate,
-            expectedHarvestDate: cropData.expectedHarvestDate,
+        const predicted = await predictYieldWithAI({
+            cropName: cropData.name, variety: cropData.variety, area: cropData.area,
+            areaUnit: AREA_UNITS.acres, farmLocation: farm.location, soilType: farm.soilType,
+            plantingDate: cropData.plantingDate, expectedHarvestDate: cropData.expectedHarvestDate,
             yieldUnit: cropData.yieldUnit || 'kg'
         });
-
-        if (predicted !== null) {
-            cropData.predictedYield = predicted;
-        }
+        if (predicted !== null) cropData.predictedYield = predicted;
 
         const newCrop = new Crop(cropData);
         await newCrop.save();
-
         const populatedCrop = await Crop.findById(newCrop._id).populate('farm', 'name location');
-
         res.status(201).json({ success: true, data: populatedCrop });
     } catch (err) {
         console.error("Error creating crop", err.message);
@@ -251,21 +240,22 @@ export const updateCropStage = async (req, res) => {
     try {
         const { cropId } = req.params;
         const { stage, notes, actualYield, totalCost } = req.body;
-
         if (!mongoose.Types.ObjectId.isValid(cropId)) {
             return res.status(400).json({ success: false, message: 'Invalid crop ID' });
         }
-
+        const existingCrop = await Crop.findById(cropId);
+        if (!existingCrop) return res.status(404).json({ success: false, message: 'Crop not found' });
+        if (existingCrop.farmer.toString() !== req.user._id.toString() && req.user.role !== 'admin') {
+            return res.status(403).json({ success: false, message: 'Not authorized to update this crop' });
+        }
         const validStages = ['planning', 'planting', 'growing', 'flowering', 'fruiting', 'harvest', 'harvested'];
         if (stage && !validStages.includes(stage)) {
             return res.status(400).json({ success: false, message: 'Invalid stage' });
         }
-
         const updateData = {};
         if (stage) updateData.stage = stage;
         if (notes !== undefined) updateData.notes = notes;
 
-        // If stage is 'harvested', require actualYield, set harvest date and isHarvested flag, and create a product
         if (stage === 'harvested') {
             if (actualYield === undefined || actualYield === null || Number(actualYield) <= 0) {
                 return res.status(400).json({ success: false, message: 'Please provide actualYield to mark as harvested' });
@@ -276,44 +266,46 @@ export const updateCropStage = async (req, res) => {
             updateData.actualYield = Number(actualYield);
             if (totalCost !== undefined && totalCost !== null) {
                 const parsedCost = Number(totalCost);
-                if (!isNaN(parsedCost) && parsedCost >= 0) {
-                    updateData.totalCost = parsedCost;
-                }
+                if (!isNaN(parsedCost) && parsedCost >= 0) updateData.totalCost = parsedCost;
             }
-
-            // Get the crop to access farm information
             const crop = await Crop.findById(cropId).populate('farm');
             if (crop) {
-                // Create a product from the harvested crop
-                const newProduct = new Product({
-                    name: `${crop.name} - ${crop.variety}`,
-                    description: `${crop.name} variety ${crop.variety} harvested from ${crop.farm.name}`,
-                    price: 0, // Will be set by farmer later
-                    category: 'vegetables', // Default category
-                    stock: Number(actualYield) || crop.estimatedYield || 0,
-                    unit: crop.yieldUnit || 'kg',
-                    farmer: crop.farmer,
-                    farm: crop.farm._id,
-                    isAvailable: false, // Not published to marketplace yet
-                    rating: 0,
-                    reviewCount: 0
-                });
-
-                await newProduct.save();
-                updateData.product = newProduct._id; // Link the product to the crop
+                if (crop.product) {
+                    const existingProduct = await Product.findByIdAndUpdate(crop.product, {
+                        stock: Number(actualYield) || crop.estimatedYield || 0,
+                        harvestQuantity: Number(actualYield) || crop.estimatedYield || 0,
+                        unit: normalizeProductUnit(crop.yieldUnit),
+                        harvestDate: new Date(),
+                        status: 'harvested',
+                        isAvailable: false,
+                        isInMarketplace: false
+                    }, { new: true, runValidators: true });
+                    if (existingProduct) updateData.product = existingProduct._id;
+                } else {
+                    const harvestedQuantity = Number(actualYield) || crop.estimatedYield || 0;
+                    const newProduct = new Product({
+                        name: `${crop.name}${crop.variety ? ` - ${crop.variety}` : ''}`,
+                        description: `${crop.name}${crop.variety ? ` variety ${crop.variety}` : ''} harvested from ${crop.farm?.name || 'farm'}`,
+                        price: 0,
+                        category: 'vegetables',
+                        stock: harvestedQuantity,
+                        harvestQuantity: harvestedQuantity,
+                        unit: normalizeProductUnit(crop.yieldUnit),
+                        farmer: crop.farmer,
+                        farm: crop.farm._id,
+                        status: 'harvested',
+                        isAvailable: false,
+                        isInMarketplace: false,
+                        rating: 0,
+                        reviewCount: 0
+                    });
+                    await newProduct.save();
+                    updateData.product = newProduct._id;
+                }
             }
         }
-
-        const updatedCrop = await Crop.findByIdAndUpdate(
-            cropId, 
-            updateData, 
-            { new: true }
-        ).populate('farm', 'name location');
-
-        if (!updatedCrop) {
-            return res.status(404).json({ success: false, message: 'Crop not found' });
-        }
-
+        const updatedCrop = await Crop.findByIdAndUpdate(cropId, updateData, { new: true }).populate('farm', 'name location');
+        if (!updatedCrop) return res.status(404).json({ success: false, message: 'Crop not found' });
         res.status(200).json({ success: true, data: updatedCrop });
     } catch (err) {
         console.error("Error updating crop stage", err.message);
@@ -326,21 +318,16 @@ export const updateCrop = async (req, res) => {
     try {
         const { cropId } = req.params;
         const updateData = req.body;
-
         if (!mongoose.Types.ObjectId.isValid(cropId)) {
             return res.status(400).json({ success: false, message: 'Invalid crop ID' });
         }
-
-        const updatedCrop = await Crop.findByIdAndUpdate(
-            cropId, 
-            updateData, 
-            { new: true }
-        ).populate('farm', 'name location');
-
-        if (!updatedCrop) {
-            return res.status(404).json({ success: false, message: 'Crop not found' });
+        const existingCrop = await Crop.findById(cropId);
+        if (!existingCrop) return res.status(404).json({ success: false, message: 'Crop not found' });
+        if (existingCrop.farmer.toString() !== req.user._id.toString() && req.user.role !== 'admin') {
+            return res.status(403).json({ success: false, message: 'Not authorized to update this crop' });
         }
-
+        const updatedCrop = await Crop.findByIdAndUpdate(cropId, updateData, { new: true, runValidators: true }).populate('farm', 'name location');
+        if (!updatedCrop) return res.status(404).json({ success: false, message: 'Crop not found' });
         res.status(200).json({ success: true, data: updatedCrop });
     } catch (err) {
         console.error("Error updating crop", err.message);
@@ -352,17 +339,16 @@ export const updateCrop = async (req, res) => {
 export const deleteCrop = async (req, res) => {
     try {
         const { cropId } = req.params;
-
         if (!mongoose.Types.ObjectId.isValid(cropId)) {
             return res.status(400).json({ success: false, message: 'Invalid crop ID' });
         }
-
-        const deletedCrop = await Crop.findByIdAndDelete(cropId);
-
-        if (!deletedCrop) {
-            return res.status(404).json({ success: false, message: 'Crop not found' });
+        const existingCrop = await Crop.findById(cropId);
+        if (!existingCrop) return res.status(404).json({ success: false, message: 'Crop not found' });
+        if (existingCrop.farmer.toString() !== req.user._id.toString() && req.user.role !== 'admin') {
+            return res.status(403).json({ success: false, message: 'Not authorized to delete this crop' });
         }
-
+        const deletedCrop = await Crop.findByIdAndDelete(cropId);
+        if (!deletedCrop) return res.status(404).json({ success: false, message: 'Crop not found' });
         res.status(200).json({ success: true, message: 'Crop deleted successfully' });
     } catch (err) {
         console.error("Error deleting crop", err.message);
@@ -375,109 +361,89 @@ export const harvestCrop = async (req, res) => {
     try {
         const { cropId } = req.params;
         const { actualYield, price, description, category, unit } = req.body;
-
         if (!mongoose.Types.ObjectId.isValid(cropId)) {
             return res.status(400).json({ success: false, message: 'Invalid crop ID' });
         }
-
-        // Validate required fields for product creation
         if (!actualYield || !price || !description || !category || !unit) {
             return res.status(400).json({ success: false, message: 'Provide all required fields for product creation' });
         }
-
         const crop = await Crop.findById(cropId).populate('farm');
-        if (!crop) {
-            return res.status(404).json({ success: false, message: 'Crop not found' });
+        if (!crop) return res.status(404).json({ success: false, message: 'Crop not found' });
+        if (crop.farmer.toString() !== req.user._id.toString() && req.user.role !== 'admin') {
+            return res.status(403).json({ success: false, message: 'Not authorized to harvest this crop' });
         }
-
-        // Update crop to harvested status
         crop.stage = 'harvested';
         crop.isHarvested = true;
         crop.harvestDate = new Date();
         crop.actualYield = actualYield;
         crop.status = 'completed';
         await crop.save();
-
-        // Create product from harvested crop
         const product = new Product({
-            name: `${crop.name} - ${crop.variety}`,
-            description: description,
-            price: price,
-            category: category,
-            stock: actualYield,
-            unit: unit,
-            farmer: crop.farmer,
-            farm: crop.farm._id,
-            isAvailable: true
+            name: `${crop.name} - ${crop.variety}`, description,
+            price, category, stock: actualYield, unit,
+            farmer: crop.farmer, farm: crop.farm._id, isAvailable: true
         });
-
         await product.save();
-
         const populatedCrop = await Crop.findById(cropId).populate('farm', 'name location');
-
-        res.status(200).json({ 
-            success: true, 
-            data: populatedCrop,
-            product: product,
-            message: 'Crop harvested and product created successfully'
-        });
+        res.status(200).json({ success: true, data: populatedCrop, product, message: 'Crop harvested and product created successfully' });
     } catch (err) {
         console.error("Error harvesting crop", err.message);
         res.status(500).json({ success: false, message: "Server error" });
     }
 };
 
-// Suggest crops using Gemini AI
+// Suggest crops using OpenRouter AI
 export const suggestCrops = async (req, res) => {
     console.log("=== suggestCrops function started ===");
     try {
         const { farmId } = req.params;
         console.log("1. Farm ID:", farmId);
-        
         if (!mongoose.Types.ObjectId.isValid(farmId)) {
-            console.log("Invalid farm ID");
             return res.status(400).json({ success: false, message: 'Invalid farm ID' });
         }
-
-        console.log("2. Searching for farm...");
         const farm = await Farm.findById(farmId);
-        console.log("3. Farm found:", !!farm);
-        if (!farm) {
-            return res.status(404).json({ success: false, message: 'Farm not found' });
-        }
+        if (!farm) return res.status(404).json({ success: false, message: 'Farm not found' });
 
-        // Check if suggestions already exist in database
-        console.log("4. Checking for existing suggestions in database...");
+        // Check if suggestions already exist
         let existingSuggestion = await CropSuggestion.findOne({ farm: farmId });
-        
         if (existingSuggestion) {
-            console.log("5. Found existing suggestions in database");
             return res.status(200).json({ 
-                success: true, 
-                data: existingSuggestion.suggestions,
-                farmInfo: existingSuggestion.farmInfo,
-                fromCache: true
+                success: true, data: existingSuggestion.suggestions,
+                farmInfo: existingSuggestion.farmInfo, fromCache: true
             });
         }
 
-        console.log("6. No existing suggestions found, making API call to Gemini...");
-        console.log("7. API Key present:", !!(process.env.GEMINI_API || process.env.GOOGLE_API_KEY));
+        // If no API key, use fallback suggestions immediately
+        if (!process.env.OPENROUTER_API_KEY) {
+            console.log("⚠️ Missing OPENROUTER_API_KEY — using fallback crop suggestions");
+            const fallbackSuggestions = getFallbackCropSuggestions(farm.location, farm.landSize);
+            
+            const newSuggestion = new CropSuggestion({
+                farm: farmId, farmer: farm.farmer,
+                suggestions: fallbackSuggestions, farmInfo: { location: farm.location, area: farm.landSize }
+            });
+            await newSuggestion.save();
 
-        // Initialize Gemini AI
-        let model;
-        try {
-            model = getGeminiModel();
-        } catch (e) {
-            console.log("Missing Gemini API key (GEMINI_API or GOOGLE_API_KEY)");
-            return res.status(500).json({ success: false, message: 'Missing Gemini API key' });
+            return res.status(200).json({ 
+                success: true, data: fallbackSuggestions,
+                farmInfo: { location: farm.location, area: farm.landSize },
+                fromCache: false, source: 'fallback'
+            });
         }
-        console.log("9. Model initialized");
 
-                       // Create the prompt
-               const prompt = `Give me suggestions on what crops should I plant on my farm based on the following data:
+        // Initialize OpenRouter client
+        let client;
+        try {
+            client = getOpenRouterClient();
+        } catch (e) {
+            console.log("Missing OPENROUTER_API_KEY");
+            return res.status(500).json({ success: false, message: 'Crop suggestion service temporarily unavailable' });
+        }
+
+        const prompt = `Give me suggestions on what crops should I plant on my farm based on the following data:
 
 Location: ${farm.location}
-                Land area: ${farm.landSize}
+Land area: ${farm.landSize}
 
 Your output should be a JSON array containing objects with the following structure:
 {
@@ -489,83 +455,82 @@ Your output should be a JSON array containing objects with the following structu
 
 Please provide 3-5 crop suggestions that would be suitable for this farm location and size. Return ONLY the JSON array, no markdown formatting, no code blocks, no additional text or explanations.`;
 
-        console.log("10. Making API call to Gemini...");
-        // Generate content using Gemini
-        const result = await model.generateContent(prompt);
-        console.log("11. Got result from Gemini");
-        
-        const response = await result.response;
-        console.log("12. Got response object");
-        
-        let text = response.text();
+        console.log("10. Making API call to OpenRouter...");
+        const completion = await client.chat.completions.create({
+            model: OPENROUTER_MODEL,
+            messages: [{ role: "user", content: prompt }],
+        });
+
+        let text = completion.choices[0]?.message?.content || "";
         console.log("13. Response text length:", text.length);
 
         try {
-            console.log("14. Processing response text...");
-            console.log("Raw response:", text);
-            
-            // Clean the response by removing markdown code blocks if present
+            // Clean the response
             if (text.includes('```json')) {
                 text = text.replace(/```json\n?/g, '').replace(/\n?```/g, '');
             } else if (text.includes('```')) {
                 text = text.replace(/```\n?/g, '').replace(/\n?```/g, '');
             }
-            
-            // Remove any leading/trailing whitespace and newlines
             text = text.trim();
-            
-            // Try to find JSON array in the response
             const jsonMatch = text.match(/\[[\s\S]*\]/);
-            if (jsonMatch) {
-                text = jsonMatch[0];
-            }
-            
-            console.log("15. Cleaned text:", text);
-            console.log("15. Cleaned text length:", text.length);
-            
-            // Parse the JSON response from Gemini
+            if (jsonMatch) text = jsonMatch[0];
+
             const suggestions = JSON.parse(text);
             console.log("16. JSON parsed successfully, suggestions count:", suggestions.length);
-            
-            // Store suggestions in database
-            console.log("17. Storing suggestions in database...");
+
+            // Store suggestions
             const newSuggestion = new CropSuggestion({
-                farm: farmId,
-                farmer: farm.farmer,
-                suggestions: suggestions,
-                farmInfo: {
-                    location: farm.location,
-                    area: farm.landSize
-                }
+                farm: farmId, farmer: farm.farmer,
+                suggestions, farmInfo: { location: farm.location, area: farm.landSize }
             });
-            
             await newSuggestion.save();
-            console.log("18. Suggestions stored successfully");
-            
+
             res.status(200).json({ 
-                success: true, 
-                data: suggestions,
-                farmInfo: {
-                    location: farm.location,
-                    area: farm.landSize
-                },
+                success: true, data: suggestions,
+                farmInfo: { location: farm.location, area: farm.landSize },
                 fromCache: false
             });
         } catch (parseError) {
-            console.error("JSON Parse Error:", parseError.message);
-            console.error("Cleaned text:", text);
-            res.status(500).json({ 
-                success: false, 
-                message: "Error processing AI response",
-                rawResponse: text 
+            console.error("JSON Parse Error — using fallback:", parseError.message);
+            const fallbackSuggestions = getFallbackCropSuggestions(farm.location, farm.landSize);
+            
+            const newSuggestion = new CropSuggestion({
+                farm: farmId, farmer: farm.farmer,
+                suggestions: fallbackSuggestions, farmInfo: { location: farm.location, area: farm.landSize }
+            });
+            await newSuggestion.save();
+
+            res.status(200).json({ 
+                success: true, data: fallbackSuggestions,
+                farmInfo: { location: farm.location, area: farm.landSize },
+                fromCache: false, source: 'fallback'
             });
         }
-
     } catch (err) {
-        console.error("=== MAIN ERROR ===");
+        console.error("=== MAIN ERROR (using fallback) ===");
         console.error("Error message:", err.message);
-        console.error("Error stack:", err.stack);
-        res.status(500).json({ success: false, message: "Server error", details: err.message });
+        // Graceful fallback: return rule-based suggestions instead of error
+        try {
+            const farm = await Farm.findById(farmId);
+            const fallbackSuggestions = getFallbackCropSuggestions(farm?.location, farm?.landSize);
+            
+            if (farm) {
+                const newSuggestion = new CropSuggestion({
+                    farm: farmId, farmer: farm.farmer,
+                    suggestions: fallbackSuggestions, farmInfo: { location: farm.location, area: farm.landSize }
+                });
+                await newSuggestion.save();
+            }
+
+            return res.status(200).json({ 
+                success: true, data: fallbackSuggestions,
+                farmInfo: farm ? { location: farm.location, area: farm.landSize } : null,
+                fromCache: false, source: 'fallback'
+            });
+        } catch (fallbackErr) {
+            console.error("Fallback also failed:", fallbackErr.message);
+            res.status(500).json({ success: false, message: "Crop suggestion service temporarily unavailable" });
+        }
     }
 };
 
@@ -573,75 +538,56 @@ Please provide 3-5 crop suggestions that would be suitable for this farm locatio
 export const getStoredCropSuggestions = async (req, res) => {
     try {
         const { farmId } = req.params;
-        
         if (!mongoose.Types.ObjectId.isValid(farmId)) {
             return res.status(400).json({ success: false, message: 'Invalid farm ID' });
         }
-
         const suggestion = await CropSuggestion.findOne({ farm: farmId });
-        
         if (!suggestion) {
             return res.status(404).json({ success: false, message: 'No suggestions found for this farm' });
         }
-
-        res.status(200).json({ 
-            success: true, 
-            data: suggestion.suggestions,
-            farmInfo: suggestion.farmInfo,
-            createdAt: suggestion.createdAt
-        });
+        res.status(200).json({ success: true, data: suggestion.suggestions, farmInfo: suggestion.farmInfo, createdAt: suggestion.createdAt });
     } catch (err) {
         console.error("Error fetching stored crop suggestions", err.message);
         res.status(500).json({ success: false, message: "Server error" });
     }
 };
 
-// Force refresh crop suggestions (delete existing and get new ones)
+// Force refresh crop suggestions
 export const refreshCropSuggestions = async (req, res) => {
     try {
         const { farmId } = req.params;
-        
         if (!mongoose.Types.ObjectId.isValid(farmId)) {
             return res.status(400).json({ success: false, message: 'Invalid farm ID' });
         }
-
-        // Delete existing suggestions
         await CropSuggestion.findOneAndDelete({ farm: farmId });
-        
-        // Call the suggestCrops function to get new suggestions
         req.params.farmId = farmId;
         return await suggestCrops(req, res);
-        
     } catch (err) {
         console.error("Error refreshing crop suggestions", err.message);
         res.status(500).json({ success: false, message: "Server error" });
     }
 };
 
-// Generate a crop timeline using Gemini for a given suggestion (without creating the crop yet)
+// Generate a crop timeline using OpenRouter
 export const generateCropTimeline = async (req, res) => {
     try {
         const { farmId } = req.params;
-        const { suggestion, plantingStartDate } = req.body; // suggestion is an object as returned by suggestCrops
+        const { suggestion, plantingStartDate } = req.body;
 
         if (!mongoose.Types.ObjectId.isValid(farmId)) {
             return res.status(400).json({ success: false, message: 'Invalid farm ID' });
         }
-
         const farm = await Farm.findById(farmId);
-        if (!farm) {
-            return res.status(404).json({ success: false, message: 'Farm not found' });
-        }
-
+        if (!farm) return res.status(404).json({ success: false, message: 'Farm not found' });
         if (!suggestion || !suggestion.cropName) {
             return res.status(400).json({ success: false, message: 'Suggestion with cropName is required' });
         }
 
-        let model;
+        let client;
         try {
-            model = getGeminiModel();
+            client = getOpenRouterClient();
         } catch (e) {
-            return res.status(500).json({ success: false, message: 'Missing Gemini API key' });
+            return res.status(500).json({ success: false, message: 'Crop suggestion service temporarily unavailable' });
         }
 
         const startDateIso = plantingStartDate ? new Date(plantingStartDate).toISOString().split('T')[0] : 'unspecified';
@@ -657,30 +603,31 @@ Planting starts on ${startDateIso}. If date is 'unspecified', infer a reasonable
 IMPORTANT: Use the planting start date (${startDateIso}) as your reference point for calculating all task dates.
 - Soil preparation tasks should happen BEFORE the planting start date
 - Planting tasks should happen ON the planting start date
-- All subsequent tasks (watering, fertilizing, etc.) should be calculated relative to the planting start date
-- Use realistic intervals between tasks (e.g., watering every 2-3 days, fertilizing every 2-3 weeks)
+- All subsequent tasks should be calculated relative to the planting start date
 
 Return a JSON array of timeline items. Each item must strictly match this schema:
 {
   "title": string,
   "category": "soil_preparation" | "planting" | "watering" | "irrigation" | "fertilizing" | "weeding" | "pest_control" | "monitoring" | "pruning" | "harvest" | "other",
   "description": string,
-  "startDate": "YYYY-MM-DD", // Calculate this relative to planting start date
-  "endDate": "YYYY-MM-DD",   // Calculate this relative to planting start date
-  "dueDate": "YYYY-MM-DD",   // For single-day tasks, calculate relative to planting start date
-  "frequency": string,         // e.g., 'every 3 days', 'weekly', 'biweekly'
+  "startDate": "YYYY-MM-DD",
+  "endDate": "YYYY-MM-DD",
+  "dueDate": "YYYY-MM-DD",
+  "frequency": string
 }
 Make sure the JSON is valid and no additional text.`;
 
-        const result = await model.generateContent(prompt);
-        const response = await result.response;
-        let text = response.text().trim();
+        const completion = await client.chat.completions.create({
+            model: OPENROUTER_MODEL,
+            messages: [{ role: "user", content: prompt }],
+        });
+
+        let text = (completion.choices[0]?.message?.content || "").trim();
         if (text.includes('```')) {
             text = text.replace(/```json\n?/g, '').replace(/```/g, '').trim();
         }
         const jsonMatch = text.match(/\[[\s\S]*\]/);
         if (jsonMatch) text = jsonMatch[0];
-
         const timeline = JSON.parse(text);
 
         return res.status(200).json({ success: true, data: timeline });
@@ -696,18 +643,14 @@ export const acceptCropSuggestion = async (req, res) => {
         const { farmId } = req.params;
         const { farmerId, suggestion, cropInput, timeline } = req.body;
 
-        // cropInput can include: variety, area, unit, plantingDate, expectedHarvestDate, estimatedYield, yieldUnit, notes
-
         if (!mongoose.Types.ObjectId.isValid(farmId) || !mongoose.Types.ObjectId.isValid(farmerId)) {
             return res.status(400).json({ success: false, message: 'Invalid IDs' });
         }
-
         const farm = await Farm.findById(farmId);
         if (!farm) return res.status(404).json({ success: false, message: 'Farm not found' });
         if (farm.farmer.toString() !== farmerId) {
             return res.status(403).json({ success: false, message: 'Farm does not belong to this farmer' });
         }
-
         if (!suggestion || !suggestion.cropName) {
             return res.status(400).json({ success: false, message: 'Suggestion with cropName is required' });
         }
@@ -715,14 +658,12 @@ export const acceptCropSuggestion = async (req, res) => {
         const cropData = {
             name: suggestion.cropName,
             variety: cropInput?.variety || 'General',
-            farm: farmId,
-            farmer: farmerId,
+            farm: farmId, farmer: farmerId,
             area: Number(cropInput?.area || 1),
             unit: AREA_UNITS.acres,
             plantingDate: cropInput?.plantingDate ? new Date(cropInput.plantingDate) : new Date(),
             expectedHarvestDate: cropInput?.expectedHarvestDate ? new Date(cropInput.expectedHarvestDate) : new Date(Date.now() + 1000*60*60*24*120),
-            stage: 'planning',
-            status: 'active',
+            stage: 'planning', status: 'active',
             estimatedYield: cropInput?.estimatedYield ? Number(cropInput.estimatedYield) : undefined,
             yieldUnit: cropInput?.yieldUnit || 'kg',
             notes: cropInput?.notes || '',
@@ -733,19 +674,16 @@ export const acceptCropSuggestion = async (req, res) => {
                 reason: suggestion.reason || ''
             },
             timeline: Array.isArray(timeline) ? timeline.map(t => ({
-                title: t.title,
-                category: t.category || 'other',
+                title: t.title, category: t.category || 'other',
                 description: t.description || '',
                 startDate: t.startDate ? new Date(t.startDate) : undefined,
                 endDate: t.endDate ? new Date(t.endDate) : undefined,
                 dueDate: t.dueDate ? new Date(t.dueDate) : undefined,
                 frequency: t.frequency || '',
-                completed: !!t.completed,
-                notes: t.notes || ''
+                completed: !!t.completed, notes: t.notes || ''
             })) : []
         };
 
-        // Validate dates: expected harvest should not be earlier than planting date
         if (isNaN(cropData.plantingDate.getTime()) || isNaN(cropData.expectedHarvestDate.getTime())) {
             return res.status(400).json({ success: false, message: 'Invalid planting or harvest date' });
         }
@@ -753,59 +691,51 @@ export const acceptCropSuggestion = async (req, res) => {
             return res.status(400).json({ success: false, message: 'Expected harvest date cannot be earlier than planting date' });
         }
 
-        // Validate available area similar to addCrop
         const { value: farmSizeValue, unit: farmSizeUnit } = parseFarmLandSize(farm.landSize);
         const farmSizeSqM = convertToSquareMeters(farmSizeValue, farmSizeUnit);
         if (isNaN(farmSizeSqM)) {
             return res.status(400).json({ success: false, message: 'Invalid farm land size configuration' });
         }
-
-        const existingCrops = await Crop.find({ farm: farm._id, status: 'active' }).select('area unit');
+        const existingCrops = await Crop.find({ farm: farm._id, stage: { $ne: 'harvested' } }).select('area unit');
         const usedSqM = existingCrops.reduce((sum, c) => {
             const cSqm = convertToSquareMeters(Number(c.area), c.unit || AREA_UNITS.acres);
             return isNaN(cSqm) ? sum : sum + cSqm;
         }, 0);
-
         const requestedSqM = convertToSquareMeters(cropData.area, AREA_UNITS.acres);
         if (isNaN(requestedSqM) || requestedSqM <= 0) {
             return res.status(400).json({ success: false, message: 'Invalid crop area or unit' });
         }
-
         const remainingSqM = Math.max(0, farmSizeSqM - usedSqM);
         const EPSILON = 1e-6;
         if (requestedSqM - remainingSqM > EPSILON) {
             const remainingInRequestedUnit = convertFromSquareMeters(remainingSqM, AREA_UNITS.acres);
-            return res.status(400).json({
-                success: false,
-                message: `Insufficient available area on this farm. Remaining: ${remainingInRequestedUnit.toFixed(2)} acres`
-            });
+            return res.status(400).json({ success: false, message: `Insufficient available area on this farm. Remaining: ${remainingInRequestedUnit.toFixed(2)} acres` });
         }
 
-        // Attempt AI predicted yield using Gemini
         try {
-            const predicted = await predictYieldWithGemini({
-                cropName: cropData.name,
-                variety: cropData.variety,
-                area: cropData.area,
-                areaUnit: AREA_UNITS.acres,
-                farmLocation: farm.location,
-                soilType: farm.soilType,
-                plantingDate: cropData.plantingDate,
-                expectedHarvestDate: cropData.expectedHarvestDate,
+            const predicted = await predictYieldWithAI({
+                cropName: cropData.name, variety: cropData.variety, area: cropData.area,
+                areaUnit: AREA_UNITS.acres, farmLocation: farm.location, soilType: farm.soilType,
+                plantingDate: cropData.plantingDate, expectedHarvestDate: cropData.expectedHarvestDate,
                 yieldUnit: cropData.yieldUnit
             });
-
-            if (predicted !== null) {
-                cropData.predictedYield = predicted;
-            }
+            if (predicted !== null) cropData.predictedYield = predicted;
         } catch (error) {
-            console.log('Failed to predict yield with Gemini:', error.message);
-            // Continue without prediction if Gemini fails
+            console.log('Failed to predict yield:', error.message);
         }
 
         const newCrop = new Crop(cropData);
         await newCrop.save();
         const populatedCrop = await Crop.findById(newCrop._id).populate('farm', 'name location');
+
+        // Auto-generate task from accepted crop suggestion (non-blocking)
+        try {
+            await generateTaskFromCropSuggestion(suggestion, farmerId, farmId);
+            console.log('Task auto-generated from crop suggestion');
+        } catch (taskErr) {
+            console.error('Task generation from crop suggestion failed (non-critical):', taskErr.message);
+        }
+
         return res.status(201).json({ success: true, data: populatedCrop });
     } catch (err) {
         console.error('Error accepting crop suggestion', err.message);
@@ -836,15 +766,13 @@ export const addTimelineItem = async (req, res) => {
         const crop = await Crop.findById(cropId);
         if (!crop) return res.status(404).json({ success: false, message: 'Crop not found' });
         crop.timeline.push({
-            title: item.title,
-            category: item.category || 'other',
+            title: item.title, category: item.category || 'other',
             description: item.description || '',
             startDate: item.startDate ? new Date(item.startDate) : undefined,
             endDate: item.endDate ? new Date(item.endDate) : undefined,
             dueDate: item.dueDate ? new Date(item.dueDate) : undefined,
             frequency: item.frequency || '',
-            completed: !!item.completed,
-            notes: item.notes || ''
+            completed: !!item.completed, notes: item.notes || ''
         });
         await crop.save();
         return res.status(201).json({ success: true, data: crop.timeline });
@@ -866,8 +794,7 @@ export const updateTimelineItem = async (req, res) => {
         }
         const current = crop.timeline[i];
         crop.timeline[i] = {
-            ...current.toObject(),
-            ...updates,
+            ...current.toObject(), ...updates,
             startDate: updates.startDate ? new Date(updates.startDate) : current.startDate,
             endDate: updates.endDate ? new Date(updates.endDate) : current.endDate,
             dueDate: updates.dueDate ? new Date(updates.dueDate) : current.dueDate,
@@ -899,22 +826,21 @@ export const deleteTimelineItem = async (req, res) => {
     }
 };
 
-// Generate and save a timeline for an existing crop based on its data
+// Generate and save a timeline for an existing crop
 export const generateTimelineForCrop = async (req, res) => {
     try {
         const { cropId } = req.params;
         if (!mongoose.Types.ObjectId.isValid(cropId)) {
             return res.status(400).json({ success: false, message: 'Invalid crop ID' });
         }
-
         const crop = await Crop.findById(cropId).populate('farm');
         if (!crop) return res.status(404).json({ success: false, message: 'Crop not found' });
 
-        let model;
+        let client;
         try {
-            model = getGeminiModel();
+            client = getOpenRouterClient();
         } catch (e) {
-            return res.status(500).json({ success: false, message: 'Missing Gemini API key' });
+            return res.status(500).json({ success: false, message: 'Crop suggestion service temporarily unavailable' });
         }
 
         const plantingIso = crop.plantingDate ? new Date(crop.plantingDate).toISOString().split('T')[0] : 'unspecified';
@@ -927,45 +853,44 @@ Soil type: ${crop.farm.soilType}
 Planting date: ${plantingIso}
 Expected harvest: ${harvestIso}
 
-IMPORTANT: Use the planting date (${plantingIso}) as your reference point for calculating all task dates. If the planting date is 'unspecified', infer todays date as the planting start date based on the expected harvest date and typical crop cycles.
+IMPORTANT: Use the planting date (${plantingIso}) as your reference point for calculating all task dates.
 - Soil preparation tasks should happen BEFORE the planting date
 - Planting tasks should happen ON the planting date
-- All subsequent tasks (watering, fertilizing, etc.) should be calculated relative to the planting date
-- Use realistic intervals between tasks (e.g., watering every 2-3 days, fertilizing every 2-3 weeks)
+- All subsequent tasks should be calculated relative to the planting date
 
 Return a JSON array of timeline items with this exact schema:
 {
   "title": string,
   "category": "soil_preparation" | "planting" | "watering" | "irrigation" | "fertilizing" | "weeding" | "pest_control" | "monitoring" | "pruning" | "harvest" | "other",
   "description": string,
-  "startDate": "YYYY-MM-DD", // Calculate this relative to planting date
-  "endDate": "YYYY-MM-DD",   // Calculate this relative to planting date
-  "dueDate": "YYYY-MM-DD",   // For single-day tasks, calculate relative to planting date
-  "frequency": string          // e.g., 'every 3 days', 'weekly', 'biweekly'
+  "startDate": "YYYY-MM-DD",
+  "endDate": "YYYY-MM-DD",
+  "dueDate": "YYYY-MM-DD",
+  "frequency": string
 }
 Return ONLY the JSON array.`;
 
-        const result = await model.generateContent(prompt);
-        const response = await result.response;
-        let text = response.text().trim();
+        const completion = await client.chat.completions.create({
+            model: OPENROUTER_MODEL,
+            messages: [{ role: "user", content: prompt }],
+        });
+
+        let text = (completion.choices[0]?.message?.content || "").trim();
         if (text.includes('```')) {
             text = text.replace(/```json\n?/g, '').replace(/```/g, '').trim();
         }
         const jsonMatch = text.match(/\[[\s\S]*\]/);
         if (jsonMatch) text = jsonMatch[0];
-
         const timeline = JSON.parse(text);
 
         crop.timeline = (timeline || []).map(t => ({
-            title: t.title,
-            category: t.category || 'other',
+            title: t.title, category: t.category || 'other',
             description: t.description || '',
             startDate: t.startDate ? new Date(t.startDate) : undefined,
             endDate: t.endDate ? new Date(t.endDate) : undefined,
             dueDate: t.dueDate ? new Date(t.dueDate) : undefined,
             frequency: t.frequency || '',
-            completed: false,
-            notes: ''
+            completed: false, notes: ''
         }));
         await crop.save();
         return res.status(200).json({ success: true, data: crop.timeline });

@@ -8,6 +8,7 @@ import {
     FileText,
     Heart,
     Home,
+    Leaf,
     List,
     LogOut,
     Mail,
@@ -21,8 +22,8 @@ import {
     X
 } from 'lucide-react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { usePathname, useRouter } from 'next/navigation';
+import { useCallback, useEffect, useState } from 'react';
 
 export default function Sidebar({ userRole, userName, userEmail, onClose }) {
   const [expandedSections, setExpandedSections] = useState({
@@ -32,15 +33,17 @@ export default function Sidebar({ userRole, userName, userEmail, onClose }) {
   });
   const [isMobile, setIsMobile] = useState(false);
   const pathname = usePathname();
+  const router = useRouter();
+  const prefetchLink = useCallback((path) => {
+    router.prefetch(path);
+  }, [router]);
 
   useEffect(() => {
     const checkMobile = () => {
       setIsMobile(window.innerWidth < 768);
     };
-    
     checkMobile();
     window.addEventListener('resize', checkMobile);
-    
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
@@ -59,160 +62,51 @@ export default function Sidebar({ userRole, userName, userEmail, onClose }) {
     }
   };
 
-  // Role-based navigation items
   const getNavigationItems = () => {
     const baseItems = [
-      {
-        id: 'profile',
-        label: 'Profile',
-        icon: User,
-        path: '/dashboard/profile',
-        children: []
-      }
+      { id: 'profile', label: 'Profile', icon: User, path: '/dashboard/profile', children: [] }
     ];
 
     switch (userRole) {
       case 'farmer':
         return [
-          {
-            id: 'dashboard',
-            label: 'Dashboard',
-            icon: Home,
-            path: '/dashboard/farmer',
-            children: []
-          },
-          {
-            id: 'my-farm',
-            label: 'My Farm',
-            icon: Monitor,
-            children: [
-                             { label: 'Farm Profile', path: '/dashboard/farmer/farm-profile' },
-               { label: 'My Products', path: '/dashboard/farmer/my-products' },
-               { label: 'My Orders', path: '/dashboard/farmer/my-orders' },
-               { label: 'Farm Condition Reports', path: '/dashboard/farmer/farm-condition-reports' }
-            ]
-          },
-          {
-            id: 'planning',
-            label: 'Planning',
-            icon: Calendar,
-            children: [
-              { label: 'Crop Suggestions', path: '/dashboard/farmer/crop-suggestions' },
-              { label: 'Planting Calendar', path: '/dashboard/farmer/planting-calendar' }
-            ]
-          },
-          {
-            id: 'pest-detection',
-            label: 'Pest Detection',
-            icon: FileText,
-            path: '/dashboard/farmer/pest-detection',
-            children: []
-          },
-          {
-            id: 'task-management',
-            label: 'Task Management',
-            icon: List,
-            path: '/dashboard/farmer/task-management',
-            children: []
-          },
-          {
-            id: 'analytics',
-            label: 'Analytics',
-            icon: BarChart3,
-            path: '/dashboard/farmer/analytics',
-            children: []
-          },
-          {
-            id: 'community',
-            label: 'Community Forum',
-            icon: Users,
-            path: '/dashboard/farmer/community',
-            children: []
-          },
-          {
-            id: 'qa',
-            label: 'Q&A Support',
-            icon: MessageCircle,
-            path: '/dashboard/farmer/qa',
-            children: []
-          },
+          { id: 'dashboard', label: 'Dashboard', icon: Home, path: '/dashboard/farmer', children: [] },
+          { id: 'my-farm', label: 'My Farm', icon: Monitor, children: [
+            { label: 'Farm Profile', path: '/dashboard/farmer/farm-profile' },
+            { label: 'My Products', path: '/dashboard/farmer/my-products' },
+            { label: 'My Orders', path: '/dashboard/farmer/my-orders' },
+            { label: 'Farm Condition Reports', path: '/dashboard/farmer/farm-condition-reports' }
+          ]},
+          { id: 'planning', label: 'Planning', icon: Calendar, children: [
+            { label: 'Crop Suggestions', path: '/dashboard/farmer/crop-suggestions' },
+            { label: 'Planting Calendar', path: '/dashboard/farmer/planting-calendar' }
+          ]},
+          { id: 'pest-detection', label: 'Pest Detection', icon: FileText, path: '/dashboard/farmer/pest-detection', children: [] },
+          { id: 'task-management', label: 'Task Management', icon: List, path: '/dashboard/farmer/task-management', children: [] },
+          { id: 'analytics', label: 'Analytics', icon: BarChart3, path: '/dashboard/farmer/analytics', children: [] },
+          { id: 'community', label: 'Community Forum', icon: Users, path: '/dashboard/farmer/community', children: [] },
+          { id: 'qa', label: 'Q&A Support', icon: MessageCircle, path: '/dashboard/farmer/qa', children: [] },
           ...baseItems
         ];
-      
       case 'admin':
         return [
-          {
-            id: 'dashboard',
-            label: 'Dashboard',
-            icon: Home,
-            path: '/dashboard/admin',
-            children: []
-          },
-          {
-            id: 'user-management',
-            label: 'User Management',
-            icon: Users,
-            path: '/dashboard/admin/user-management',
-            children: []
-          },
-          {
-            id: 'qa-management',
-            label: 'Q&A Management',
-            icon: MessageCircle,
-            path: '/dashboard/admin/qa',
-            children: []
-          },
+          { id: 'dashboard', label: 'Dashboard', icon: Home, path: '/dashboard/admin', children: [] },
+          { id: 'user-management', label: 'User Management', icon: Users, path: '/dashboard/admin/user-management', children: [] },
+          { id: 'order-management', label: 'Order Management', icon: Package, path: '/dashboard/admin/order-management', children: [] },
+          { id: 'platform-analytics', label: 'Platform Analytics', icon: BarChart3, path: '/dashboard/admin/analytics', children: [] },
+          { id: 'qa-management', label: 'Q&A Management', icon: MessageCircle, path: '/dashboard/admin/qa', children: [] },
           ...baseItems
         ];
-      
       case 'buyer':
         return [
-          {
-            id: 'dashboard',
-            label: 'Dashboard',
-            icon: Home,
-            path: '/dashboard/buyer',
-            children: []
-          },
-          {
-            id: 'browse-farmers',
-            label: 'Browse Farmers',
-            icon: Store,
-            path: '/dashboard/buyer/browse-farmers',
-            children: []
-          },
-          {
-            id: 'marketplace',
-            label: 'Marketplace',
-            icon: Store,
-            path: '/dashboard/buyer/marketplace',
-            children: []
-          },
-          {
-            id: 'my-orders',
-            label: 'My Orders',
-            icon: Package,
-            path: '/dashboard/buyer/my-orders',
-            children: []
-          },
-          {
-            id: 'favorites',
-            label: 'Favorites',
-            icon: Heart,
-            path: '/dashboard/buyer/favorites',
-            children: []
-          },
-          
-          {
-            id: 'cart',
-            label: 'Cart',
-            icon: ShoppingCart,
-            path: '/dashboard/buyer/cart',
-            children: []
-          },
+          { id: 'dashboard', label: 'Dashboard', icon: Home, path: '/dashboard/buyer', children: [] },
+          { id: 'browse-farmers', label: 'Browse Farmers', icon: Store, path: '/dashboard/buyer/browse-farmers', children: [] },
+          { id: 'marketplace', label: 'Marketplace', icon: Store, path: '/dashboard/buyer/marketplace', children: [] },
+          { id: 'my-orders', label: 'My Orders', icon: Package, path: '/dashboard/buyer/my-orders', children: [] },
+          { id: 'favorites', label: 'Favorites', icon: Heart, path: '/dashboard/buyer/favorites', children: [] },
+          { id: 'cart', label: 'Cart', icon: ShoppingCart, path: '/dashboard/buyer/cart', children: [] },
           ...baseItems
         ];
-      
       default:
         return baseItems;
     }
@@ -220,115 +114,74 @@ export default function Sidebar({ userRole, userName, userEmail, onClose }) {
 
   const navigationItems = getNavigationItems();
 
-  // Get user initials for avatar
   const getUserInitials = (name) => {
-    return name
-      .split(' ')
-      .map(word => word.charAt(0))
-      .join('')
-      .toUpperCase()
-      .slice(0, 2);
+    return name.split(' ').map(word => word.charAt(0)).join('').toUpperCase().slice(0, 2);
   };
 
-  // Get role display name
   const getRoleDisplayName = (role) => {
     switch (role) {
-      case 'farmer':
-        return 'Farmer';
-      case 'buyer':
-        return 'Buyer';
-      case 'admin':
-        return 'Administrator';
-      default:
-        return role;
+      case 'farmer': return 'Farmer';
+      case 'buyer': return 'Buyer';
+      case 'admin': return 'Administrator';
+      default: return role;
     }
   };
 
   return (
-    <div className={`${isMobile ? 'w-80' : 'w-64'} h-full bg-white border-r border-gray-200 flex flex-col`}>
-      {/* Header - Fixed at top */}
-      <div className="flex-shrink-0 p-4 border-b border-gray-200 flex items-center justify-between">
-        <Link 
-          href={userRole === 'farmer' ? '/dashboard/farmer' : userRole === 'buyer' ? '/dashboard/buyer' : userRole === 'admin' ? '/dashboard/admin' : '/'} 
-          className="flex items-center gap-2"
-          onClick={handleLinkClick}
-        >
-          <div className="w-8 h-8 bg-teal-600 rounded-lg flex items-center justify-center">
-            <FileText className="w-5 h-5 text-white" />
+    <div className={`${isMobile ? 'w-80' : 'w-64'} h-full bg-surface-800 border-r border-white/[0.06] flex flex-col`}>
+      {/* Header */}
+      <div className="flex-shrink-0 p-4 border-b border-white/[0.06] flex items-center justify-between">
+        <Link href={userRole === 'farmer' ? '/dashboard/farmer' : userRole === 'buyer' ? '/dashboard/buyer' : userRole === 'admin' ? '/dashboard/admin' : '/'} className="flex items-center gap-2" onClick={handleLinkClick}>
+          <div className="w-8 h-8 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-xl flex items-center justify-center shadow-soft">
+            <Leaf className="h-5 w-5 text-white" />
           </div>
-          <span className="text-xl font-bold text-gray-900">FarmMate</span>
+          <span className="text-lg font-bold text-white tracking-tight">FarmMate</span>
         </Link>
         {isMobile && onClose && (
-          <button
-            onClick={onClose}
-            className="p-2 rounded-lg hover:bg-gray-100 md:hidden"
-          >
-            <X className="w-5 h-5 text-gray-600" />
+          <button onClick={onClose} className="p-2 rounded-lg hover:bg-white/10 transition-colors">
+            <X className="w-5 h-5 text-surface-400" />
           </button>
         )}
       </div>
 
-      {/* Scrollable Navigation */}
-      <div className="flex-1 overflow-y-auto">
-        <nav className="p-3 space-y-1">
+      {/* Navigation */}
+      <div className="flex-1 overflow-y-auto py-2">
+        <nav className="px-3 space-y-0.5">
           {navigationItems.map((item) => {
             const Icon = item.icon;
-            
             if (item.children && item.children.length > 0) {
-              // Expandable section
               const isExpanded = expandedSections[item.id];
               return (
                 <div key={item.id}>
-                  <button
-                    onClick={() => toggleSection(item.id)}
-                    className="w-full flex items-center justify-between p-2 rounded-lg hover:bg-gray-50 transition-colors text-left"
-                  >
-                    <div className="flex items-center gap-2">
-                      <Icon className="w-4 h-4 text-gray-600" />
-                      <span className="text-base font-medium text-gray-700">{item.label}</span>
+                  <button onClick={() => toggleSection(item.id)} className="w-full flex items-center justify-between p-2 rounded-xl hover:bg-white/[0.04] transition-all duration-200 group">
+                    <div className="flex items-center gap-2.5">
+                      <Icon className="w-4 h-4 text-surface-400 group-hover:text-surface-200 transition-colors" />
+                      <span className="text-sm font-medium text-surface-300 group-hover:text-white transition-colors">{item.label}</span>
                     </div>
-                    {isExpanded ? (
-                      <ChevronUp className="w-3 h-3 text-gray-500" />
-                    ) : (
-                      <ChevronDown className="w-3 h-3 text-gray-500" />
-                    )}
+                    {isExpanded ? <ChevronUp className="w-3 h-3 text-surface-500" /> : <ChevronDown className="w-3 h-3 text-surface-500" />}
                   </button>
-                  
                   {isExpanded && (
-                    <div className="ml-6 mt-1 space-y-0.5">
-                      {item.children.map((child, index) => (
-                        <Link
-                          key={index}
-                          href={child.path}
-                          className={`block p-2 rounded-lg text-sm transition-colors ${
-                            isActive(child.path)
-                              ? 'bg-teal-50 text-teal-700'
-                              : 'text-gray-600 hover:bg-gray-50'
-                          }`}
-                          onClick={handleLinkClick}
-                        >
-                          {child.label}
-                        </Link>
-                      ))}
+                    <div className="ml-6 mt-0.5 space-y-0.5">
+                      {item.children.map((child, index) => {
+                        const active = isActive(child.path);
+                        return (
+                          <Link key={index} href={child.path} className={`relative flex items-center p-2 rounded-xl text-sm transition-all duration-200 ${active ? 'text-white font-medium' : 'text-surface-400 hover:text-surface-200 hover:bg-white/[0.03]'}`} onClick={handleLinkClick} onMouseEnter={() => prefetchLink(child.path)}>
+                            {active && <span className="nav-indicator" />}
+                            {child.label}
+                          </Link>
+                        );
+                      })}
                     </div>
                   )}
                 </div>
               );
             } else {
-              // Single item
+              const active = isActive(item.path);
               return (
-                <Link
-                  key={item.id}
-                  href={item.path}
-                  className={`flex items-center gap-2 p-2 rounded-lg transition-colors ${
-                    isActive(item.path)
-                      ? 'bg-teal-600 text-white'
-                      : 'text-gray-700 hover:bg-gray-50'
-                  }`}
-                  onClick={handleLinkClick}
-                >
-                  <Icon className="w-4 h-4" />
-                  <span className="text-base font-medium">{item.label}</span>
+                <Link key={item.id} href={item.path} className={`relative flex items-center gap-2.5 p-2 rounded-xl transition-all duration-200 group ${active ? 'text-white font-medium' : 'text-surface-400 hover:text-surface-200 hover:bg-white/[0.03]'}`} onClick={handleLinkClick} onMouseEnter={() => prefetchLink(item.path)}>
+                  {active && <span className="nav-indicator" />}
+                  <Icon className={`w-4 h-4 transition-colors ${active ? 'text-emerald-400' : 'text-surface-500 group-hover:text-surface-300'}`} />
+                  <span className="text-sm">{item.label}</span>
                 </Link>
               );
             }
@@ -336,27 +189,23 @@ export default function Sidebar({ userRole, userName, userEmail, onClose }) {
         </nav>
       </div>
 
-      {/* User Profile - Fixed at bottom */}
-      <div className="flex-shrink-0 p-3 border-t border-gray-200 bg-white">
+      {/* User Profile */}
+      <div className="flex-shrink-0 p-3 border-t border-white/[0.06] bg-surface-800/80">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-teal-600 rounded-full flex items-center justify-center">
-              <span className="text-white font-medium text-sm">{getUserInitials(userName)}</span>
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-full flex items-center justify-center shadow-sm">
+              <span className="text-white font-medium text-xs">{getUserInitials(userName)}</span>
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-gray-900 truncate">{userName}</p>
-              <div className="flex items-center gap-1">
-                <Mail className="w-2.5 h-2.5 text-gray-400" />
-                <p className="text-xs text-gray-500 truncate">{userEmail}</p>
-              </div>
-              <p className="text-xs text-gray-500 capitalize">{getRoleDisplayName(userRole)}</p>
+              <p className="text-sm font-medium text-white truncate">{userName}</p>
+              <p className="text-[10px] text-surface-400 uppercase tracking-wider">{getRoleDisplayName(userRole)}</p>
             </div>
           </div>
-          <Link href="/logout" className="p-1.5 rounded-lg hover:bg-gray-50" onClick={handleLinkClick}>
-            <LogOut className="w-3.5 h-3.5 text-gray-500" />
+          <Link href="/logout" className="p-1.5 rounded-lg hover:bg-white/[0.06] text-surface-400 hover:text-surface-200 transition-all" onClick={handleLinkClick}>
+            <LogOut className="w-3.5 h-3.5" />
           </Link>
         </div>
       </div>
     </div>
   );
-} 
+}

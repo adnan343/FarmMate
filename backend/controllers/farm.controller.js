@@ -12,12 +12,36 @@ export const getFarms = async (req, res) => {
     }
 }
 
+export const getFarmById = async (req, res) => {
+    try {
+        const { id } = req.params;
+        
+        if (!mongoose.Types.ObjectId.isValid(id)) {
+            return res.status(400).json({ success: false, message: 'Invalid farm ID' });
+        }
+
+        const farm = await Farm.findById(id).populate('farmer', 'name email');
+        if (!farm) {
+            return res.status(404).json({ success: false, message: 'Farm not found' });
+        }
+        res.status(200).json({success: true, data: farm});
+    } catch (err) {
+        console.log("error in fetching farm", err.message);
+        res.status(500).json({success: false, message: "Server error"});
+    }
+}
+
 export const getFarmsByFarmer = async (req, res) => {
     try {
         const { farmerId } = req.params;
         
         if (!mongoose.Types.ObjectId.isValid(farmerId)) {
             return res.status(400).json({ success: false, message: 'Invalid farmer ID' });
+        }
+
+        // IDOR guard: farmers can only view their own farms; admins can view any
+        if (req.user.role !== 'admin' && req.user._id.toString() !== farmerId) {
+            return res.status(403).json({ success: false, message: 'Not authorized to view these farms' });
         }
 
         const farms = await Farm.find({ farmer: farmerId }).populate('farmer', 'name email');
@@ -29,28 +53,51 @@ export const getFarmsByFarmer = async (req, res) => {
 }
 
 export const addFarm = async (req, res) => {
-    const farm = req.body; //user will send this data
+    const farmData = req.body;
 
-    if (!farm.name || !farm.location || !farm.soilType || !farm.landSize || !farm.mapView || !farm.farmer) {
-        return res.status(400).json({success: false, message: 'Provide all the inputs'});
+    const name = String(farmData.name || '').trim();
+    const location = String(farmData.location || '').trim();
+    const soilType = String(farmData.soilType || '').trim();
+    const landSize = String(farmData.landSize || '').trim();
+    const mapView = String(farmData.mapView || '').trim();
+    const description = String(farmData.description || '').trim();
+    const establishedYear = farmData.establishedYear ? Number(farmData.establishedYear) : undefined;
+
+    if (!name || !location || !soilType || !landSize || !mapView) {
+        return res.status(400).json({ success: false, message: 'Please provide name, location, soil type, land size, and map view.' });
     }
 
-    const newFarm = new Farm(farm);
+    if (name.length > 120 || location.length > 120 || soilType.length > 80 || landSize.length > 40) {
+        return res.status(400).json({ success: false, message: 'One or more farm fields exceed allowed length.' });
+    }
+
+    if (establishedYear && (Number.isNaN(establishedYear) || establishedYear < 1800 || establishedYear > new Date().getFullYear())) {
+        return res.status(400).json({ success: false, message: 'Established year is invalid.' });
+    }
+
+    const safeFarm = {
+        name,
+        location,
+        soilType,
+        landSize,
+        mapView,
+        description,
+        establishedYear,
+        farmer: req.user._id
+    };
+
+    const newFarm = new Farm(safeFarm);
 
     try {
         await newFarm.save();
-        
-        // Add the farm to the user's farms array
-        await User.findByIdAndUpdate(
-            farm.farmer,
-            { $push: { farms: newFarm._id } }
-        );
-        
+
+        await User.findByIdAndUpdate(req.user._id, { $push: { farms: newFarm._id } });
+
         const populatedFarm = await Farm.findById(newFarm._id).populate('farmer', 'name email');
-        res.status(201).json({success: true, farm: populatedFarm});
+        res.status(201).json({ success: true, data: populatedFarm });
     } catch (err) {
-        console.error("Error creating farm", err.message);
-        res.status(500).json({success: false, message: "Server error"});
+        console.error('Error creating farm', err.message);
+        res.status(500).json({ success: false, message: 'Internal Server Error' });
     }
 }
 
@@ -66,6 +113,13 @@ export const deleteFarm = async (req, res) => {
         const farm = await Farm.findById(id);
         if (!farm) {
             return res.status(404).json({success: false, message: 'Farm not found'});
+        }
+
+        // IDOR guard: only the farm owner or an admin can delete
+        const isOwner = farm.farmer.toString() === req.user._id.toString();
+        const isAdmin = req.user.role === 'admin';
+        if (!isOwner && !isAdmin) {
+            return res.status(403).json({success: false, message: 'Not authorized to delete this farm'});
         }
         
         // Delete the farm
@@ -85,18 +139,41 @@ export const deleteFarm = async (req, res) => {
 }
 
 export const updateFarm = async (req, res) => {
-    const {id} = req.params;
+    const { id } = req.params;
+    const farmData = req.body;
 
-    const farm = req.body;
-
-    if(!mongoose.Types.ObjectId.isValid(id)) {
-        return res.status(404).json({success: false, message: 'Farm not found'});
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+        return res.status(404).json({ success: false, message: 'Farm not found' });
     }
 
-    try{
-        const updatedFarm = await Farm.findByIdAndUpdate(id, farm, {new:true})
-        res.status(200).json({success: true, data: updatedFarm});
-    } catch {
-        res.status(500).json({success: false, message: "Server error"});
+    const allowedUpdates = ['name', 'location', 'soilType', 'landSize', 'mapView', 'description', 'establishedYear'];
+    const safeUpdates = {};
+    allowedUpdates.forEach((field) => {
+        if (field in farmData) {
+            safeUpdates[field] = farmData[field];
+        }
+    });
+
+    if (safeUpdates.name && String(safeUpdates.name).trim().length === 0) {
+        return res.status(400).json({ success: false, message: 'Farm name cannot be empty.' });
+    }
+
+    try {
+        const farm = await Farm.findById(id);
+        if (!farm) {
+            return res.status(404).json({ success: false, message: 'Farm not found' });
+        }
+
+        const isOwner = farm.farmer.toString() === req.user._id.toString();
+        const isAdmin = req.user.role === 'admin';
+        if (!isOwner && !isAdmin) {
+            return res.status(403).json({ success: false, message: 'Not authorized to update this farm' });
+        }
+
+        const updatedFarm = await Farm.findByIdAndUpdate(id, safeUpdates, { new: true, runValidators: true });
+        res.status(200).json({ success: true, data: updatedFarm });
+    } catch (error) {
+        console.error('Error updating farm', error.message);
+        res.status(500).json({ success: false, message: 'Internal Server Error' });
     }
 }
